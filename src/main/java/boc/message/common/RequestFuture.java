@@ -1,8 +1,7 @@
 package boc.message.common;
 
+import java.util.LinkedList;
 import java.util.List;
-
-import com.google.common.collect.Lists;
 
 public class RequestFuture<R> {
 
@@ -15,7 +14,7 @@ public class RequestFuture<R> {
 	private int timeout = 10;
 	private Host host;
 
-	private volatile List<FutureListener<R>> futures = Lists.newLinkedList();
+	private volatile List<FutureListener<R>> futures = new LinkedList<FutureListener<R>>();
 
 	// 1:ok -1:connet fail -2:timeout
 	private int[] stat = new int[1];

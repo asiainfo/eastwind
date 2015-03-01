@@ -11,7 +11,6 @@ import java.util.List;
 import org.springframework.util.CollectionUtils;
 
 import boc.message.common.Ping;
-import boc.message.common.PingListener;
 
 import com.alibaba.fastjson.JSON;
 import com.esotericsoftware.kryo.Kryo;

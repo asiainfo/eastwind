@@ -1,4 +1,4 @@
-package boc.message.common;
+package boc.message;
 
 import io.netty.channel.ChannelHandlerContext;
 

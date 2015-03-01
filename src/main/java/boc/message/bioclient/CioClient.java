@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Proxy;
 import java.net.Socket;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -27,7 +28,6 @@ import boc.message.common.SubmitRequest;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
-import com.google.common.collect.Lists;
 
 public class CioClient {
 
@@ -134,7 +134,7 @@ public class CioClient {
 		exe.execute(new Runnable() {
 			@Override
 			public void run() {
-				List<NetStateListener> oneOffs = Lists.newLinkedList();
+				List<NetStateListener> oneOffs = new LinkedList<NetStateListener>();
 				for (int i = 0; i < netStateListeners.size(); i++) {
 					NetStateListener netStateListener = netStateListeners.get(i);
 					invokeListener(netStateListener);

@@ -1,12 +1,11 @@
 package boc.message.common;
 
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-
-import com.google.common.collect.Maps;
 
 public class RequestFuturePool {
 
-	private ConcurrentMap<Long, RequestFuture<?>> requestFutures = Maps.newConcurrentMap();
+	private ConcurrentMap<Long, RequestFuture<?>> requestFutures = new ConcurrentHashMap<Long, RequestFuture<?>>();
 
 	public void put(RequestFuture<?> requestFuture) {
 		requestFutures.put(requestFuture.getRequest().getId(), requestFuture);

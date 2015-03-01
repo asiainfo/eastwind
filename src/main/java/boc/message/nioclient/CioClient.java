@@ -19,6 +19,7 @@ import boc.message.CioCodec;
 import boc.message.common.CioProvider;
 import boc.message.common.Host;
 import boc.message.common.KryoFactory;
+import boc.message.common.NoticeHandlerManager;
 import boc.message.common.Ping;
 import boc.message.common.RequestFuture;
 import boc.message.common.RequestFuturePool;
@@ -38,8 +39,8 @@ public class CioClient {
 	private int ChannelTimeout = 15;
 
 	private RequestFuturePool requestFuturePool = new RequestFuturePool();
-	
 	private RequestInvokeHandler requestInvokeHandler = new RequestInvokeHandler(new NioSubmitRequest());
+	private NoticeHandlerManager noticeHandlerManager = new NoticeHandlerManager();
 
 	private CioProvider cioProvider;
 
@@ -59,7 +60,8 @@ public class CioClient {
 				sc.pipeline().addLast("lengthFieldPrepender", new LengthFieldPrepender(2, true));
 				sc.pipeline().addLast("lengthDecoder", new LengthFieldBasedFrameDecoder(65535, 0, 2, 0, 2));
 				sc.pipeline().addLast("codec", new CioCodec(app, KryoFactory.getKryo()));
-				sc.pipeline().addLast("inboundHandler", new ClientInboundHandler(requestFuturePool, channelGuard));
+				sc.pipeline().addLast("inboundHandler",
+						new ClientInboundHandler(requestFuturePool, channelGuard, noticeHandlerManager));
 			}
 		});
 
@@ -138,7 +140,7 @@ public class CioClient {
 				});
 			}
 		}
-		
+
 	}
-	
+
 }

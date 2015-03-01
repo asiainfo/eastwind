@@ -102,6 +102,5 @@
 			<artifactId>spring-core</artifactId>
 			<version>${spring.v}</version>
 		</dependency>
-
 	</dependencies>
 </project>
