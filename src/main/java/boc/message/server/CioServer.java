@@ -32,18 +32,18 @@ public class CioServer {
 	private List<Filter> filters = Lists.newArrayList();
 	private ExceptionResolver exceptionResolver;
 
-	private CioServerContext cioServerContext = new CioServerContext();
+	private ServerContext serverContext = new ServerContext();
 
-	private int ChannelTimeout = 15;
+	private int channelTimeout = 15;
 
 	private int parentThreads = 0;
 	private int childThreads = 0;
 
-	private boolean checkPing = true;
+	private boolean checkPing = false;
 	
 	public CioServer(String app) {
 		this.app = app;
-		registerProvider(new CioProviderImpl());
+		registerProvider(new HelloProviderImpl());
 	}
 
 	public void start() {
@@ -54,20 +54,20 @@ public class CioServer {
 			@Override
 			protected void initChannel(SocketChannel sc) throws Exception {
 				if (checkPing) {
-					sc.pipeline().addLast("readTimeoutHandler", new ReadTimeoutHandler(ChannelTimeout));
+					sc.pipeline().addLast("readTimeoutHandler", new ReadTimeoutHandler(channelTimeout));
 				}
 				sc.pipeline().addLast("lengthFieldPrepender", new LengthFieldPrepender(2, true));
 				sc.pipeline().addLast("lengthDecoder", new LengthFieldBasedFrameDecoder(65535, 0, 2, 0, 2));
 				sc.pipeline().addLast("codec", new CioCodec(app, KryoFactory.getKryo()));
 				sc.pipeline().addLast("inboundHandler",
-						new ServerInboundHandler(filters, exceptionResolver, cioServerContext));
+						new ServerInboundHandler(filters, exceptionResolver, serverContext));
 			}
 		});
 		serverBootstrap.option(ChannelOption.SO_REUSEADDR, true);
 		serverBootstrap.bind("127.0.0.1", port).addListener(new ChannelFutureListener() {
 			@Override
 			public void operationComplete(ChannelFuture future) throws Exception {
-				System.out.println("start ok");
+				System.out.println(app + ":" + port + " start ok");
 			}
 		});
 
@@ -76,7 +76,7 @@ public class CioServer {
 			public void run() {
 				CioServer.shutdown = true;
 				for (int i = 0; i < 30; i++) {
-					if (cioServerContext.getRequestPool().count() == 0) {
+					if (serverContext.getRequestPool().count() == 0) {
 						break;
 					}
 
@@ -108,7 +108,7 @@ public class CioServer {
 	}
 
 	public void setChannelTimeout(int channelTimeout) {
-		ChannelTimeout = channelTimeout;
+		this.channelTimeout = channelTimeout;
 	}
 
 	public void setCheckPing(boolean checkPing) {
@@ -119,11 +119,11 @@ public class CioServer {
 		this.exceptionResolver = exceptionResolver;
 	}
 
-	public CioServerContext getCioServerContext() {
-		return cioServerContext;
+	public ServerContext getServerContext() {
+		return serverContext;
 	}
 
 	public void registerProvider(Object handlerObj) {
-		cioServerContext.getProviderManager().register(handlerObj);
+		serverContext.getProviderManager().register(handlerObj);
 	}
 }

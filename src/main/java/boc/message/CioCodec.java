@@ -58,7 +58,6 @@ public class CioCodec extends ByteToMessageCodec<Object> {
 		if (in.readableBytes() < 0) {
 			return;
 		}
-		ChannelStat.set(ctx.channel(), ChannelStat.lastWriteTime, System.currentTimeMillis() / 1000);
 		short v = in.readShort();
 		switch (v) {
 		case 0:

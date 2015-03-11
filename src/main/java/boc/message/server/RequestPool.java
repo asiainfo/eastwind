@@ -9,17 +9,13 @@ import com.google.common.collect.Maps;
 
 public class RequestPool {
 
-	private AtomicInteger nextGid = new AtomicInteger();
-
 	private ConcurrentMap<Integer, ConcurrentMap<Long, Request>> requests = Maps.newConcurrentMap();
 
-	public int newGroup() {
-		int gid = nextGid.getAndIncrement();
+	public void newGroup(Integer gid) {
 		ConcurrentMap<Long, Request> g = Maps.newConcurrentMap();
 		requests.put(gid, g);
-		return gid;
 	}
-
+	
 	public void delGroup(Integer gid) {
 		requests.remove(gid);
 	}

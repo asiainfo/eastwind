@@ -12,7 +12,7 @@ public class MultipleMap<K, V> {
 	private ConcurrentMap<K, V>[] maps;
 
 	public static <K, V> MultipleMap<K, V> newMultipleMap() {
-		return newMultipleMap(4);
+		return newMultipleMap(5);
 	}
 
 	public static <K, V> MultipleMap<K, V> newMultipleMap(int power) {
@@ -30,14 +30,26 @@ public class MultipleMap<K, V> {
 		return shard + 1;
 	}
 
-	public ConcurrentMap<K, V> getKeyMap(K k) {
+	public ConcurrentMap<K, V> getShardMap(int shard) {
+		return maps[shard];
+	}
+
+	public V get(K k) {
+		return getShardMapByKey(k).get(k);
+	}
+
+	public void put(K k, V v) {
+		getShardMapByKey(k).put(k, v);
+	}
+
+	public V remove(K k) {
+		return getShardMapByKey(k).remove(k);
+	}
+	
+	public ConcurrentMap<K, V> getShardMapByKey(K k) {
 		if (k == null) {
 			return maps[0];
 		}
 		return maps[k.hashCode() & shard];
-	}
-
-	public ConcurrentMap<K, V> getShardMap(int shard) {
-		return maps[shard];
 	}
 }

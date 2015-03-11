@@ -10,6 +10,8 @@ public class KryoFactory {
 		kryo.register(Request.class, 11);
 		kryo.register(Respone.class, 12);
 		kryo.register(Notice.class, 13);
+		kryo.register(Host.class, 14);
+		
 		kryo.register(Ping.class, 126);
 		kryo.register(ShutdownObj.class, 127);
 	}

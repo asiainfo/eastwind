@@ -5,9 +5,7 @@ import io.netty.util.AttributeKey;
 
 public class ChannelStat {
 
-	public static final AttributeKey<Integer> gid = AttributeKey.valueOf("gid");
-
-	public static final AttributeKey<Long> lastWriteTime = AttributeKey.valueOf("lastWriteTime");
+	public static final AttributeKey<Session> session = AttributeKey.valueOf("session");
 	
 	public static <T> T get(Channel channel, AttributeKey<T> key) {
 		return channel.attr(key).get();

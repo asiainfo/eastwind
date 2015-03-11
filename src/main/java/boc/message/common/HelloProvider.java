@@ -2,9 +2,9 @@ package boc.message.common;
 
 import boc.message.server.Provider;
 
-public interface CioProvider {
+public interface HelloProvider {
 
-	@Provider("#ruok")
+	@Provider
 	public String ruok();
 	
 }

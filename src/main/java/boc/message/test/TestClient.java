@@ -6,7 +6,7 @@ import boc.message.common.FutureListener;
 import boc.message.common.Host;
 import boc.message.common.RequestFuture;
 import boc.message.nioclient.CioClient;
-import boc.message.nioclient.CioInvoker;
+import boc.message.nioclient.HelloInvoker;
 
 public class TestClient {
 
@@ -27,8 +27,8 @@ public class TestClient {
 		TestClient testClient = new TestClient();
 		CioClient cioClient = testClient.getCioClient();
 		Host host = new Host("127.0.0.1", 19999);
-		CioInvoker cioInvoker = cioClient.buildCioInvoker(host);
-		cioInvoker.ruok().addFuture(new FutureListener<String>() {
+		HelloInvoker helloInvoker = cioClient.createCioInvoker(host);
+		helloInvoker.ruok().addFuture(new FutureListener<String>() {
 			@Override
 			public void operationComplete(RequestFuture<String> rf) {
 				System.out.println(rf.getRespone().getResult());

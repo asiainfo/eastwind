@@ -1,7 +1,6 @@
 package boc.message.nioclient;
 
 import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelInitializer;
@@ -16,14 +15,13 @@ import java.lang.reflect.Proxy;
 import java.util.concurrent.TimeUnit;
 
 import boc.message.CioCodec;
-import boc.message.common.CioProvider;
+import boc.message.common.HelloProvider;
 import boc.message.common.Host;
 import boc.message.common.KryoFactory;
 import boc.message.common.NoticeHandlerManager;
-import boc.message.common.Ping;
 import boc.message.common.RequestFuture;
 import boc.message.common.RequestFuturePool;
-import boc.message.common.RequestInvokeHandler;
+import boc.message.common.RequestInvocationHandler;
 import boc.message.common.SharedScheduledExecutor;
 import boc.message.common.SubmitRequest;
 
@@ -36,17 +34,17 @@ public class CioClient {
 
 	private int threads = 0;
 	private int invokeTimeout = 10;
-	private int ChannelTimeout = 15;
+	private int channelTimeout = 15;
 
 	private RequestFuturePool requestFuturePool = new RequestFuturePool();
-	private RequestInvokeHandler requestInvokeHandler = new RequestInvokeHandler(new NioSubmitRequest());
+	private RequestInvocationHandler requestInvocationHandler = new RequestInvocationHandler(new NioSubmitRequest());
 	private NoticeHandlerManager noticeHandlerManager = new NoticeHandlerManager();
 
-	private CioProvider cioProvider;
+	private HelloProvider helloProvider;
 
 	public CioClient(String app) {
 		this.app = app;
-		cioProvider = createInvoker(CioProvider.class);
+		helloProvider = createInvoker(HelloProvider.class);
 	}
 
 	public void start() {
@@ -56,7 +54,9 @@ public class CioClient {
 		bootstrap.handler(new ChannelInitializer<SocketChannel>() {
 			@Override
 			protected void initChannel(SocketChannel sc) throws Exception {
-				sc.pipeline().addLast("readTimeoutHandler", new ReadTimeoutHandler(ChannelTimeout));
+				if (channelTimeout > 0) {
+					sc.pipeline().addLast("readTimeoutHandler", new ReadTimeoutHandler(channelTimeout));
+				}
 				sc.pipeline().addLast("lengthFieldPrepender", new LengthFieldPrepender(2, true));
 				sc.pipeline().addLast("lengthDecoder", new LengthFieldBasedFrameDecoder(65535, 0, 2, 0, 2));
 				sc.pipeline().addLast("codec", new CioCodec(app, KryoFactory.getKryo()));
@@ -65,7 +65,7 @@ public class CioClient {
 			}
 		});
 
-		channelGuard = new ChannelGuard(bootstrap, this);
+		channelGuard = new ChannelGuard(bootstrap, channelTimeout);
 		channelGuard.start();
 
 		TimeoutRunner timeoutRunner = new TimeoutRunner(requestFuturePool, invokeTimeout);
@@ -74,13 +74,13 @@ public class CioClient {
 
 	public <T> T createInvoker(Class<T> interf) {
 		Object obj = Proxy.newProxyInstance(this.getClass().getClassLoader(), new Class<?>[] { interf },
-				requestInvokeHandler);
+				requestInvocationHandler);
 		return (T) obj;
 	}
 
-	public CioInvoker buildCioInvoker(Host host) {
-		CioInvoker builder = new CioInvoker(host, cioProvider);
-		return builder;
+	public HelloInvoker createCioInvoker(Host host) {
+		HelloInvoker invoker = new HelloInvoker(host, helloProvider);
+		return invoker;
 	}
 
 	public void setThreads(int threads) {
@@ -88,11 +88,11 @@ public class CioClient {
 	}
 
 	public void setChannelTimeout(int ChannelTimeout) {
-		this.ChannelTimeout = ChannelTimeout;
+		this.channelTimeout = ChannelTimeout;
 	}
 
 	public int getChannelTimeout() {
-		return ChannelTimeout;
+		return channelTimeout;
 	}
 
 	public int getInvokeTimeout() {
@@ -101,13 +101,6 @@ public class CioClient {
 
 	public void setInvokeTimeout(int invokeTimeout) {
 		this.invokeTimeout = invokeTimeout;
-	}
-
-	public void ping(Host host) {
-		Channel channel = channelGuard.getChannel(host);
-		if (channel != null) {
-			channel.writeAndFlush(Ping.instance);
-		}
 	}
 
 	private class NioSubmitRequest implements SubmitRequest {

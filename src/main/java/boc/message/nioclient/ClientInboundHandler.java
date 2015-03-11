@@ -36,7 +36,7 @@ public class ClientInboundHandler extends SimpleChannelInboundHandler<Object> {
 				channelGuard.setShutdown(requestFuture.getHost());
 				requestFuture.fail();
 			} else {
-				requestFuture.done(respone);j
+				requestFuture.done(respone);
 			}
 		} else if (msg instanceof Notice) {
 			Notice notice = (Notice) msg;

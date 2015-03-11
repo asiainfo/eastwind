@@ -2,7 +2,7 @@ package boc.message.server;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class CioServerContext {
+public class ServerContext {
 
 	private ProviderManager providerManager = new ProviderManager();
 

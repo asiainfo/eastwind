@@ -5,13 +5,13 @@ import java.lang.reflect.Method;
 
 import boc.message.server.Provider;
 
-public class RequestInvokeHandler implements InvocationHandler {
+public class RequestInvocationHandler implements InvocationHandler {
 
 	private TimedIdSequence100 timedIdSequence100 = new TimedIdSequence100();
 	
 	private SubmitRequest submitRequest;
 	
-	public RequestInvokeHandler(SubmitRequest submitRequest) {
+	public RequestInvocationHandler(SubmitRequest submitRequest) {
 		this.submitRequest = submitRequest;
 	}
 
@@ -23,7 +23,11 @@ public class RequestInvokeHandler implements InvocationHandler {
 		Request request = new Request();
 		Provider p = method.getAnnotation(Provider.class);
 		request.setId(timedIdSequence100.newId());
-		request.setType(p.value());
+		if (p.value().equals("")) {
+			request.setType(method.getName());
+		} else {
+			request.setType(p.value());
+		}
 		request.setArgs(args);
 
 		RequestFuture<?> requestFuture = RequestFuture.REQUEST_FUTURE_LOCAL.get();

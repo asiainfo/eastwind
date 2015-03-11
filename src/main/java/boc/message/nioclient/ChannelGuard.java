@@ -5,14 +5,16 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 
-import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
 import boc.message.ChannelStat;
+import boc.message.Session;
+import boc.message.common.CioUtils;
 import boc.message.common.Host;
+import boc.message.common.Ping;
 import boc.message.common.SharedScheduledExecutor;
 
 import com.google.common.collect.Maps;
@@ -21,16 +23,14 @@ public class ChannelGuard {
 
 	private Bootstrap bootstrap;
 
-	private CioClient cioClient;
 	private int pingInterval;
 
 	private ConcurrentMap<Host, Long> shutdowns = Maps.newConcurrentMap();
 	private ConcurrentMap<Host, ChannelFuture> channels = Maps.newConcurrentMap();
 
-	public ChannelGuard(Bootstrap bootstrap, CioClient cioClient) {
+	public ChannelGuard(Bootstrap bootstrap, int timeout) {
 		this.bootstrap = bootstrap;
-		this.cioClient = cioClient;
-		this.pingInterval = this.cioClient.getChannelTimeout() / 3;
+		this.pingInterval = timeout / 3;
 	}
 
 	public void setHosts(List<Host> hosts) {
@@ -40,8 +40,9 @@ public class ChannelGuard {
 	}
 
 	public void start() {
-		SharedScheduledExecutor.ses.scheduleWithFixedDelay(new PingRunner(), this.pingInterval, this.pingInterval,
-				TimeUnit.SECONDS);
+		// SharedScheduledExecutor.ses.scheduleWithFixedDelay(new PingRunner(),
+		// this.pingInterval, this.pingInterval,
+		// TimeUnit.SECONDS);
 	}
 
 	public void setShutdown(Host host) {
@@ -106,7 +107,8 @@ public class ChannelGuard {
 			@Override
 			public void operationComplete(ChannelFuture future) throws Exception {
 				if (future.isSuccess()) {
-					ChannelStat.set(future.channel(), ChannelStat.lastWriteTime, System.currentTimeMillis() / 1000);
+					Session session = new Session(future.channel());
+					ChannelStat.set(future.channel(), ChannelStat.session, session);
 
 					// reconnect after close
 					future.channel().closeFuture().addListener(new ChannelFutureListener() {
@@ -140,7 +142,7 @@ public class ChannelGuard {
 	private class PingRunner implements Runnable {
 		@Override
 		public void run() {
-			long now = System.currentTimeMillis() / 1000;
+			long now = CioUtils.currentTimeSeconds();
 
 			for (Entry<Host, ChannelFuture> en : channels.entrySet()) {
 
@@ -148,15 +150,10 @@ public class ChannelGuard {
 				Channel channel = cf.channel();
 
 				if (cf.isSuccess() && channel.isActive()) {
-					Long t = ChannelStat.get(channel, ChannelStat.lastWriteTime);
-					
+					Long t = ChannelStat.get(channel, ChannelStat.session).getLastAccessedTime();
 					if (t != null && now - t.longValue() > pingInterval) {
-						InetSocketAddress host = (InetSocketAddress) channel.remoteAddress();
-						String ip = host.getAddress().getHostAddress();
-						int port = host.getPort();
-						cioClient.ping(new Host(ip, port));
+						channel.writeAndFlush(Ping.instance);
 					}
-
 				}
 
 			}

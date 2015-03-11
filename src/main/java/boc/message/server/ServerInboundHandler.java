@@ -8,6 +8,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
 import boc.message.ChannelStat;
+import boc.message.Session;
 import boc.message.common.Ping;
 import boc.message.common.Request;
 import boc.message.common.Respone;
@@ -24,33 +25,34 @@ public class ServerInboundHandler extends SimpleChannelInboundHandler<Object> {
 	private ProviderManager providerHandlerManager;
 	private RequestPool requestPool;
 
-	private CioServerContext cioServerContext;
+	private ServerContext serverContext;
 
 	public ServerInboundHandler(List<Filter> filters, ExceptionResolver exceptionResolver,
-			CioServerContext cioServerContext) {
+			ServerContext serverContext) {
 		this.filters = filters;
 		this.exceptionResolver = exceptionResolver;
 
-		this.providerHandlerManager = cioServerContext.getProviderManager();
-		this.requestPool = cioServerContext.getRequestPool();
-		this.cioServerContext = cioServerContext;
+		this.providerHandlerManager = serverContext.getProviderManager();
+		this.requestPool = serverContext.getRequestPool();
+		this.serverContext = serverContext;
 	}
 
 	@Override
 	public void channelActive(ChannelHandlerContext ctx) throws Exception {
 		System.out.println("channel active:" + ctx.channel().remoteAddress());
-		int id = requestPool.newGroup();
-		ChannelStat.set(ctx.channel(), ChannelStat.gid, id);
-		cioServerContext.incrementClientCount();
+		Session session = new Session(ctx.channel());
+		requestPool.newGroup(session.getId());
+		ChannelStat.set(ctx.channel(), ChannelStat.session, session);
+		serverContext.incrementClientCount();
 		super.channelActive(ctx);
 	}
 
 	@Override
 	public void channelInactive(ChannelHandlerContext ctx) throws Exception {
 		System.out.println("channel inactive:" + ctx.channel().remoteAddress());
-		int id = ChannelStat.get(ctx.channel(), ChannelStat.gid);
+		int id = ChannelStat.get(ctx.channel(), ChannelStat.session).getId();
 		requestPool.delGroup(id);
-		cioServerContext.decrementClientCount();
+		serverContext.decrementClientCount();
 		super.channelInactive(ctx);
 	}
 
@@ -69,13 +71,15 @@ public class ServerInboundHandler extends SimpleChannelInboundHandler<Object> {
 				ctx.channel().writeAndFlush(respone);
 				return;
 			}
-
-			int gid = ChannelStat.get(ctx.channel(), ChannelStat.gid);
+			
+			Session session = ChannelStat.get(ctx.channel(), ChannelStat.session);
 			try {
-				requestPool.addRequest(gid, request);
+				Session.setSession(session);
+				requestPool.addRequest(session.getId(), request);
 				handleRequest(ctx, request);
 			} finally {
-				requestPool.delRequest(gid, request.getId());
+				Session.setSession(null);
+				requestPool.delRequest(session.getId(), request.getId());
 			}
 		}
 	}
@@ -94,6 +98,9 @@ public class ServerInboundHandler extends SimpleChannelInboundHandler<Object> {
 			th = e.getCause();
 		} catch (Throwable e) {
 			th = e;
+		}
+		if (th != null) {
+			th.printStackTrace();
 		}
 		Respone<Object> respone = new Respone<Object>(request.getId());
 		respone.setResult(result);

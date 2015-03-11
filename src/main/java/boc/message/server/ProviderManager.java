@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
@@ -31,7 +33,11 @@ public class ProviderManager {
 		Map<String, Method> map = Maps.newHashMap();
 		for (Method m : superHandlers) {
 			Provider p = m.getAnnotation(Provider.class);
-			map.put(p.value(), m);
+			String key = p.value();
+			if (StringUtils.isBlank(key)) {
+				key = m.getName();
+			}
+			map.put(key.trim(), m);
 		}
 
 		for (Entry<String, Method> en : map.entrySet()) {

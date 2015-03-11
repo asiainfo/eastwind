@@ -1,23 +1,23 @@
 package boc.message.nioclient;
 
-import boc.message.common.CioProvider;
+import boc.message.common.HelloProvider;
 import boc.message.common.Host;
 import boc.message.common.RequestFuture;
 
-public class CioInvoker {
+public class HelloInvoker {
 
 	private Host host;
-	private CioProvider cioProvider;
+	private HelloProvider helloProvider;
 
-	public CioInvoker(Host host, CioProvider cioProvider) {
+	public HelloInvoker(Host host, HelloProvider helloProvider) {
 		this.host = host;
-		this.cioProvider = cioProvider;
+		this.helloProvider = helloProvider;
 	}
 
 	public RequestFuture<String> ruok() {
 		RequestFuture<String> rf = new RequestFuture<String>(host);
 		rf.start();
-		cioProvider.ruok();
+		helloProvider.ruok();
 		rf.end();
 		return rf;
 	}

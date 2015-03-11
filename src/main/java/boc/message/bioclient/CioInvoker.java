@@ -1,13 +1,13 @@
 package boc.message.bioclient;
 
-import boc.message.common.CioProvider;
+import boc.message.common.HelloProvider;
 import boc.message.common.RequestFuture;
 
 public class CioInvoker {
 
-	private CioProvider cioProvider;
+	private HelloProvider cioProvider;
 
-	public CioInvoker(CioProvider cioProvider) {
+	public CioInvoker(HelloProvider cioProvider) {
 		this.cioProvider = cioProvider;
 	}
 	

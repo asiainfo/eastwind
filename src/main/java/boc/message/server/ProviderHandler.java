@@ -18,11 +18,11 @@ public class ProviderHandler {
 		_void = method.getReturnType().equals(void.class) || method.getReturnType().equals(Void.class);
 	}
 
-	public Object invoke(Object param) throws Exception {
+	public Object invoke(Object[] param) throws Exception {
 		if (paramNum == 0) {
 			return method.invoke(instance);
 		} else {
-			return method.invoke(instance, new Object[] { param });
+			return method.invoke(instance, param);
 		}
 	}
 

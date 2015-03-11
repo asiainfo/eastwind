@@ -17,11 +17,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
-import boc.message.common.CioProvider;
+import boc.message.common.HelloProvider;
 import boc.message.common.KryoFactory;
 import boc.message.common.RequestFuture;
 import boc.message.common.RequestFuturePool;
-import boc.message.common.RequestInvokeHandler;
+import boc.message.common.RequestInvocationHandler;
 import boc.message.common.Respone;
 import boc.message.common.SubmitRequest;
 
@@ -52,19 +52,19 @@ public class CioClient {
 	private ExecutorService exe = Executors.newFixedThreadPool(3);
 
 	private BlockingQueue<RequestFuture<?>> sendQueue = new LinkedBlockingQueue<>();
-	private RequestInvokeHandler requestBuilderHandler = new RequestInvokeHandler(new BioSubmitRequest());
+	private RequestInvocationHandler requestInvocationHandler = new RequestInvocationHandler(new BioSubmitRequest());
 	private RequestFuturePool requestFuturePool = new RequestFuturePool();
 	private WriteThread writeThread;
 	private ReadThread readThread;
 
 	private long lastReadTime = System.currentTimeMillis();
 
-	private CioProvider cioProvider;
+	private HelloProvider cioProvider;
 	private CioInvoker cioInvoker;
 
 	public CioClient(String app) {
 		this.app = app;
-		this.cioProvider = createInvoker(CioProvider.class);
+		this.cioProvider = createInvoker(HelloProvider.class);
 		this.cioInvoker = new CioInvoker(cioProvider);
 	}
 
@@ -88,7 +88,7 @@ public class CioClient {
 
 	public <T> T createInvoker(Class<T> interf) {
 		Object obj = Proxy.newProxyInstance(this.getClass().getClassLoader(), new Class<?>[] { interf },
-				requestBuilderHandler);
+				requestInvocationHandler);
 		return (T) obj;
 	}
 
