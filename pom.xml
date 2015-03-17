@@ -10,7 +10,7 @@
 		<netty.v>4.0.25.Final</netty.v>
 		<jackson.v>2.5.1</jackson.v>
 		<spring.v>3.2.2.RELEASE</spring.v>
-		<netty-tcnative.v>windows-x86_64</netty-tcnative.v>
+		<netty-tcnative.classifier>windows-x86_64</netty-tcnative.classifier>
 	</properties>
 
 	<build>
@@ -38,6 +38,17 @@
 	</build>
 
 	<dependencies>
+		<dependency>
+			<groupId>io.netty</groupId>
+			<artifactId>netty-example</artifactId>
+			<version>${netty.v}</version>
+			<exclusions>
+				<exclusion>
+					<groupId>io.netty</groupId>
+					<artifactId>netty-tcnative</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
 
 		<dependency>
 			<groupId>io.netty</groupId>
@@ -55,7 +66,7 @@
 			<groupId>io.netty</groupId>
 			<artifactId>netty-tcnative</artifactId>
 			<version>1.1.30.Fork2</version>
-			<classifier>${netty-tcnative.v}</classifier>
+			<classifier>${netty-tcnative.classifier}</classifier>
 		</dependency>
 
 		<dependency>

@@ -5,9 +5,8 @@ import io.netty.channel.Channel;
 import java.lang.ref.WeakReference;
 import java.net.InetSocketAddress;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
-import boc.message.common.CioUtils;
+import boc.message.common.CommonUtils;
 
 import com.google.common.collect.Maps;
 
@@ -15,12 +14,10 @@ public class Session {
 
 	private static ThreadLocal<Session> TL = new ThreadLocal<Session>();
 
-	private AtomicInteger nextId = new AtomicInteger();
+	private int id;
 
-	private int id = nextId.getAndIncrement();
-	
-	private long lastCreationTime = CioUtils.currentTimeSeconds();
-	private long lastAccessedTime = CioUtils.currentTimeSeconds();
+	private long lastCreationTime = CommonUtils.currentTimeSeconds();
+	private long lastAccessedTime = CommonUtils.currentTimeSeconds();
 
 	private WeakReference<Channel> channel;
 	private Map<String, Object> attributes;
@@ -33,16 +30,17 @@ public class Session {
 		TL.set(session);
 	}
 
-	public Session(Channel channel) {
+	public Session(int id) {
+		this.id = id;
+	}
+
+	public void setChannel(Channel channel) {
 		this.channel = new WeakReference<Channel>(channel);
+		ChannelAttr.set(channel, ChannelAttr.SESSION, this);
 	}
 
-	public int getId() {
-		return id;
-	}
-
-	public Channel getChannel() {
-		return channel.get();
+	public void refreshAccessedTime() {
+		this.lastAccessedTime = CommonUtils.currentTimeSeconds();
 	}
 
 	public InetSocketAddress getRemoteAddress() {
@@ -63,6 +61,14 @@ public class Session {
 		attributes.put(name, value);
 	}
 
+	public int getId() {
+		return id;
+	}
+
+	public Channel getChannel() {
+		return channel.get();
+	}
+
 	public long getLastCreationTime() {
 		return lastCreationTime;
 	}
@@ -70,4 +76,5 @@ public class Session {
 	public long getLastAccessedTime() {
 		return lastAccessedTime;
 	}
+
 }

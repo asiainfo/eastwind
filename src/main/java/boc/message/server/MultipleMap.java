@@ -15,6 +15,7 @@ public class MultipleMap<K, V> {
 		return newMultipleMap(5);
 	}
 
+	@SuppressWarnings("unchecked")
 	public static <K, V> MultipleMap<K, V> newMultipleMap(int power) {
 		MultipleMap<K, V> multipleMap = new MultipleMap<K, V>();
 		multipleMap.shard = 1 << power;
@@ -30,23 +31,26 @@ public class MultipleMap<K, V> {
 		return shard + 1;
 	}
 
-	public ConcurrentMap<K, V> getShardMap(int shard) {
+	public ConcurrentMap<K, V> getShard(int shard) {
+		if (shard > this.shard) {
+			shard &= this.shard;
+		}
 		return maps[shard];
 	}
 
 	public V get(K k) {
-		return getShardMapByKey(k).get(k);
+		return getShardByKey(k).get(k);
 	}
 
 	public void put(K k, V v) {
-		getShardMapByKey(k).put(k, v);
+		getShardByKey(k).put(k, v);
 	}
 
 	public V remove(K k) {
-		return getShardMapByKey(k).remove(k);
+		return getShardByKey(k).remove(k);
 	}
-	
-	public ConcurrentMap<K, V> getShardMapByKey(K k) {
+
+	public ConcurrentMap<K, V> getShardByKey(K k) {
 		if (k == null) {
 			return maps[0];
 		}

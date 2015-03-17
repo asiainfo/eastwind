@@ -29,10 +29,12 @@ public class CioServer {
 	private ServerBootstrap serverBootstrap;
 	private int port;
 
+	private ProviderManager providerManager = new ProviderManager();
+	private ServerHandshaker serverHandshaker;
 	private List<Filter> filters = Lists.newArrayList();
 	private ExceptionResolver exceptionResolver;
 
-	private ServerContext serverContext = new ServerContext();
+	private ServerCount serverCount = new ServerCount();
 
 	private int channelTimeout = 15;
 
@@ -40,10 +42,9 @@ public class CioServer {
 	private int childThreads = 0;
 
 	private boolean checkPing = false;
-	
+
 	public CioServer(String app) {
 		this.app = app;
-		registerProvider(new HelloProviderImpl());
 	}
 
 	public void start() {
@@ -59,8 +60,11 @@ public class CioServer {
 				sc.pipeline().addLast("lengthFieldPrepender", new LengthFieldPrepender(2, true));
 				sc.pipeline().addLast("lengthDecoder", new LengthFieldBasedFrameDecoder(65535, 0, 2, 0, 2));
 				sc.pipeline().addLast("codec", new CioCodec(app, KryoFactory.getKryo()));
-				sc.pipeline().addLast("inboundHandler",
-						new ServerInboundHandler(filters, exceptionResolver, serverContext));
+				if (serverHandshaker != null) {
+					sc.pipeline().addLast(new ServerHandshakeHandler(serverHandshaker));
+				}
+				sc.pipeline().addLast(
+						new ServerInboundHandler(filters, exceptionResolver, providerManager, serverCount));
 			}
 		});
 		serverBootstrap.option(ChannelOption.SO_REUSEADDR, true);
@@ -76,7 +80,7 @@ public class CioServer {
 			public void run() {
 				CioServer.shutdown = true;
 				for (int i = 0; i < 30; i++) {
-					if (serverContext.getRequestPool().count() == 0) {
+					if (serverCount.getHandlingCount() == 0) {
 						break;
 					}
 
@@ -115,15 +119,19 @@ public class CioServer {
 		this.checkPing = checkPing;
 	}
 
+	public void setServerHandshaker(ServerHandshaker serverHandshaker) {
+		this.serverHandshaker = serverHandshaker;
+	}
+
 	public void setExceptionResolver(ExceptionResolver exceptionResolver) {
 		this.exceptionResolver = exceptionResolver;
 	}
 
-	public ServerContext getServerContext() {
-		return serverContext;
+	public ServerCount getServerContext() {
+		return serverCount;
 	}
 
 	public void registerProvider(Object handlerObj) {
-		serverContext.getProviderManager().register(handlerObj);
+		providerManager.register(handlerObj);
 	}
 }

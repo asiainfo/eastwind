@@ -17,7 +17,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
-import boc.message.common.HelloProvider;
 import boc.message.common.KryoFactory;
 import boc.message.common.RequestFuture;
 import boc.message.common.RequestFuturePool;
@@ -59,13 +58,8 @@ public class CioClient {
 
 	private long lastReadTime = System.currentTimeMillis();
 
-	private HelloProvider cioProvider;
-	private CioInvoker cioInvoker;
-
 	public CioClient(String app) {
 		this.app = app;
-		this.cioProvider = createInvoker(HelloProvider.class);
-		this.cioInvoker = new CioInvoker(cioProvider);
 	}
 
 	public CioClient start() {
@@ -101,10 +95,6 @@ public class CioClient {
 		} else {
 			this.netStateListeners.add(netStateListener);
 		}
-	}
-
-	public CioInvoker getCioInvoker() {
-		return cioInvoker;
 	}
 
 	public void setReconnectTime(int reconnectTime) {

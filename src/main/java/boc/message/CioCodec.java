@@ -8,23 +8,18 @@ import io.netty.handler.codec.ByteToMessageCodec;
 
 import java.util.List;
 
-import org.springframework.util.CollectionUtils;
-
 import boc.message.common.Ping;
 
 import com.alibaba.fastjson.JSON;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
-import com.google.common.collect.Lists;
 
 public class CioCodec extends ByteToMessageCodec<Object> {
 
 	private String app;
 	private Kryo kryo;
 
-	private List<PingListener> pingListeners;
-	
 	public CioCodec(String app, Kryo kryo) {
 		this.app = app;
 		this.kryo = kryo;
@@ -36,11 +31,6 @@ public class CioCodec extends ByteToMessageCodec<Object> {
 		if (msg instanceof Ping) {
 			System.out.println("ping ->");
 			buf.writeShort(0);
-			if (!CollectionUtils.isEmpty(pingListeners)) {
-				for (PingListener pl : pingListeners) {
-					pl.onPing(ctx);
-				}
-			}
 		} else {
 			System.out.println(app + " send:" + JSON.toJSONString(msg));
 			buf.writeShort(1);
@@ -73,12 +63,5 @@ public class CioCodec extends ByteToMessageCodec<Object> {
 			out.add(obj);
 			break;
 		}
-	}
-
-	public void addPingListener(PingListener pl) {
-		if (CollectionUtils.isEmpty(pingListeners)) {
-			pingListeners = Lists.newArrayListWithCapacity(1);
-		}
-		pingListeners.add(pl);
 	}
 }

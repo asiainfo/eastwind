@@ -12,18 +12,20 @@ import io.netty.handler.codec.LengthFieldPrepender;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 
 import java.lang.reflect.Proxy;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import boc.message.CioCodec;
-import boc.message.common.HelloProvider;
-import boc.message.common.Host;
 import boc.message.common.KryoFactory;
-import boc.message.common.NoticeHandlerManager;
 import boc.message.common.RequestFuture;
 import boc.message.common.RequestFuturePool;
 import boc.message.common.RequestInvocationHandler;
 import boc.message.common.SharedScheduledExecutor;
 import boc.message.common.SubmitRequest;
+
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
 public class CioClient {
 
@@ -34,17 +36,16 @@ public class CioClient {
 
 	private int threads = 0;
 	private int invokeTimeout = 10;
-	private int channelTimeout = 15;
+	private int aliveTimeout = 0;
+
+	private Map<String, ClientHandshaker> clientHandshakers = Maps.newHashMap();
+	private Map<String, List<Object>> appProviders = Maps.newHashMap();
 
 	private RequestFuturePool requestFuturePool = new RequestFuturePool();
 	private RequestInvocationHandler requestInvocationHandler = new RequestInvocationHandler(new NioSubmitRequest());
-	private NoticeHandlerManager noticeHandlerManager = new NoticeHandlerManager();
-
-	private HelloProvider helloProvider;
 
 	public CioClient(String app) {
 		this.app = app;
-		helloProvider = createInvoker(HelloProvider.class);
 	}
 
 	public void start() {
@@ -54,45 +55,62 @@ public class CioClient {
 		bootstrap.handler(new ChannelInitializer<SocketChannel>() {
 			@Override
 			protected void initChannel(SocketChannel sc) throws Exception {
-				if (channelTimeout > 0) {
-					sc.pipeline().addLast("readTimeoutHandler", new ReadTimeoutHandler(channelTimeout));
+				if (aliveTimeout > 0) {
+					sc.pipeline().addLast("readTimeoutHandler", new ReadTimeoutHandler(aliveTimeout));
 				}
 				sc.pipeline().addLast("lengthFieldPrepender", new LengthFieldPrepender(2, true));
 				sc.pipeline().addLast("lengthDecoder", new LengthFieldBasedFrameDecoder(65535, 0, 2, 0, 2));
 				sc.pipeline().addLast("codec", new CioCodec(app, KryoFactory.getKryo()));
-				sc.pipeline().addLast("inboundHandler",
-						new ClientInboundHandler(requestFuturePool, channelGuard, noticeHandlerManager));
+				sc.pipeline().addLast(new ClientHandshakeHandler(clientHandshakers));
+				sc.pipeline().addLast(new ClientInboundHandler(requestFuturePool, channelGuard));
 			}
 		});
 
-		channelGuard = new ChannelGuard(bootstrap, channelTimeout);
+		channelGuard = new ChannelGuard(bootstrap, aliveTimeout);
 		channelGuard.start();
 
 		TimeoutRunner timeoutRunner = new TimeoutRunner(requestFuturePool, invokeTimeout);
 		SharedScheduledExecutor.ses.scheduleWithFixedDelay(timeoutRunner, 1, 1, TimeUnit.SECONDS);
 	}
 
-	public <T> T createInvoker(Class<T> interf) {
-		Object obj = Proxy.newProxyInstance(this.getClass().getClassLoader(), new Class<?>[] { interf },
-				requestInvocationHandler);
-		return (T) obj;
+	@SuppressWarnings("unchecked")
+	public <T> T buildProvider(String app, Class<T> interf) {
+		synchronized (appProviders) {
+			List<Object> providers = appProviders.get(app);
+			if (providers == null) {
+				providers = Lists.newArrayList();
+				appProviders.put(app, providers);
+			}
+			for (Object p : providers) {
+				if (interf.isAssignableFrom(p.getClass())) {
+					return (T) p;
+				}
+			}
+			Object obj = Proxy.newProxyInstance(this.getClass().getClassLoader(), new Class<?>[] { interf },
+					requestInvocationHandler);
+			providers.add(obj);
+			return (T) obj;
+		}
 	}
 
-	public HelloInvoker createCioInvoker(Host host) {
-		HelloInvoker invoker = new HelloInvoker(host, helloProvider);
-		return invoker;
+	public void addHandshaker(ClientHandshaker handshaker) {
+		clientHandshakers.put(handshaker.getName(), handshaker);
+	}
+
+	public ChannelGuard getChannelGuard() {
+		return channelGuard;
 	}
 
 	public void setThreads(int threads) {
 		this.threads = threads;
 	}
 
-	public void setChannelTimeout(int ChannelTimeout) {
-		this.channelTimeout = ChannelTimeout;
+	public int getAliveTimeout() {
+		return aliveTimeout;
 	}
 
-	public int getChannelTimeout() {
-		return channelTimeout;
+	public void setAliveTimeout(int aliveTimeout) {
+		this.aliveTimeout = aliveTimeout;
 	}
 
 	public int getInvokeTimeout() {
@@ -112,7 +130,7 @@ public class CioClient {
 				return;
 			}
 
-			ChannelFuture channelFuture = channelGuard.getChannelOrConnect(requestFuture.getHost());
+			ChannelFuture channelFuture = channelGuard.getOrConnect(requestFuture.getApp(), requestFuture.getHost());
 
 			if (channelFuture.isSuccess()) {
 				requestFuturePool.put(requestFuture);

@@ -1,12 +1,11 @@
 package boc.message.test;
 
 import java.io.IOException;
+import java.util.Map;
 
-import boc.message.common.FutureListener;
 import boc.message.common.Host;
-import boc.message.common.RequestFuture;
 import boc.message.nioclient.CioClient;
-import boc.message.nioclient.HelloInvoker;
+import boc.message.nioclient.ClientHandshaker;
 
 public class TestClient {
 
@@ -24,18 +23,23 @@ public class TestClient {
 	}
 
 	public static void main(String[] args) throws IOException {
+		final String remoteApp = "test-server";
 		TestClient testClient = new TestClient();
 		CioClient cioClient = testClient.getCioClient();
-		Host host = new Host("127.0.0.1", 19999);
-		HelloInvoker helloInvoker = cioClient.createCioInvoker(host);
-		helloInvoker.ruok().addFuture(new FutureListener<String>() {
+		cioClient.addHandshaker(new ClientHandshaker() {
 			@Override
-			public void operationComplete(RequestFuture<String> rf) {
-				System.out.println(rf.getRespone().getResult());
+			public String getName() {
+				return remoteApp;
+			}
+
+			@Override
+			public void handshakeComplete(Map<String, Object> in) {
+				System.out.println("client handshakeComplete");
 			}
 		});
-//		System.out.println(cioInvoker.ruok().sync());
-		System.out.println("111111");
+		HelloProvider helloProvder = cioClient.buildProvider(remoteApp, HelloProvider.class);
+		HelloInvoker helloInvoker = new HelloInvoker(remoteApp, helloProvder);
+		System.out.println(helloInvoker.build(new Host("127.0.0.1", 19999)).hello("baby").sync());
 		System.in.read();
 	}
 }

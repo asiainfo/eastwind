@@ -25,7 +25,7 @@ public class TestBioClient {
 
 			@Override
 			public void stateChanged(SocketAddress socketAddress, NetState netState) {
-				System.out.println(cioClient.getCioInvoker().ruok().sync());
+				System.out.println(netState);
 			}
 		});
 		System.in.read();

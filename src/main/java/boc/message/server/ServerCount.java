@@ -2,22 +2,11 @@ package boc.message.server;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class ServerContext {
-
-	private ProviderManager providerManager = new ProviderManager();
-
-	private RequestPool requestPool = new RequestPool();
+public class ServerCount {
 
 	private AtomicInteger clientCount = new AtomicInteger();
-
-	public ProviderManager getProviderManager() {
-		return providerManager;
-	}
-
-	public RequestPool getRequestPool() {
-		return requestPool;
-	}
-
+	private AtomicInteger handlingCount = new AtomicInteger();
+	
 	public int getClientCount() {
 		return clientCount.get();
 	}
@@ -28,5 +17,17 @@ public class ServerContext {
 
 	public void decrementClientCount() {
 		clientCount.decrementAndGet();
+	}
+
+	public int getHandlingCount() {
+		return handlingCount.intValue();
+	}
+	
+	public void incrementHandlingCount() {
+		handlingCount.getAndIncrement();
+	}
+
+	public void decrementHandlingCount() {
+		handlingCount.decrementAndGet();
 	}
 }

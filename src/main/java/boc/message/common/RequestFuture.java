@@ -11,7 +11,8 @@ public class RequestFuture<R> {
 	private Respone<R> respone;
 
 	private long time = System.currentTimeMillis();
-	private int timeout = 10;
+	private int timeout = 10000;
+	private String app;
 	private Host host;
 
 	private volatile List<FutureListener<R>> futures = new LinkedList<FutureListener<R>>();
@@ -21,11 +22,7 @@ public class RequestFuture<R> {
 
 	public RequestFuture() {
 	}
-
-	public RequestFuture(Host host) {
-		this.host = host;
-	}
-
+	
 	public RequestFuture<R> start() {
 		REQUEST_FUTURE_LOCAL.set(this);
 		return this;
@@ -129,6 +126,14 @@ public class RequestFuture<R> {
 
 	public void setRespone(Respone<R> respone) {
 		this.respone = respone;
+	}
+
+	public String getApp() {
+		return app;
+	}
+
+	public void setApp(String app) {
+		this.app = app;
 	}
 
 	public Host getHost() {

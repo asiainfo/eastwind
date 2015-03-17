@@ -4,15 +4,14 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelPromise;
 
-import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
-import boc.message.ChannelStat;
-import boc.message.Session;
-import boc.message.common.CioUtils;
+import boc.message.ChannelAttr;
+import boc.message.common.CommonUtils;
 import boc.message.common.Host;
 import boc.message.common.Ping;
 import boc.message.common.SharedScheduledExecutor;
@@ -33,19 +32,13 @@ public class ChannelGuard {
 		this.pingInterval = timeout / 3;
 	}
 
-	public void setHosts(List<Host> hosts) {
-		for (Host host : hosts) {
-			connect(host);
-		}
-	}
-
 	public void start() {
 		// SharedScheduledExecutor.ses.scheduleWithFixedDelay(new PingRunner(),
 		// this.pingInterval, this.pingInterval,
 		// TimeUnit.SECONDS);
 	}
 
-	public void setShutdown(Host host) {
+	public void shutdown(Host host) {
 		shutdowns.put(host, System.currentTimeMillis());
 	}
 
@@ -63,53 +56,41 @@ public class ChannelGuard {
 		}
 	}
 
-	public ChannelFuture getChannelOrConnect(Host host) {
+	public ChannelFuture getOrConnect(String app, Host host) {
 		ChannelFuture cf = channels.get(host);
 		if (cf != null) {
 			return cf;
 		}
-		connect(host);
+		connect(app, host);
 		return channels.get(host);
 	}
 
-	public Channel getChannel(Host host) {
+	private synchronized ChannelFuture connect(final String app, final Host host) {
 		ChannelFuture cf = channels.get(host);
-		if (cf == null) {
-			return null;
+		if (cf != null) {
+			return cf;
 		}
-		return cf.channel();
-	}
 
-	private void connect(final Host host) {
-		ChannelFuture cf = bootstrap.connect(host.getIp(), host.getPort());
+		cf = bootstrap.connect(host.getIp(), host.getPort());
+		ChannelAttr.set(cf.channel(), ChannelAttr.APP, app);
+		final ChannelPromise cp = ChannelAttr.initHandShakePromise(cf.channel());
 
-		for (;;) {
-			ChannelFuture oldCf = channels.putIfAbsent(host, cf);
-			if (oldCf == null) {
-				break;
-			} else {
-				if (oldCf.channel().isOpen()) {
-					return;
-				} else {
-					synchronized (oldCf) {
-						if (channels.get(host) == oldCf) {
-							channels.put(host, cf);
-							break;
-						} else {
-							return;
-						}
-					}
+		cf.addListener(new ChannelFutureListener() {
+			@Override
+			public void operationComplete(ChannelFuture future) throws Exception {
+				if (future.isCancelled()) {
+					cp.cancel(true);
+				}
+				if (!future.isSuccess()) {
+					cp.setFailure(future.cause());
 				}
 			}
-		}
+		});
 
 		cf.addListener(new ChannelFutureListener() {
 			@Override
 			public void operationComplete(ChannelFuture future) throws Exception {
 				if (future.isSuccess()) {
-					Session session = new Session(future.channel());
-					ChannelStat.set(future.channel(), ChannelStat.session, session);
-
 					// reconnect after close
 					future.channel().closeFuture().addListener(new ChannelFutureListener() {
 						@Override
@@ -118,31 +99,33 @@ public class ChannelGuard {
 							SharedScheduledExecutor.ses.schedule(new Runnable() {
 								@Override
 								public void run() {
-									connect(host);
+									connect(app, host);
 								}
 							}, 1, TimeUnit.SECONDS);
 						}
 					});
+				}
 
-				} else if (future.cause() != null) {
-
+				if (future.cause() != null) {
 					// reconnect if connect fail
 					SharedScheduledExecutor.ses.schedule(new Runnable() {
 						@Override
 						public void run() {
-							connect(host);
+							connect(app, host);
 						}
 					}, 10, TimeUnit.SECONDS);
-
 				}
 			}
 		});
+
+		channels.put(host, cp);
+		return cp;
 	}
 
 	private class PingRunner implements Runnable {
 		@Override
 		public void run() {
-			long now = CioUtils.currentTimeSeconds();
+			long now = CommonUtils.currentTimeSeconds();
 
 			for (Entry<Host, ChannelFuture> en : channels.entrySet()) {
 
@@ -150,7 +133,7 @@ public class ChannelGuard {
 				Channel channel = cf.channel();
 
 				if (cf.isSuccess() && channel.isActive()) {
-					Long t = ChannelStat.get(channel, ChannelStat.session).getLastAccessedTime();
+					Long t = ChannelAttr.get(channel, ChannelAttr.SESSION).getLastAccessedTime();
 					if (t != null && now - t.longValue() > pingInterval) {
 						channel.writeAndFlush(Ping.instance);
 					}
