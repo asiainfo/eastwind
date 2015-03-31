@@ -1,15 +1,15 @@
 package boc.message.common;
 
-public class Notice {
+public class Inform {
 
 	private int type;
 	private Object data;
 
-	public Notice() {
+	public Inform() {
 
 	}
 
-	public Notice(int type, Object data) {
+	public Inform(int type, Object data) {
 		this.type = type;
 		this.data = data;
 	}

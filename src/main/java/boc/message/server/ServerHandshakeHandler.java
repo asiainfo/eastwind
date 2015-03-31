@@ -20,7 +20,7 @@ public class ServerHandshakeHandler extends SimpleChannelInboundHandler<Handshak
 	@Override
 	public void channelActive(ChannelHandlerContext ctx) throws Exception {
 		Map<String, Object> out = Maps.newHashMap();
-		serverHandshaker.prepare(out);
+		serverHandshaker.prepare(ctx.channel(), out);
 		Handshake handshake = new Handshake();
 		handshake.setStep(serverHandshaker.isMultiStep() ? 1 : 3);
 		handshake.setAttributes(out);
@@ -32,7 +32,7 @@ public class ServerHandshakeHandler extends SimpleChannelInboundHandler<Handshak
 	protected void channelRead0(ChannelHandlerContext ctx, Handshake msg) throws Exception {
 		if (msg.getStep() == 2) {
 			Map<String, Object> out = Maps.newHashMap();
-			serverHandshaker.handshake(msg.getAttributes(), out);
+			serverHandshaker.handshake(ctx.channel(), msg.getAttributes(), out);
 			Handshake handshake = new Handshake();
 			handshake.setStep(3);
 			handshake.setAttributes(out);

@@ -39,7 +39,7 @@ public class CioClient {
 	private int aliveTimeout = 0;
 
 	private Map<String, ClientHandshaker> clientHandshakers = Maps.newHashMap();
-	private Map<String, List<Object>> appProviders = Maps.newHashMap();
+	private List<Object> providers = Lists.newArrayList();
 
 	private RequestFuturePool requestFuturePool = new RequestFuturePool();
 	private RequestInvocationHandler requestInvocationHandler = new RequestInvocationHandler(new NioSubmitRequest());
@@ -74,14 +74,16 @@ public class CioClient {
 	}
 
 	@SuppressWarnings("unchecked")
-	public <T> T buildProvider(String app, Class<T> interf) {
-		synchronized (appProviders) {
-			List<Object> providers = appProviders.get(app);
-			if (providers == null) {
-				providers = Lists.newArrayList();
-				appProviders.put(app, providers);
+	public <T> T buildProvider(Class<T> interf) {
+		for (int i = 0; i < providers.size(); i++) {
+			Object p = providers.get(i);
+			if (interf.isAssignableFrom(p.getClass())) {
+				return (T) p;
 			}
-			for (Object p : providers) {
+		}
+		synchronized (providers) {
+			for (int i = 0; i < providers.size(); i++) {
+				Object p = providers.get(i);
 				if (interf.isAssignableFrom(p.getClass())) {
 					return (T) p;
 				}

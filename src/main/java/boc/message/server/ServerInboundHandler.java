@@ -58,7 +58,7 @@ public class ServerInboundHandler extends SimpleChannelInboundHandler<Object> {
 			Request request = (Request) msg;
 
 			// shutdown
-			if (CioServer.shutdown) {
+			if (serverCount.isShutdown()) {
 				Respone<Object> respone = new Respone<Object>(request.getId());
 				respone.setResult(new ShutdownObj());
 				ctx.channel().writeAndFlush(respone);
@@ -66,10 +66,12 @@ public class ServerInboundHandler extends SimpleChannelInboundHandler<Object> {
 			}
 
 			try {
+				ChannelAttr.CHANNEL_TL.set(ctx.channel());
 				Session.setSession(session);
 				serverCount.incrementHandlingCount();
 				handleRequest(ctx, request);
 			} finally {
+				ChannelAttr.CHANNEL_TL.set(null);
 				Session.setSession(null);
 				serverCount.decrementHandlingCount();
 			}

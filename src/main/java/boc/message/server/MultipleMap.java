@@ -38,12 +38,22 @@ public class MultipleMap<K, V> {
 		return maps[shard];
 	}
 
+	public void clear() {
+		for (ConcurrentMap<K, V> map : maps) {
+			map.clear();
+		}
+	}
+
 	public V get(K k) {
 		return getShardByKey(k).get(k);
 	}
 
-	public void put(K k, V v) {
-		getShardByKey(k).put(k, v);
+	public V put(K k, V v) {
+		return getShardByKey(k).put(k, v);
+	}
+
+	public V putIfAbsent(K k, V v) {
+		return getShardByKey(k).putIfAbsent(k, v);
 	}
 
 	public V remove(K k) {

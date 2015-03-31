@@ -30,11 +30,13 @@ public class Session {
 		TL.set(session);
 	}
 
-	public Session(int id) {
+	public Session(int id, Channel channel) {
 		this.id = id;
+		setChannel(channel);
 	}
 
 	public void setChannel(Channel channel) {
+		this.lastAccessedTime = CommonUtils.currentTimeSeconds();
 		this.channel = new WeakReference<Channel>(channel);
 		ChannelAttr.set(channel, ChannelAttr.SESSION, this);
 	}
@@ -59,6 +61,15 @@ public class Session {
 			attributes = Maps.newHashMap();
 		}
 		attributes.put(name, value);
+	}
+
+	public void setAttributes(Map<String, Object> attributes) {
+		if (attributes != null) {
+			if (this.attributes == null) {
+				this.attributes = Maps.newHashMap();
+			}
+			this.attributes.putAll(attributes);
+		}
 	}
 
 	public int getId() {

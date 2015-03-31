@@ -37,7 +37,7 @@ public class TestClient {
 				System.out.println("client handshakeComplete");
 			}
 		});
-		HelloProvider helloProvder = cioClient.buildProvider(remoteApp, HelloProvider.class);
+		HelloProvider helloProvder = cioClient.buildProvider(HelloProvider.class);
 		HelloInvoker helloInvoker = new HelloInvoker(remoteApp, helloProvder);
 		System.out.println(helloInvoker.build(new Host("127.0.0.1", 19999)).hello("baby").sync());
 		System.in.read();

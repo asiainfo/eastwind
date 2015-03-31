@@ -3,14 +3,12 @@ package boc.message.common;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 
-import boc.message.server.Provider;
-
 public class RequestInvocationHandler implements InvocationHandler {
 
 	private TimedIdSequence100 timedIdSequence100 = new TimedIdSequence100();
-	
+
 	private SubmitRequest submitRequest;
-	
+
 	public RequestInvocationHandler(SubmitRequest submitRequest) {
 		this.submitRequest = submitRequest;
 	}
@@ -21,13 +19,8 @@ public class RequestInvocationHandler implements InvocationHandler {
 			return method.invoke(this, args);
 		}
 		Request request = new Request();
-		Provider p = method.getAnnotation(Provider.class);
 		request.setId(timedIdSequence100.newId());
-		if (p.value().equals("")) {
-			request.setType(method.getName());
-		} else {
-			request.setType(p.value());
-		}
+		request.setType(method.getName());
 		request.setArgs(args);
 
 		RequestFuture<?> requestFuture = RequestFuture.REQUEST_FUTURE_LOCAL.get();

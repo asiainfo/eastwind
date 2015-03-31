@@ -4,6 +4,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class ServerCount {
 
+	private volatile boolean shutdown;
 	private AtomicInteger clientCount = new AtomicInteger();
 	private AtomicInteger handlingCount = new AtomicInteger();
 	
@@ -29,5 +30,13 @@ public class ServerCount {
 
 	public void decrementHandlingCount() {
 		handlingCount.decrementAndGet();
+	}
+
+	public boolean isShutdown() {
+		return shutdown;
+	}
+
+	public void shutdown() {
+		this.shutdown = true;
 	}
 }

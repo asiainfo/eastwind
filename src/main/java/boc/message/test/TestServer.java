@@ -1,5 +1,7 @@
 package boc.message.test;
 
+import io.netty.channel.Channel;
+
 import java.io.IOException;
 import java.util.Map;
 
@@ -19,7 +21,7 @@ public class TestServer {
 		cioServer.setPort(19999);
 		cioServer.setServerHandshaker(new ServerHandshaker() {
 			@Override
-			public void prepare(Map<String, Object> out) {
+			public void prepare(Channel channel, Map<String, Object> out) {
 				System.out.println("server prepare");
 			}
 		});

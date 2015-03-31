@@ -22,7 +22,7 @@ import com.google.common.collect.Lists;
 
 public class CioServer {
 
-	public static volatile boolean shutdown = false;
+	public volatile boolean isShutdown = false;
 
 	private String app;
 
@@ -78,7 +78,7 @@ public class CioServer {
 		Runtime.getRuntime().addShutdownHook(new Thread() {
 			@Override
 			public void run() {
-				CioServer.shutdown = true;
+				shutdown();
 				for (int i = 0; i < 30; i++) {
 					if (serverCount.getHandlingCount() == 0) {
 						break;
@@ -93,6 +93,11 @@ public class CioServer {
 				}
 			}
 		});
+	}
+
+	public void shutdown() {
+		isShutdown = true;
+		serverCount.shutdown();
 	}
 
 	public void setParentThreads(int parentThreads) {
@@ -127,11 +132,11 @@ public class CioServer {
 		this.exceptionResolver = exceptionResolver;
 	}
 
-	public ServerCount getServerContext() {
+	public ServerCount getServerCount() {
 		return serverCount;
 	}
 
-	public void registerProvider(Object handlerObj) {
-		providerManager.register(handlerObj);
+	public void registerProvider(Object provider) {
+		providerManager.register(provider);
 	}
 }

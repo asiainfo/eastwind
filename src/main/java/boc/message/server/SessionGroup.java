@@ -1,9 +1,13 @@
 package boc.message.server;
 
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.TimeUnit;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
 
+import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
+
+import boc.message.ChannelAttr;
 import boc.message.Session;
 import boc.message.common.CommonUtils;
 import boc.message.common.SharedScheduledExecutor;
@@ -16,25 +20,54 @@ public class SessionGroup {
 
 	private MultipleMap<Integer, Session> sessions = MultipleMap.newMultipleMap();
 
+	private ChannelFutureListener suspendedListener = new ChannelFutureListener() {
+		@Override
+		public void operationComplete(ChannelFuture future) throws Exception {
+			Session session = ChannelAttr.get(future.channel(), ChannelAttr.SESSION);
+			if (session.getChannel() == future.channel()) {
+				for (SessionListener listener : listeners) {
+					listener.suspended(session);
+				}
+			}
+		}
+	};
+
 	private CopyOnWriteArrayList<SessionListener> listeners = new CopyOnWriteArrayList<SessionListener>();
 
-	public static SessionGroup build(String name) {
+	public static SessionGroup build(String name, int timeout) {
 		SessionGroup sessionGroup = new SessionGroup();
 		sessionGroup.name = name;
-		SharedScheduledExecutor.ses.schedule(sessionGroup.new TimeoutScanner(), sessionGroup.timeout * 1000,
-				TimeUnit.MILLISECONDS);
+		sessionGroup.timeout = timeout;
+		sessionGroup.new TimeoutScanner().begin();
 		return sessionGroup;
+	}
+
+	private SessionGroup() {
 	}
 
 	public Session get(Integer id) {
 		return sessions.get(id);
 	}
 
-	public void put(Session session) {
-		sessions.put(session.getId(), session);
-		for (SessionListener listener : listeners) {
-			listener.created(session);
+	public Session createSession(int id, Map<String, Object> attributes, Channel channel) {
+		Session session = sessions.get(id);
+		if (session == null) {
+			session = new Session(id, channel);
+			session.setAttributes(attributes);
+			if (CommonUtils.putIfAbsent(sessions.getShardByKey(id), id, session) == session) {
+				for (SessionListener listener : listeners) {
+					listener.created(session);
+				}
+			}
+		} else {
+			session.setAttributes(attributes);
+			session.setChannel(channel);
+			for (SessionListener listener : listeners) {
+				listener.recreated(session);
+			}
 		}
+		channel.closeFuture().addListener(suspendedListener);
+		return sessions.get(id);
 	}
 
 	public int getTimeout() {
@@ -49,30 +82,27 @@ public class SessionGroup {
 		return name;
 	}
 
-	private class TimeoutScanner implements Runnable {
+	class TimeoutScanner extends MultipleMapScanner<Integer, Session> {
 
-		private int shard = 0;
+		private long expireTime;
+
+		public TimeoutScanner() {
+			super(timeout * 1000, sessions, SharedScheduledExecutor.ses);
+		}
 
 		@Override
-		public void run() {
-			long t1 = System.currentTimeMillis();
-			ConcurrentMap<Integer, Session> map = sessions.getShard(shard);
-			long t = CommonUtils.currentTimeSeconds() - timeout;
-			for (Session session : map.values()) {
-				if (session.getLastAccessedTime() < t) {
-					sessions.remove(session.getId());
-					for (SessionListener listener : listeners) {
-						listener.destroyed(session);
-					}
+		protected void prepare() {
+			expireTime = CommonUtils.currentTimeSeconds();
+		}
+
+		@Override
+		protected void process(Session session) {
+			if (session.getLastAccessedTime() < expireTime) {
+				sessions.remove(session.getId());
+				for (SessionListener listener : listeners) {
+					listener.destroyed(session);
 				}
 			}
-			long cost = System.currentTimeMillis() - t1;
-			long nextRunTime = timeout * 1000 / sessions.getShard() - cost;
-			shard++;
-			if (shard >= sessions.getShard()) {
-				shard %= sessions.getShard();
-			}
-			SharedScheduledExecutor.ses.schedule(this, nextRunTime, TimeUnit.MILLISECONDS);
 		}
 
 	}
