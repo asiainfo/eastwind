@@ -9,7 +9,7 @@ public class KryoFactory {
 	static {
 		kryo.register(Request.class, 11);
 		kryo.register(Respone.class, 12);
-		kryo.register(Inform.class, 13);
+		kryo.register(Push.class, 13);
 		kryo.register(Host.class, 14);
 		kryo.register(Handshake.class, 15);
 		

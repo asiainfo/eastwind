@@ -54,7 +54,7 @@ public class SessionGroup {
 		if (session == null) {
 			session = new Session(id, channel);
 			session.setAttributes(attributes);
-			if (CommonUtils.putIfAbsent(sessions.getShardByKey(id), id, session) == session) {
+			if (CommonUtils.putIfAbsent(sessions, id, session) == session) {
 				for (SessionListener listener : listeners) {
 					listener.created(session);
 				}
@@ -66,6 +66,7 @@ public class SessionGroup {
 				listener.recreated(session);
 			}
 		}
+		ChannelAttr.setId(channel, id);
 		channel.closeFuture().addListener(suspendedListener);
 		return sessions.get(id);
 	}

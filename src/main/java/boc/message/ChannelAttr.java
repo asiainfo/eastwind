@@ -1,7 +1,5 @@
 package boc.message;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelPromise;
 import io.netty.util.AttributeKey;
@@ -10,17 +8,15 @@ public class ChannelAttr {
 
 	public static ThreadLocal<Channel> CHANNEL_TL = new ThreadLocal<Channel>();
 
-	private static final AtomicInteger NEXT_ID = new AtomicInteger();
-
 	public static final AttributeKey<Integer> ID = AttributeKey.valueOf("ID");
 	public static final AttributeKey<ChannelPromise> HANDSHAKE_PROMISE = AttributeKey.valueOf("HANDSHAKE_PROMISE");
 	public static final AttributeKey<Session> SESSION = AttributeKey.valueOf("SESSION");
 	public static final AttributeKey<String> APP = AttributeKey.valueOf("APP");
 
-	public static void initId(Channel channel) {
-		set(channel, ID, NEXT_ID.getAndIncrement());
+	public static void setId(Channel channel, int id) {
+		set(channel, ID, id);
 	}
-
+	
 	public static int getId(Channel channel) {
 		return get(channel, ID);
 	}

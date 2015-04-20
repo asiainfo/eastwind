@@ -26,10 +26,6 @@ public class ProviderHandler {
 		}
 	}
 
-	public int getParamNum() {
-		return paramNum;
-	}
-
 	public Method getTargetMethod() {
 		return method;
 	}

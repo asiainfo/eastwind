@@ -2,6 +2,8 @@ package boc.message.common;
 
 import java.util.concurrent.ConcurrentMap;
 
+import boc.message.server.MultipleMap;
+
 public class CommonUtils {
 
 	public static long currentTimeSeconds() {
@@ -16,6 +18,14 @@ public class CommonUtils {
 		return present;
 	}
 
+	public static <K, V> V putIfAbsent(MultipleMap<K, V> map, K key, V value) {
+		V present = map.putIfAbsent(key, value);
+		if (present == null) {
+			return value;
+		}
+		return present;
+	}
+	
 	public static Host toHost(String uri) {
 		if (uri.contains(":")) {
 			String[] arr = uri.split(":");

@@ -1,16 +1,18 @@
 package boc.message.common;
 
-public class Inform {
+public class Push {
 
 	private int type;
+	private long sequentId;
 	private Object data;
 
-	public Inform() {
+	public Push() {
 
 	}
 
-	public Inform(int type, Object data) {
+	public Push(int type, long sequentId, Object data) {
 		this.type = type;
+		this.sequentId = sequentId;
 		this.data = data;
 	}
 
@@ -20,6 +22,14 @@ public class Inform {
 
 	public void setType(int type) {
 		this.type = type;
+	}
+	
+	public long getSequentId() {
+		return sequentId;
+	}
+
+	public void setSequentId(long sequentId) {
+		this.sequentId = sequentId;
 	}
 
 	public Object getData() {

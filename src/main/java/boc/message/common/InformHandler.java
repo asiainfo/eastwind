@@ -6,5 +6,5 @@ public abstract class InformHandler {
 		return -1;
 	}
 	
-	public abstract void handle(Inform inform);
+	public abstract void handle(Push inform);
 }

@@ -32,7 +32,6 @@ public class CioServer {
 	private ProviderManager providerManager = new ProviderManager();
 	private ServerHandshaker serverHandshaker;
 	private List<Filter> filters = Lists.newArrayList();
-	private ExceptionResolver exceptionResolver;
 
 	private ServerCount serverCount = new ServerCount();
 
@@ -64,7 +63,7 @@ public class CioServer {
 					sc.pipeline().addLast(new ServerHandshakeHandler(serverHandshaker));
 				}
 				sc.pipeline().addLast(
-						new ServerInboundHandler(filters, exceptionResolver, providerManager, serverCount));
+						new ServerInboundHandler(filters, providerManager, serverCount));
 			}
 		});
 		serverBootstrap.option(ChannelOption.SO_REUSEADDR, true);
@@ -126,10 +125,6 @@ public class CioServer {
 
 	public void setServerHandshaker(ServerHandshaker serverHandshaker) {
 		this.serverHandshaker = serverHandshaker;
-	}
-
-	public void setExceptionResolver(ExceptionResolver exceptionResolver) {
-		this.exceptionResolver = exceptionResolver;
 	}
 
 	public ServerCount getServerCount() {

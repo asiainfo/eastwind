@@ -4,7 +4,6 @@ import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
 import boc.message.ChannelAttr;
@@ -17,18 +16,13 @@ import boc.message.common.ShutdownObj;
 @Sharable
 public class ServerInboundHandler extends SimpleChannelInboundHandler<Object> {
 
-	private static StackTraceElement[] emptyStackTraceElement = new StackTraceElement[0];
-
 	private List<Filter> filters;
-	private ExceptionResolver exceptionResolver;
 	private ProviderManager providerManager;
 	private ServerCount serverCount;
 
-	public ServerInboundHandler(List<Filter> filters, ExceptionResolver exceptionResolver,
-			ProviderManager providerManager, ServerCount serverCount) {
+	public ServerInboundHandler(List<Filter> filters, ProviderManager providerManager, ServerCount serverCount) {
 		this.filters = filters;
 		this.providerManager = providerManager;
-		this.exceptionResolver = exceptionResolver;
 		this.serverCount = serverCount;
 	}
 
@@ -50,7 +44,7 @@ public class ServerInboundHandler extends SimpleChannelInboundHandler<Object> {
 		if (session != null) {
 			session.refreshAccessedTime();
 		}
-		
+
 		if (msg instanceof Ping) {
 			ctx.writeAndFlush(Ping.instance);
 
@@ -80,42 +74,14 @@ public class ServerInboundHandler extends SimpleChannelInboundHandler<Object> {
 
 	private void handleRequest(ChannelHandlerContext ctx, Request request) {
 		ProviderHandler handler = providerManager.get(request.getType());
-		for (Filter filter : filters) {
-			filter.beforeProcess(ctx, request);
-		}
 
-		Object result = null;
-		Throwable th = null;
-		try {
-			result = handler.invoke(request.getArgs());
-		} catch (InvocationTargetException e) {
-			th = e.getCause();
-		} catch (Throwable e) {
-			th = e;
-		}
-		if (th != null) {
-			th.printStackTrace();
-		}
+		FilterChain filterChain = new FilterChain(handler, ctx.channel(), filters, request);
+		filterChain.doNextFilter();
+
 		Respone<Object> respone = new Respone<Object>(request.getId());
-		respone.setResult(result);
-		if (th != null) {
-			respone.setTh(th);
-		}
-
-		for (Filter filter : filters) {
-			filter.afterProcess(ctx, request, respone);
-		}
-
-		if (th != null && exceptionResolver != null) {
-			try {
-				exceptionResolver.doResulver(ctx, request, th);
-			} catch (Throwable e) {
-				th = e;
-				if (exceptionResolver.clearStack()) {
-					th.setStackTrace(emptyStackTraceElement);
-				}
-				respone.setTh(th);
-			}
+		respone.setResult(filterChain.getResult());
+		if (filterChain.getTh() != null) {
+			respone.setTh(filterChain.getTh());
 		}
 		ctx.writeAndFlush(respone);
 	}
