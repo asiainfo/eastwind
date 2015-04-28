@@ -23,10 +23,10 @@ public class RequestInvocationHandler implements InvocationHandler {
 		request.setType(method.getName());
 		request.setArgs(args);
 
-		RequestFuture<?> requestFuture = RequestFuture.REQUEST_FUTURE_LOCAL.get();
-		requestFuture.setRequest(request);
+		InvocationFuture<?> invocationFuture = InvocationFuture.INVOCATION_FUTURE_LOCAL.get();
+		invocationFuture.setRequest(request);
 
-		this.submitRequest.submit(requestFuture);
+		this.submitRequest.submit(invocationFuture);
 
 		return returnVal(method.getReturnType());
 	}

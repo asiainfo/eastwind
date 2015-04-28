@@ -5,19 +5,21 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.SimpleChannelInboundHandler;
 
+import java.util.Collections;
 import java.util.Map;
 
 import com.google.common.collect.Maps;
 
 import eastwind.io.ChannelAttr;
 import eastwind.io.common.Handshake;
+import eastwind.io.common.Host;
 
 public class ClientHandshakeHandler extends SimpleChannelInboundHandler<Handshake> {
 
-	private Map<String, ClientHandshaker> clientHandshakers;
+	private String app;
 
-	public ClientHandshakeHandler(Map<String, ClientHandshaker> clientHandshakers) {
-		this.clientHandshakers = clientHandshakers;
+	public ClientHandshakeHandler(String app) {
+		this.app = app;
 	}
 
 	@Override
@@ -32,22 +34,23 @@ public class ClientHandshakeHandler extends SimpleChannelInboundHandler<Handshak
 	protected void channelRead0(ChannelHandlerContext ctx, Handshake msg) throws Exception {
 		if (msg.getStep() == 1) {
 			ClientHandshaker clientHandshaker = getClientHandshaker(ctx.channel());
+			Host remoteHost = ChannelAttr.get(ctx.channel(), ChannelAttr.HOST);
 			Map<String, Object> out = Maps.newHashMap();
-			clientHandshaker.prepare(msg.getAttributes(), out);
+			clientHandshaker.prepare(msg.getApp(), remoteHost, Collections.unmodifiableMap(msg.getAttributes()), out);
 			Handshake handshake = new Handshake();
+			handshake.setApp(app);
 			handshake.setStep(2);
 			handshake.setAttributes(out);
 			ctx.writeAndFlush(handshake);
 		} else if (msg.getStep() == 3) {
 			ClientHandshaker clientHandshaker = getClientHandshaker(ctx.channel());
-			clientHandshaker.handshakeComplete(msg.getAttributes());
+			clientHandshaker.handshakeComplete(Collections.unmodifiableMap(msg.getAttributes()));
 			ChannelPromise handshakePromise = ChannelAttr.get(ctx.channel(), ChannelAttr.HANDSHAKE_PROMISE);
 			handshakePromise.setSuccess();
 		}
 	}
 
 	private ClientHandshaker getClientHandshaker(Channel channel) {
-		String app = ChannelAttr.get(channel, ChannelAttr.APP);
-		return clientHandshakers.get(app);
+		return ChannelAttr.get(channel, ChannelAttr.CLIENT_HANDSHAKE);
 	}
 }

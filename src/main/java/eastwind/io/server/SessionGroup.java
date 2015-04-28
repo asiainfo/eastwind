@@ -10,7 +10,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import eastwind.io.ChannelAttr;
 import eastwind.io.Session;
 import eastwind.io.common.CommonUtils;
-import eastwind.io.common.SharedScheduledExecutor;
+import eastwind.io.common.ScheduledExecutor;
 
 public class SessionGroup {
 
@@ -88,7 +88,7 @@ public class SessionGroup {
 		private long expireTime;
 
 		public TimeoutScanner() {
-			super(timeout * 1000, sessions, SharedScheduledExecutor.ses);
+			super(timeout * 1000, sessions, ScheduledExecutor.ses);
 		}
 
 		@Override

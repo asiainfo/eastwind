@@ -27,7 +27,7 @@ public class EastWindServer {
 	private String app;
 
 	private ServerBootstrap serverBootstrap;
-	private int port;
+	private int port = 12468;
 
 	private ProviderManager providerManager = new ProviderManager();
 	private ServerHandshaker serverHandshaker;
@@ -58,12 +58,11 @@ public class EastWindServer {
 				}
 				sc.pipeline().addLast("lengthFieldPrepender", new LengthFieldPrepender(2, true));
 				sc.pipeline().addLast("lengthDecoder", new LengthFieldBasedFrameDecoder(65535, 0, 2, 0, 2));
-				sc.pipeline().addLast("codec", new WindCodec(app, KryoFactory.getKryo()));
+				sc.pipeline().addLast("windCodec", new WindCodec(app, KryoFactory.getKryo()));
 				if (serverHandshaker != null) {
-					sc.pipeline().addLast(new ServerHandshakeHandler(serverHandshaker));
+					sc.pipeline().addLast(new ServerHandshakeHandler(app, serverHandshaker));
 				}
-				sc.pipeline().addLast(
-						new ServerInboundHandler(filters, providerManager, serverCount));
+				sc.pipeline().addLast(new ServerInboundHandler(filters, providerManager, serverCount));
 			}
 		});
 		serverBootstrap.option(ChannelOption.SO_REUSEADDR, true);

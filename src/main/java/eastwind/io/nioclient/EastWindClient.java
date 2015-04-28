@@ -1,8 +1,6 @@
 package eastwind.io.nioclient;
 
 import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
@@ -13,19 +11,16 @@ import io.netty.handler.timeout.ReadTimeoutHandler;
 
 import java.lang.reflect.Proxy;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 
 import eastwind.io.WindCodec;
+import eastwind.io.common.Host;
+import eastwind.io.common.InvocationFuturePool;
 import eastwind.io.common.KryoFactory;
-import eastwind.io.common.RequestFuture;
-import eastwind.io.common.RequestFuturePool;
-import eastwind.io.common.RequestInvocationHandler;
-import eastwind.io.common.SharedScheduledExecutor;
-import eastwind.io.common.SubmitRequest;
+import eastwind.io.common.ScheduledExecutor;
+import eastwind.io.common.TimedIdSequence100;
 
 public class EastWindClient {
 
@@ -38,11 +33,9 @@ public class EastWindClient {
 	private int invokeTimeout = 10;
 	private int aliveTimeout = 0;
 
-	private Map<String, ClientHandshaker> clientHandshakers = Maps.newHashMap();
-	private List<Object> providers = Lists.newArrayList();
-
-	private RequestFuturePool requestFuturePool = new RequestFuturePool();
-	private RequestInvocationHandler requestInvocationHandler = new RequestInvocationHandler(new NioSubmitRequest());
+	private TimedIdSequence100 timedIdSequence100 = new TimedIdSequence100();
+	private List<ProviderGroup> providerGroups = Lists.newArrayList();
+	private InvocationFuturePool invocationFuturePool = new InvocationFuturePool();
 
 	public EastWindClient(String app) {
 		this.app = app;
@@ -60,43 +53,52 @@ public class EastWindClient {
 				}
 				sc.pipeline().addLast("lengthFieldPrepender", new LengthFieldPrepender(2, true));
 				sc.pipeline().addLast("lengthDecoder", new LengthFieldBasedFrameDecoder(65535, 0, 2, 0, 2));
-				sc.pipeline().addLast("codec", new WindCodec(app, KryoFactory.getKryo()));
-				sc.pipeline().addLast(new ClientHandshakeHandler(clientHandshakers));
-				sc.pipeline().addLast(new ClientInboundHandler(requestFuturePool, channelGuard));
+				sc.pipeline().addLast("windCodec", new WindCodec(app, KryoFactory.getKryo()));
+				sc.pipeline().addLast(new ClientHandshakeHandler(app));
+				sc.pipeline().addLast(new ClientInboundHandler(invocationFuturePool, channelGuard));
 			}
 		});
 
-		channelGuard = new ChannelGuard(bootstrap, aliveTimeout);
+		channelGuard = new ChannelGuard(bootstrap);
 		channelGuard.start();
 
-		TimeoutRunner timeoutRunner = new TimeoutRunner(requestFuturePool, invokeTimeout);
-		SharedScheduledExecutor.ses.scheduleWithFixedDelay(timeoutRunner, 1, 1, TimeUnit.SECONDS);
+		TimeoutRunner timeoutRunner = new TimeoutRunner(invocationFuturePool, invokeTimeout);
+		ScheduledExecutor.ses.scheduleWithFixedDelay(timeoutRunner, 1, 1, TimeUnit.SECONDS);
+	}
+
+	public void createProviderGroup(String app, List<Host> hosts, ClientHandshaker clientHandshaker) {
+		synchronized (providerGroups) {
+			if (getProviderGroup(app) == null) {
+				ProviderGroup pg = new ProviderGroup(app, hosts, clientHandshaker);
+				providerGroups.add(pg);
+				for (Host host : hosts) {
+					channelGuard.add(app, host, clientHandshaker);
+				}
+			}
+		}
+	}
+
+	public ProviderGroup getProviderGroup(String app) {
+		for (int i = 0; i < providerGroups.size(); i++) {
+			ProviderGroup pg = providerGroups.get(i);
+			if (pg.getApp().equals(app)) {
+				return pg;
+			}
+		}
+		return null;
 	}
 
 	@SuppressWarnings("unchecked")
-	public <T> T buildProvider(Class<T> interf) {
-		for (int i = 0; i < providers.size(); i++) {
-			Object p = providers.get(i);
-			if (interf.isAssignableFrom(p.getClass())) {
-				return (T) p;
-			}
+	public <T> T getProvider(String app, Class<T> interf) {
+		ProviderGroup pg = getProviderGroup(app);
+		Object provider = pg.getProvider(interf);
+		if (provider != null) {
+			return (T) provider;
 		}
-		synchronized (providers) {
-			for (int i = 0; i < providers.size(); i++) {
-				Object p = providers.get(i);
-				if (interf.isAssignableFrom(p.getClass())) {
-					return (T) p;
-				}
-			}
-			Object obj = Proxy.newProxyInstance(this.getClass().getClassLoader(), new Class<?>[] { interf },
-					requestInvocationHandler);
-			providers.add(obj);
-			return (T) obj;
-		}
-	}
-
-	public void addHandshaker(ClientHandshaker handshaker) {
-		clientHandshakers.put(handshaker.getName(), handshaker);
+		provider = Proxy.newProxyInstance(this.getClass().getClassLoader(), new Class<?>[] { interf },
+				new InvocationFutureHandler(timedIdSequence100, pg, channelGuard, invocationFuturePool));
+		pg.addProvider(interf, provider);
+		return (T) provider;
 	}
 
 	public ChannelGuard getChannelGuard() {
@@ -121,39 +123,6 @@ public class EastWindClient {
 
 	public void setInvokeTimeout(int invokeTimeout) {
 		this.invokeTimeout = invokeTimeout;
-	}
-
-	private class NioSubmitRequest implements SubmitRequest {
-
-		@Override
-		public void submit(final RequestFuture<?> requestFuture) {
-			if (channelGuard.isShutdowning(requestFuture.getHost())) {
-				requestFuture.fail();
-				return;
-			}
-
-			ChannelFuture channelFuture = channelGuard.getOrConnect(requestFuture.getApp(), requestFuture.getHost());
-
-			if (channelFuture.isSuccess()) {
-				requestFuturePool.put(requestFuture);
-				channelFuture.channel().writeAndFlush(requestFuture.getRequest());
-			} else if (channelFuture.cause() != null) {
-				requestFuture.fail();
-			} else {
-				channelFuture.addListener(new ChannelFutureListener() {
-					@Override
-					public void operationComplete(ChannelFuture future) throws Exception {
-						if (future.isSuccess()) {
-							requestFuturePool.put(requestFuture);
-							future.channel().writeAndFlush(requestFuture.getRequest());
-						} else if (future.cause() != null) {
-							requestFuture.fail();
-						}
-					}
-				});
-			}
-		}
-
 	}
 
 }

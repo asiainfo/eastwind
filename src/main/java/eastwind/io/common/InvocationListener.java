@@ -1,11 +1,11 @@
 package eastwind.io.common;
 
 
-public abstract class FutureListener<R> {
+public abstract class InvocationListener<R> {
 
 	protected Object attach;
 
-	public abstract void operationComplete(RequestFuture<R> rf);
+	public abstract void operationComplete(R result, Throwable th);
 
 	public void setAttach(Object attach) {
 		this.attach = attach;

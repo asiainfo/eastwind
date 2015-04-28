@@ -1,32 +1,28 @@
 package eastwind.io.test;
 
-import io.netty.channel.Channel;
-
 import java.io.IOException;
-import java.util.Map;
 
 import eastwind.io.server.EastWindServer;
-import eastwind.io.server.ServerHandshaker;
 
 public class TestServer {
 
 	private String app = "test-server";
 
-	private EastWindServer cioServer;
+	private EastWindServer eastWindServer;
 
 	public TestServer() {
-		cioServer = new EastWindServer(app);
-		cioServer.setCheckPing(false);
-		cioServer.setParentThreads(1);
-		cioServer.setPort(19999);
-		cioServer.setServerHandshaker(new ServerHandshaker() {
-			@Override
-			public void prepare(Channel channel, Map<String, Object> out) {
-				System.out.println("server prepare");
-			}
-		});
-		cioServer.registerProvider(new HelloProviderImpl());
-		cioServer.start();
+		eastWindServer = new EastWindServer(app);
+		eastWindServer.setCheckPing(false);
+		eastWindServer.setParentThreads(1);
+		eastWindServer.setPort(12468);
+//		cioServer.setServerHandshaker(new ServerHandshaker() {
+//			@Override
+//			public void prepare(Channel channel, Map<String, Object> out) {
+//				System.out.println("server prepare");
+//			}
+//		});
+		eastWindServer.registerProvider(new HelloProviderImpl());
+		eastWindServer.start();
 	}
 
 	public static void main(String[] args) throws IOException {

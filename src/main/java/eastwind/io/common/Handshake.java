@@ -4,10 +4,19 @@ import java.util.Map;
 
 public class Handshake {
 
+	private String app;
 	public int step;
 
 	private Map<String, Object> attributes;
 	
+	public String getApp() {
+		return app;
+	}
+
+	public void setApp(String app) {
+		this.app = app;
+	}
+
 	public int getStep() {
 		return step;
 	}

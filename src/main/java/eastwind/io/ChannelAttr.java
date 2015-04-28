@@ -3,25 +3,29 @@ package eastwind.io;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelPromise;
 import io.netty.util.AttributeKey;
+import eastwind.io.common.Host;
+import eastwind.io.nioclient.ClientHandshaker;
 
 public class ChannelAttr {
 
 	public static ThreadLocal<Channel> CHANNEL_TL = new ThreadLocal<Channel>();
 
 	public static final AttributeKey<Integer> ID = AttributeKey.valueOf("ID");
+	public static final AttributeKey<String> APP = AttributeKey.valueOf("APP");
+	public static final AttributeKey<Host> HOST = AttributeKey.valueOf("HOST");
+	public static final AttributeKey<ClientHandshaker> CLIENT_HANDSHAKE = AttributeKey.valueOf("CLIENT_HANDSHAKER");
 	public static final AttributeKey<ChannelPromise> HANDSHAKE_PROMISE = AttributeKey.valueOf("HANDSHAKE_PROMISE");
 	public static final AttributeKey<Session> SESSION = AttributeKey.valueOf("SESSION");
-	public static final AttributeKey<String> APP = AttributeKey.valueOf("APP");
 
 	public static void setId(Channel channel, int id) {
 		set(channel, ID, id);
 	}
-	
+
 	public static int getId(Channel channel) {
 		return get(channel, ID);
 	}
 
-	public static ChannelPromise initHandShakePromise(Channel channel) {
+	public static ChannelPromise initHandshakePromise(Channel channel) {
 		synchronized (channel) {
 			ChannelPromise channelPromise = get(channel, HANDSHAKE_PROMISE);
 			if (channelPromise == null) {

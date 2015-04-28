@@ -22,8 +22,8 @@ import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 
 import eastwind.io.common.KryoFactory;
-import eastwind.io.common.RequestFuture;
-import eastwind.io.common.RequestFuturePool;
+import eastwind.io.common.InvocationFuture;
+import eastwind.io.common.InvocationFuturePool;
 import eastwind.io.common.RequestInvocationHandler;
 import eastwind.io.common.Respone;
 import eastwind.io.common.SubmitRequest;
@@ -50,9 +50,9 @@ public class EastWindClient {
 	private Kryo kryo = KryoFactory.getKryo();
 	private ExecutorService exe = Executors.newFixedThreadPool(3);
 
-	private BlockingQueue<RequestFuture<?>> sendQueue = new LinkedBlockingQueue<>();
+	private BlockingQueue<InvocationFuture<?>> sendQueue = new LinkedBlockingQueue<>();
 	private RequestInvocationHandler requestInvocationHandler = new RequestInvocationHandler(new BioSubmitRequest());
-	private RequestFuturePool requestFuturePool = new RequestFuturePool();
+	private InvocationFuturePool invocationFuturePool = new InvocationFuturePool();
 	private WriteThread writeThread;
 	private ReadThread readThread;
 
@@ -156,8 +156,8 @@ public class EastWindClient {
 		notifyNetStateListener();
 	}
 
-	private void write0(RequestFuture<?> rf) {
-		requestFuturePool.put(rf);
+	private void write0(InvocationFuture<?> rf) {
+		invocationFuturePool.put(rf);
 		Output output = IoPut.outPut();
 		output.clear();
 		FrugalOutputStream fos = (FrugalOutputStream) output.getOutputStream();
@@ -176,7 +176,7 @@ public class EastWindClient {
 			os.write(fos.buf(), 0, fos.count());
 			os.flush();
 		} catch (IOException e) {
-			requestFuturePool.remove(rf.getId());
+			invocationFuturePool.remove(rf.getId());
 			rf.fail();
 			netState = NetState.LOST;
 			e.printStackTrace();
@@ -187,13 +187,13 @@ public class EastWindClient {
 	private class BioSubmitRequest implements SubmitRequest {
 
 		@Override
-		public void submit(RequestFuture<?> requestFuture) {
+		public void submit(InvocationFuture<?> invocationFuture) {
 			if (netState == NetState.LOST) {
-				requestFuture.fail();
+				invocationFuture.fail();
 				return;
 			}
-			requestFuturePool.put(requestFuture);
-			sendQueue.add(requestFuture);
+			invocationFuturePool.put(invocationFuture);
+			sendQueue.add(invocationFuture);
 		}
 	}
 
@@ -251,7 +251,7 @@ public class EastWindClient {
 
 				} else {
 					try {
-						RequestFuture<?> rf = sendQueue.take();
+						InvocationFuture<?> rf = sendQueue.take();
 						write0(rf);
 					} catch (InterruptedException e) {
 						continue;
@@ -305,7 +305,7 @@ public class EastWindClient {
 					exe.execute(new Runnable() {
 						@Override
 						public void run() {
-							RequestFuture rf = requestFuturePool.remove(respone.getId());
+							InvocationFuture rf = invocationFuturePool.remove(respone.getId());
 							rf.done(respone);
 						}
 					});

@@ -2,27 +2,27 @@ package eastwind.io.nioclient;
 
 import java.util.Collection;
 
-import eastwind.io.common.RequestFuture;
-import eastwind.io.common.RequestFuturePool;
+import eastwind.io.common.InvocationFuture;
+import eastwind.io.common.InvocationFuturePool;
 
 public class TimeoutRunner implements Runnable {
 
-	private RequestFuturePool requestFuturePool;
+	private InvocationFuturePool invocationFuturePool;
 	private int invokeTimeout;
 	
-	public TimeoutRunner(RequestFuturePool requestFuturePool, int invokeTimeout) {
-		this.requestFuturePool = requestFuturePool;
+	public TimeoutRunner(InvocationFuturePool invocationFuturePool, int invokeTimeout) {
+		this.invocationFuturePool = invocationFuturePool;
 		this.invokeTimeout = invokeTimeout;
 	}
 
 	@Override
 	public void run() {
 		long now = System.currentTimeMillis();
-		Collection<RequestFuture<?>> requestFutures = requestFuturePool.getRequestFutures().values();
-		for (RequestFuture<?> rf : requestFutures) {
+		Collection<InvocationFuture<?>> invocationFutures = invocationFuturePool.getInvocationFutures().values();
+		for (InvocationFuture<?> rf : invocationFutures) {
 			int timeout = rf.getTimeout() == 0 ? invokeTimeout : rf.getTimeout();
 			if (now - rf.getTime() > timeout * 1000) {
-				RequestFuture<?> t = requestFuturePool.remove(rf.getId());
+				InvocationFuture<?> t = invocationFuturePool.remove(rf.getId());
 				if (t != null) {
 					t.timeout();
 				}
