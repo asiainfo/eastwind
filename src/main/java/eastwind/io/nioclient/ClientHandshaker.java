@@ -1,16 +1,16 @@
 package eastwind.io.nioclient;
 
-import java.util.Map;
+import io.netty.channel.Channel;
 
-import eastwind.io.common.Host;
+import java.util.Map;
 
 public abstract class ClientHandshaker {
 
-	public void prepare(String app, Host remoteHost, Map<String, Object> in, Map<String, Object> out) {
+	public void prepare(String remoteApp, Channel channel, Map<String, Object> in, Map<String, Object> out) {
 
 	}
 
-	public void handshakeComplete(Map<String, Object> in) {
+	public void handshakeComplete(Channel channel, Map<String, Object> in) {
 
 	}
 }

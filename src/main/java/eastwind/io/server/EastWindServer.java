@@ -18,7 +18,6 @@ import java.util.concurrent.TimeUnit;
 import com.google.common.collect.Lists;
 
 import eastwind.io.WindCodec;
-import eastwind.io.common.KryoFactory;
 
 public class EastWindServer {
 
@@ -27,6 +26,7 @@ public class EastWindServer {
 	private String app;
 
 	private ServerBootstrap serverBootstrap;
+	private String ip = "127.0.0.1";
 	private int port = 12468;
 
 	private ProviderManager providerManager = new ProviderManager();
@@ -46,7 +46,7 @@ public class EastWindServer {
 		this.app = app;
 	}
 
-	public void start() {
+	public EastWindServer init() {
 		serverBootstrap = new ServerBootstrap();
 		serverBootstrap.group(new NioEventLoopGroup(parentThreads), new NioEventLoopGroup(childThreads));
 		serverBootstrap.channel(NioServerSocketChannel.class);
@@ -58,7 +58,7 @@ public class EastWindServer {
 				}
 				sc.pipeline().addLast("lengthFieldPrepender", new LengthFieldPrepender(2, true));
 				sc.pipeline().addLast("lengthDecoder", new LengthFieldBasedFrameDecoder(65535, 0, 2, 0, 2));
-				sc.pipeline().addLast("windCodec", new WindCodec(app, KryoFactory.getKryo()));
+				sc.pipeline().addLast("windCodec", new WindCodec());
 				if (serverHandshaker != null) {
 					sc.pipeline().addLast(new ServerHandshakeHandler(app, serverHandshaker));
 				}
@@ -66,12 +66,6 @@ public class EastWindServer {
 			}
 		});
 		serverBootstrap.option(ChannelOption.SO_REUSEADDR, true);
-		serverBootstrap.bind("127.0.0.1", port).addListener(new ChannelFutureListener() {
-			@Override
-			public void operationComplete(ChannelFuture future) throws Exception {
-				System.out.println(app + ":" + port + " start ok");
-			}
-		});
 
 		Runtime.getRuntime().addShutdownHook(new Thread() {
 			@Override
@@ -91,11 +85,24 @@ public class EastWindServer {
 				}
 			}
 		});
+		return this;
+	}
+
+	public EastWindServer start() {
+		serverBootstrap.bind(ip, port).addListener(new ChannelFutureListener() {
+			@Override
+			public void operationComplete(ChannelFuture future) throws Exception {
+				System.out.println(app + ":" + port + " start ok");
+			}
+		});
+		return this;
 	}
 
 	public void shutdown() {
 		isShutdown = true;
 		serverCount.shutdown();
+		serverBootstrap.group().shutdownGracefully();
+		serverBootstrap.childGroup().shutdownGracefully();
 	}
 
 	public void setParentThreads(int parentThreads) {
@@ -104,6 +111,10 @@ public class EastWindServer {
 
 	public void setChildThreads(int childThreads) {
 		this.childThreads = childThreads;
+	}
+
+	public void setIp(String ip) {
+		this.ip = ip;
 	}
 
 	public void setPort(int port) {
@@ -130,7 +141,9 @@ public class EastWindServer {
 		return serverCount;
 	}
 
-	public void registerProvider(Object provider) {
+	public <T> T registerProvider(T provider) {
 		providerManager.register(provider);
+		return provider;
 	}
+	
 }

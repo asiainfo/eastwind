@@ -22,7 +22,7 @@ public class TestServer {
 //			}
 //		});
 		eastWindServer.registerProvider(new HelloProviderImpl());
-		eastWindServer.start();
+		eastWindServer.init().start();
 	}
 
 	public static void main(String[] args) throws IOException {

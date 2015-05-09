@@ -1,5 +1,7 @@
 package eastwind.io.test;
 
+import io.netty.channel.Channel;
+
 import java.util.Map;
 
 import eastwind.io.common.Host;
@@ -16,15 +18,16 @@ public class ClusterClientHandshaker extends ClientHandshaker {
 	}
 
 	@Override
-	public void prepare(String remoteApp, Host remoteHost, Map<String, Object> in, Map<String, Object> out) {
+	public void prepare(String remoteApp, Channel channel, Map<String, Object> in, Map<String, Object> out) {
 		String uuid = (String) in.get("uuid");
+		System.out.println(uuid);
 		out.put("app", app);
 		out.put("host", localHost);
 	}
 
 	@Override
-	public void handshakeComplete(Map<String, Object> in) {
-
+	public void handshakeComplete(Channel channel, Map<String, Object> in) {
+		
 	}
 
 }

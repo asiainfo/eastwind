@@ -4,6 +4,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 
+import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -16,7 +17,7 @@ public class SessionGroup {
 
 	private String name;
 
-	private int timeout = 60;
+	private int timeout = 60 * 5;
 
 	private MultipleMap<Integer, Session> sessions = MultipleMap.newMultipleMap();
 
@@ -49,6 +50,14 @@ public class SessionGroup {
 		return sessions.get(id);
 	}
 
+	public boolean isOnline(int uid) {
+		Session session = sessions.get(uid);
+		if (session == null) {
+			return false;
+		}
+		return session.getChannel() != null || session.getChannel().isActive();
+	}
+
 	public Session createSession(int id, Map<String, Object> attributes, Channel channel) {
 		Session session = sessions.get(id);
 		if (session == null) {
@@ -66,9 +75,15 @@ public class SessionGroup {
 				listener.recreated(session);
 			}
 		}
-		ChannelAttr.setId(channel, id);
-		channel.closeFuture().addListener(suspendedListener);
+		if (channel != null) {
+			ChannelAttr.setId(channel, id);
+			channel.closeFuture().addListener(suspendedListener);
+		}
 		return sessions.get(id);
+	}
+
+	public Iterator<Session> iterator() {
+		return sessions.iterator();
 	}
 
 	public int getTimeout() {

@@ -1,16 +1,16 @@
 package eastwind.io.common;
 
-public class Push {
+public class Messaging {
 
 	private int type;
 	private long sequentId;
 	private Object data;
 
-	public Push() {
+	public Messaging() {
 
 	}
 
-	public Push(int type, long sequentId, Object data) {
+	public Messaging(int type, long sequentId, Object data) {
 		this.type = type;
 		this.sequentId = sequentId;
 		this.data = data;

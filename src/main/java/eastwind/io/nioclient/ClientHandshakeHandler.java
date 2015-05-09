@@ -12,7 +12,6 @@ import com.google.common.collect.Maps;
 
 import eastwind.io.ChannelAttr;
 import eastwind.io.common.Handshake;
-import eastwind.io.common.Host;
 
 public class ClientHandshakeHandler extends SimpleChannelInboundHandler<Handshake> {
 
@@ -32,20 +31,20 @@ public class ClientHandshakeHandler extends SimpleChannelInboundHandler<Handshak
 
 	@Override
 	protected void channelRead0(ChannelHandlerContext ctx, Handshake msg) throws Exception {
+		Channel channel = ctx.channel();
 		if (msg.getStep() == 1) {
-			ClientHandshaker clientHandshaker = getClientHandshaker(ctx.channel());
-			Host remoteHost = ChannelAttr.get(ctx.channel(), ChannelAttr.HOST);
+			ClientHandshaker clientHandshaker = getClientHandshaker(channel);
 			Map<String, Object> out = Maps.newHashMap();
-			clientHandshaker.prepare(msg.getApp(), remoteHost, Collections.unmodifiableMap(msg.getAttributes()), out);
+			clientHandshaker.prepare(msg.getApp(), channel, Collections.unmodifiableMap(msg.getAttributes()), out);
 			Handshake handshake = new Handshake();
 			handshake.setApp(app);
 			handshake.setStep(2);
 			handshake.setAttributes(out);
 			ctx.writeAndFlush(handshake);
 		} else if (msg.getStep() == 3) {
-			ClientHandshaker clientHandshaker = getClientHandshaker(ctx.channel());
-			clientHandshaker.handshakeComplete(Collections.unmodifiableMap(msg.getAttributes()));
-			ChannelPromise handshakePromise = ChannelAttr.get(ctx.channel(), ChannelAttr.HANDSHAKE_PROMISE);
+			ClientHandshaker clientHandshaker = getClientHandshaker(channel);
+			clientHandshaker.handshakeComplete(channel, Collections.unmodifiableMap(msg.getAttributes()));
+			ChannelPromise handshakePromise = ChannelAttr.get(channel, ChannelAttr.HANDSHAKE_PROMISE);
 			handshakePromise.setSuccess();
 		}
 	}

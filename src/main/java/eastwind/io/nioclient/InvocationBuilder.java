@@ -12,7 +12,7 @@ public class InvocationBuilder {
 	public static InvocationBuilder builder() {
 		InvocationBuilder invocationBuilder = new InvocationBuilder();
 		InvocationFuture.INVOCATION_FUTURE_LOCAL.set(invocationBuilder.invocationFuture);
-		return invocationBuilder;
+		return invocationBuilder.async();
 	}
 
 	public InvocationBuilder broadcast() {
@@ -39,6 +39,12 @@ public class InvocationBuilder {
 	public <R> R listen(R r, InvocationListener<R> listener) {
 		invocationFuture.addListener(listener);
 		return r;
+	}
+
+	@SuppressWarnings("unchecked")
+	public <T> T listenAvoid(T t, InvocationListener<Object> listener) {
+		invocationFuture.addListener(listener);
+		return t;
 	}
 
 	public <T> T invoke(T t) {

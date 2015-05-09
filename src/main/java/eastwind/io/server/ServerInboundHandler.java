@@ -83,6 +83,7 @@ public class ServerInboundHandler extends SimpleChannelInboundHandler<Object> {
 		Respone<Object> respone = new Respone<Object>(request.getId());
 		respone.setResult(filterChain.getResult());
 		if (filterChain.getTh() != null) {
+			filterChain.getTh().printStackTrace();
 			respone.setTh(filterChain.getTh());
 		}
 		ctx.writeAndFlush(respone);

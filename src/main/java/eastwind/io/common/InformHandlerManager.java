@@ -8,17 +8,17 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public class InformHandlerManager {
 
-	private ConcurrentMap<Integer, CopyOnWriteArrayList<InformHandler>> informHandlers = new ConcurrentHashMap<Integer, CopyOnWriteArrayList<InformHandler>>();
+	private ConcurrentMap<Integer, CopyOnWriteArrayList<MessagingHandler>> messagingHandlers = new ConcurrentHashMap<Integer, CopyOnWriteArrayList<MessagingHandler>>();
 
 	public InformHandlerManager() {
-		informHandlers.put(-1, new CopyOnWriteArrayList<InformHandler>());
+		messagingHandlers.put(-1, new CopyOnWriteArrayList<MessagingHandler>());
 	}
 
-	public void addHandler(InformHandler imformHandler) {
-		CopyOnWriteArrayList<InformHandler> handlers = informHandlers.get(imformHandler.type());
+	public void addHandler(MessagingHandler imformHandler) {
+		CopyOnWriteArrayList<MessagingHandler> handlers = messagingHandlers.get(imformHandler.type());
 		if (handlers == null) {
-			handlers = new CopyOnWriteArrayList<InformHandler>();
-			CopyOnWriteArrayList<InformHandler> t = informHandlers.putIfAbsent(imformHandler.type(), handlers);
+			handlers = new CopyOnWriteArrayList<MessagingHandler>();
+			CopyOnWriteArrayList<MessagingHandler> t = messagingHandlers.putIfAbsent(imformHandler.type(), handlers);
 			if (t != null) {
 				handlers = t;
 			}
@@ -26,8 +26,8 @@ public class InformHandlerManager {
 		handlers.add(imformHandler);
 	}
 
-	public List<InformHandler> getHandlers(int type) {
-		CopyOnWriteArrayList<InformHandler> handlers = informHandlers.get(type);
+	public List<MessagingHandler> getHandlers(int type) {
+		CopyOnWriteArrayList<MessagingHandler> handlers = messagingHandlers.get(type);
 		if (handlers == null) {
 			return Collections.emptyList();
 		}

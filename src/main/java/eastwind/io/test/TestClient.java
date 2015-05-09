@@ -18,7 +18,7 @@ public class TestClient {
 
 	public TestClient() {
 		eastWindClient = new EastWindClient(app);
-		eastWindClient.start();
+		eastWindClient.init().start();
 	}
 
 	public EastWindClient getEastWindClient() {

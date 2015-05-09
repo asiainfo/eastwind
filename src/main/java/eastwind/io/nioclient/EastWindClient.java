@@ -11,15 +11,12 @@ import io.netty.handler.timeout.ReadTimeoutHandler;
 
 import java.lang.reflect.Proxy;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import com.google.common.collect.Lists;
 
 import eastwind.io.WindCodec;
 import eastwind.io.common.Host;
 import eastwind.io.common.InvocationFuturePool;
-import eastwind.io.common.KryoFactory;
-import eastwind.io.common.ScheduledExecutor;
 import eastwind.io.common.TimedIdSequence100;
 
 public class EastWindClient {
@@ -41,8 +38,7 @@ public class EastWindClient {
 		this.app = app;
 	}
 
-	public void start() {
-
+	public EastWindClient init() {
 		bootstrap = new Bootstrap();
 		bootstrap.group(new NioEventLoopGroup(threads)).channel(NioSocketChannel.class);
 		bootstrap.handler(new ChannelInitializer<SocketChannel>() {
@@ -53,19 +49,29 @@ public class EastWindClient {
 				}
 				sc.pipeline().addLast("lengthFieldPrepender", new LengthFieldPrepender(2, true));
 				sc.pipeline().addLast("lengthDecoder", new LengthFieldBasedFrameDecoder(65535, 0, 2, 0, 2));
-				sc.pipeline().addLast("windCodec", new WindCodec(app, KryoFactory.getKryo()));
+				sc.pipeline().addLast("windCodec", new WindCodec());
 				sc.pipeline().addLast(new ClientHandshakeHandler(app));
 				sc.pipeline().addLast(new ClientInboundHandler(invocationFuturePool, channelGuard));
 			}
 		});
 
 		channelGuard = new ChannelGuard(bootstrap);
-		channelGuard.start();
-
-		TimeoutRunner timeoutRunner = new TimeoutRunner(invocationFuturePool, invokeTimeout);
-		ScheduledExecutor.ses.scheduleWithFixedDelay(timeoutRunner, 1, 1, TimeUnit.SECONDS);
+		return this;
 	}
 
+	public EastWindClient start() {
+		channelGuard.start();
+
+//		TimeoutRunner timeoutRunner = new TimeoutRunner(invocationFuturePool, invokeTimeout);
+//		ScheduledExecutor.ses.scheduleWithFixedDelay(timeoutRunner, 1, 1, TimeUnit.SECONDS);
+		return this;
+	}
+
+	public void shutdown() {
+		channelGuard.shutdownAll();
+		bootstrap.group().shutdownGracefully();
+	}
+	
 	public void createProviderGroup(String app, List<Host> hosts, ClientHandshaker clientHandshaker) {
 		synchronized (providerGroups) {
 			if (getProviderGroup(app) == null) {

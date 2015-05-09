@@ -32,7 +32,9 @@ public class Session {
 
 	public Session(int id, Channel channel) {
 		this.id = id;
-		setChannel(channel);
+		if (channel != null) {
+			setChannel(channel);
+		}
 	}
 
 	public void setChannel(Channel channel) {

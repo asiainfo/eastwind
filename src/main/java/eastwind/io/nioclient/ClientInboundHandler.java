@@ -31,10 +31,12 @@ public class ClientInboundHandler extends SimpleChannelInboundHandler<Object> {
 		super.channelInactive(ctx);
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	protected void channelRead0(ChannelHandlerContext ctx, Object msg) throws Exception {
 		if (msg instanceof Respone) {
-			Respone respone = (Respone<?>) msg;
+			@SuppressWarnings("rawtypes")
+			Respone respone = (Respone) msg;
 			InvocationFuture<?> invocationFuture = requestPool.remove(respone.getId());
 			if (respone.getResult() instanceof ShutdownObj) {
 				channelGuard.shutdown(invocationFuture.getHost());

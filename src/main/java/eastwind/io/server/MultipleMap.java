@@ -73,17 +73,6 @@ public class MultipleMap<K, V> implements Iterable<V> {
 		return new It();
 	}
 
-	public static void main(String[] args) {
-		MultipleMap<String, String> map = MultipleMap.newMultipleMap();
-		for (int i = 0; i < 100; i++) {
-			map.put(i + "", i + "");
-		}
-		Iterator<String> it = map.iterator();
-		for (int i = 0; it.hasNext(); i++) {
-			System.out.println(i + ":" + it.next());
-		}
-	}
-
 	private class It implements Iterator<V> {
 
 		private int curShard = 0;

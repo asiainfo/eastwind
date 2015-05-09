@@ -32,7 +32,7 @@ public class TestCluster1 {
 
 	public void start() {
 		eastWindClient = new EastWindClient(app);
-		eastWindClient.start();
+		eastWindClient.init().start();
 		eastWindClient.createProviderGroup(app, hosts, new ClusterClientHandshaker(app, host));
 		helloProvider = eastWindClient.getProvider(app, HelloProvider.class);
 
@@ -41,7 +41,7 @@ public class TestCluster1 {
 		eastWindServer.setParentThreads(1);
 		eastWindServer.setServerHandshaker(new ClusterServerHandshaker(uuid, eastWindClient.getChannelGuard()));
 		eastWindServer.registerProvider(new HelloProviderImpl());
-		eastWindServer.start();
+		eastWindServer.init().start();
 	}
 
 	public int getId() {

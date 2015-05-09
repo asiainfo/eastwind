@@ -21,9 +21,9 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 
-import eastwind.io.common.KryoFactory;
 import eastwind.io.common.InvocationFuture;
 import eastwind.io.common.InvocationFuturePool;
+import eastwind.io.common.KryoFactory;
 import eastwind.io.common.RequestInvocationHandler;
 import eastwind.io.common.Respone;
 import eastwind.io.common.SubmitRequest;
@@ -47,7 +47,6 @@ public class EastWindClient {
 	private Condition toConnect = lock.newCondition();
 	private Condition connected = lock.newCondition();
 
-	private Kryo kryo = KryoFactory.getKryo();
 	private ExecutorService exe = Executors.newFixedThreadPool(3);
 
 	private BlockingQueue<InvocationFuture<?>> sendQueue = new LinkedBlockingQueue<>();
@@ -162,6 +161,7 @@ public class EastWindClient {
 		output.clear();
 		FrugalOutputStream fos = (FrugalOutputStream) output.getOutputStream();
 		fos.reset();
+		Kryo kryo = KryoFactory.getLocalKryo();
 		kryo.writeClassAndObject(output, rf.getRequest());
 		output.flush();
 		try {
@@ -216,6 +216,7 @@ public class EastWindClient {
 
 		Input input = IoPut.inPut();
 		input.setInputStream(new ByteArrayInputStream(fos.buf(), 0, fos.count()));
+		Kryo kryo = KryoFactory.getLocalKryo();
 		Object obj = kryo.readClassAndObject(input);
 		return obj;
 	}

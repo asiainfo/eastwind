@@ -12,7 +12,7 @@ public class ChannelAttr {
 
 	public static final AttributeKey<Integer> ID = AttributeKey.valueOf("ID");
 	public static final AttributeKey<String> APP = AttributeKey.valueOf("APP");
-	public static final AttributeKey<Host> HOST = AttributeKey.valueOf("HOST");
+	public static final AttributeKey<Host> REMOTE_HOST = AttributeKey.valueOf("REMOTE_HOST");
 	public static final AttributeKey<ClientHandshaker> CLIENT_HANDSHAKE = AttributeKey.valueOf("CLIENT_HANDSHAKER");
 	public static final AttributeKey<ChannelPromise> HANDSHAKE_PROMISE = AttributeKey.valueOf("HANDSHAKE_PROMISE");
 	public static final AttributeKey<Session> SESSION = AttributeKey.valueOf("SESSION");

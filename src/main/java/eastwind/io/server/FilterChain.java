@@ -2,7 +2,6 @@ package eastwind.io.server;
 
 import io.netty.channel.Channel;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
 import eastwind.io.common.Request;
@@ -31,8 +30,6 @@ public class FilterChain {
 			Throwable th = null;
 			try {
 				result = handler.invoke(request.getArgs());
-			} catch (InvocationTargetException e) {
-				th = e.getCause();
 			} catch (Throwable e) {
 				th = e;
 			} finally {
@@ -40,9 +37,8 @@ public class FilterChain {
 				this.th = th;
 			}
 		} else {
-			filters.get(pos).doFilter(this);
+			filters.get(pos++).doFilter(this);
 		}
-		pos++;
 	}
 
 	public Channel getChannel() {

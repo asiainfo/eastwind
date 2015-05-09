@@ -4,7 +4,7 @@ public class Host {
 
 	private String ip;
 	private int port;
-	
+
 	public Host() {
 	}
 
@@ -31,11 +31,7 @@ public class Host {
 
 	@Override
 	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + ((ip == null) ? 0 : ip.hashCode());
-		result = prime * result + port;
-		return result;
+		return ip.hashCode() + port;
 	}
 
 	@Override
@@ -61,5 +57,5 @@ public class Host {
 	public String toString() {
 		return ip + ":" + port;
 	}
-	
+
 }

@@ -19,7 +19,8 @@ public class ChannelGuard {
 
 	private Bootstrap bootstrap;
 	private int pingInterval = 3;
-
+	private boolean shutdown;
+	
 	private ConcurrentMap<Host, Long> shutdowns = Maps.newConcurrentMap();
 	private ConcurrentMap<Host, ConnectStat> connectStats = Maps.newConcurrentMap();
 
@@ -62,7 +63,7 @@ public class ChannelGuard {
 
 			ChannelAttr.set(cf.channel(), ChannelAttr.APP, connectStat.getApp());
 			ChannelAttr.set(cf.channel(), ChannelAttr.CLIENT_HANDSHAKE, connectStat.getClientHandshaker());
-			ChannelAttr.set(cf.channel(), ChannelAttr.HOST, connectStat.getHost());
+			ChannelAttr.set(cf.channel(), ChannelAttr.REMOTE_HOST, connectStat.getHost());
 			ChannelPromise handshakePromise = ChannelAttr.initHandshakePromise(cf.channel());
 			connectStat.setChannelFuture(handshakePromise);
 
@@ -93,6 +94,10 @@ public class ChannelGuard {
 		shutdowns.put(host, System.currentTimeMillis());
 	}
 
+	public void shutdownAll() {
+		this.shutdown = true;
+	}
+	
 	public boolean isShutdowning(Host host) {
 		Long t = shutdowns.get(host);
 		if (t == null) {
@@ -126,6 +131,9 @@ public class ChannelGuard {
 				future.channel().closeFuture().addListener(new ChannelFutureListener() {
 					@Override
 					public void operationComplete(ChannelFuture future) throws Exception {
+						if (shutdown) {
+							return;
+						}
 						if (mod == connectStat.getMode()) {
 							ScheduledExecutor.ses.schedule(new Runnable() {
 								@Override
@@ -142,6 +150,9 @@ public class ChannelGuard {
 				// TODO connect cause or handshake cause
 				System.out.println("connect fail:" + connectStat.getHost());
 				synchronized (connectStat) {
+					if (shutdown) {
+						return;
+					}
 					if (mod == connectStat.getMode()) {
 						ScheduledExecutor.ses.schedule(new Runnable() {
 							@Override

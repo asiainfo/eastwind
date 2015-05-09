@@ -13,17 +13,10 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 
+import eastwind.io.common.KryoFactory;
 import eastwind.io.common.Ping;
 
 public class WindCodec extends ByteToMessageCodec<Object> {
-
-	private String app;
-	private Kryo kryo;
-
-	public WindCodec(String app, Kryo kryo) {
-		this.app = app;
-		this.kryo = kryo;
-	}
 
 	@Override
 	protected void encode(ChannelHandlerContext ctx, Object msg, ByteBuf out) throws Exception {
@@ -32,11 +25,12 @@ public class WindCodec extends ByteToMessageCodec<Object> {
 			System.out.println("ping ->");
 			buf.writeShort(0);
 		} else {
-			System.out.println(app + " send:" + JSON.toJSONString(msg));
+			System.out.println(ctx.channel() + " send:" + JSON.toJSONString(msg));
 			buf.writeShort(1);
 			Output output = IoPut.outPut();
 			output.clear();
 			output.setOutputStream(new ByteBufOutputStream(buf));
+			Kryo kryo = KryoFactory.getLocalKryo();
 			kryo.writeClassAndObject(output, msg);
 			output.flush();
 		}
@@ -58,8 +52,9 @@ public class WindCodec extends ByteToMessageCodec<Object> {
 			Input input = IoPut.inPut();
 			ByteBufInputStream bbis = new ByteBufInputStream(in);
 			input.setInputStream(bbis);
+			Kryo kryo = KryoFactory.getLocalKryo();
 			Object obj = kryo.readClassAndObject(input);
-			System.out.println(app + " receive:" + JSON.toJSONString(obj));
+			System.out.println(ctx.channel() + " receive:" + JSON.toJSONString(obj));
 			out.add(obj);
 			break;
 		}

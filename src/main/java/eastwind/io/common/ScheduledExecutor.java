@@ -5,7 +5,7 @@ import java.util.concurrent.ScheduledExecutorService;
 
 public class ScheduledExecutor {
 
-	public static ScheduledExecutorService ses = Executors.newScheduledThreadPool(5, new NamedThreadFactory(
+	public static ScheduledExecutorService ses = Executors.newScheduledThreadPool(3, new NamedThreadFactory(
 			"ScheduledExecutor"));
 
 }
