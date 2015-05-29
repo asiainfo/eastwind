@@ -8,6 +8,9 @@ import io.netty.channel.ChannelPromise;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.google.common.collect.Maps;
 
 import eastwind.io.ChannelAttr;
@@ -17,6 +20,8 @@ import eastwind.io.common.ScheduledExecutor;
 
 public class ChannelGuard {
 
+	private static Logger logger = LoggerFactory.getLogger(ChannelGuard.class);
+	
 	private Bootstrap bootstrap;
 	private int pingInterval = 3;
 	private boolean shutdown;
@@ -61,8 +66,8 @@ public class ChannelGuard {
 			ChannelFuture cf = bootstrap.connect(host.getIp(), host.getPort());
 			connectStat.setChannelFuture(cf);
 
-			ChannelAttr.set(cf.channel(), ChannelAttr.APP, connectStat.getApp());
 			ChannelAttr.set(cf.channel(), ChannelAttr.CLIENT_HANDSHAKE, connectStat.getClientHandshaker());
+			ChannelAttr.set(cf.channel(), ChannelAttr.REMOTE_APP, connectStat.getApp());
 			ChannelAttr.set(cf.channel(), ChannelAttr.REMOTE_HOST, connectStat.getHost());
 			ChannelPromise handshakePromise = ChannelAttr.initHandshakePromise(cf.channel());
 			connectStat.setChannelFuture(handshakePromise);
@@ -148,7 +153,7 @@ public class ChannelGuard {
 
 			if (future.cause() != null) {
 				// TODO connect cause or handshake cause
-				System.out.println("connect fail:" + connectStat.getHost());
+				logger.debug("connect fail:{}", connectStat.getHost());
 				synchronized (connectStat) {
 					if (shutdown) {
 						return;

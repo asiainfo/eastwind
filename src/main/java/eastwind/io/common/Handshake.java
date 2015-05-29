@@ -5,6 +5,7 @@ import java.util.Map;
 public class Handshake {
 
 	private String app;
+	private String uuid;
 	public int step;
 
 	private Map<String, Object> attributes;
@@ -23,6 +24,14 @@ public class Handshake {
 
 	public void setStep(int step) {
 		this.step = step;
+	}
+
+	public String getUuid() {
+		return uuid;
+	}
+
+	public void setUuid(String uuid) {
+		this.uuid = uuid;
 	}
 
 	public Map<String, Object> getAttributes() {

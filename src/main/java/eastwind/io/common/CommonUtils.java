@@ -6,6 +6,12 @@ import eastwind.io.server.MultipleMap;
 
 public class CommonUtils {
 
+	public static String UUID;
+	
+	static {
+		UUID = java.util.UUID.randomUUID().toString();
+	}
+	
 	public static long currentTimeSeconds() {
 		return System.currentTimeMillis() / 1000;
 	}

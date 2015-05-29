@@ -11,8 +11,10 @@ import io.netty.handler.timeout.ReadTimeoutHandler;
 
 import java.lang.reflect.Proxy;
 import java.util.List;
+import java.util.concurrent.ConcurrentMap;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
 import eastwind.io.WindCodec;
 import eastwind.io.common.Host;
@@ -33,12 +35,13 @@ public class EastWindClient {
 	private TimedIdSequence100 timedIdSequence100 = new TimedIdSequence100();
 	private List<ProviderGroup> providerGroups = Lists.newArrayList();
 	private InvocationFuturePool invocationFuturePool = new InvocationFuturePool();
+	private ConcurrentMap<Host, InterfAb> interfAbs = Maps.newConcurrentMap();
 
 	public EastWindClient(String app) {
 		this.app = app;
 	}
 
-	public EastWindClient init() {
+	public EastWindClient start() {
 		bootstrap = new Bootstrap();
 		bootstrap.group(new NioEventLoopGroup(threads)).channel(NioSocketChannel.class);
 		bootstrap.handler(new ChannelInitializer<SocketChannel>() {
@@ -51,19 +54,19 @@ public class EastWindClient {
 				sc.pipeline().addLast("lengthDecoder", new LengthFieldBasedFrameDecoder(65535, 0, 2, 0, 2));
 				sc.pipeline().addLast("windCodec", new WindCodec());
 				sc.pipeline().addLast(new ClientHandshakeHandler(app));
+				sc.pipeline().addLast(new ClientOutboundHandler(interfAbs));
 				sc.pipeline().addLast(new ClientInboundHandler(invocationFuturePool, channelGuard));
 			}
 		});
 
 		channelGuard = new ChannelGuard(bootstrap);
-		return this;
-	}
 
-	public EastWindClient start() {
 		channelGuard.start();
 
-//		TimeoutRunner timeoutRunner = new TimeoutRunner(invocationFuturePool, invokeTimeout);
-//		ScheduledExecutor.ses.scheduleWithFixedDelay(timeoutRunner, 1, 1, TimeUnit.SECONDS);
+		// TimeoutRunner timeoutRunner = new TimeoutRunner(invocationFuturePool,
+		// invokeTimeout);
+		// ScheduledExecutor.ses.scheduleWithFixedDelay(timeoutRunner, 1, 1,
+		// TimeUnit.SECONDS);
 		return this;
 	}
 
@@ -71,13 +74,14 @@ public class EastWindClient {
 		channelGuard.shutdownAll();
 		bootstrap.group().shutdownGracefully();
 	}
-	
+
 	public void createProviderGroup(String app, List<Host> hosts, ClientHandshaker clientHandshaker) {
 		synchronized (providerGroups) {
 			if (getProviderGroup(app) == null) {
 				ProviderGroup pg = new ProviderGroup(app, hosts, clientHandshaker);
 				providerGroups.add(pg);
 				for (Host host : hosts) {
+					interfAbs.putIfAbsent(host, new InterfAb());
 					channelGuard.add(app, host, clientHandshaker);
 				}
 			}

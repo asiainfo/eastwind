@@ -1,19 +1,27 @@
 package eastwind.io.nioclient;
 
-import eastwind.io.common.InvocationFuture;
-import eastwind.io.common.InvocationFuturePool;
-import eastwind.io.common.Respone;
-import eastwind.io.common.ShutdownObj;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import eastwind.io.ChannelAttr;
+import eastwind.io.common.InvocationFuture;
+import eastwind.io.common.InvocationFuturePool;
+import eastwind.io.common.Messaging;
+import eastwind.io.common.Respone;
+import eastwind.io.common.ShutdownObj;
+
 @Sharable
 public class ClientInboundHandler extends SimpleChannelInboundHandler<Object> {
 
+	private static Logger logger = LoggerFactory.getLogger(ClientInboundHandler.class);
+
 	private ChannelGuard channelGuard;
 	private InvocationFuturePool requestPool;
-	
+
 	public ClientInboundHandler(InvocationFuturePool invocationPool, ChannelGuard channelGuard) {
 		this.requestPool = invocationPool;
 		this.channelGuard = channelGuard;
@@ -21,13 +29,13 @@ public class ClientInboundHandler extends SimpleChannelInboundHandler<Object> {
 
 	@Override
 	public void channelActive(ChannelHandlerContext ctx) throws Exception {
-		System.out.println("connect ok:" + ctx.channel().remoteAddress());
+		logger.info("->{}:connected", ctx.channel().remoteAddress());
 		super.channelActive(ctx);
 	}
 
 	@Override
 	public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-		System.out.println("deconnect to:" + ctx.channel().remoteAddress());
+		logger.info("->{}:closed", ctx.channel().remoteAddress());
 		super.channelInactive(ctx);
 	}
 
@@ -43,6 +51,13 @@ public class ClientInboundHandler extends SimpleChannelInboundHandler<Object> {
 				invocationFuture.fail();
 			} else {
 				invocationFuture.done(respone);
+			}
+		} else if (msg instanceof Messaging) {
+			Messaging messaging = (Messaging) msg;
+			if (messaging.getType() == Messaging.INTERF_ID) {
+				String[] interfId = (String[]) messaging.getData();
+				InterfAb interfAb = ChannelAttr.get(ctx.channel(), ChannelAttr.INTERF_AB);
+				interfAb.setInterfId(interfId[0], interfId[1]);
 			}
 		}
 	}

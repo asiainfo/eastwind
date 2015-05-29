@@ -5,13 +5,15 @@ import io.netty.channel.ChannelPromise;
 import io.netty.util.AttributeKey;
 import eastwind.io.common.Host;
 import eastwind.io.nioclient.ClientHandshaker;
+import eastwind.io.nioclient.InterfAb;
 
 public class ChannelAttr {
 
 	public static ThreadLocal<Channel> CHANNEL_TL = new ThreadLocal<Channel>();
 
 	public static final AttributeKey<Integer> ID = AttributeKey.valueOf("ID");
-	public static final AttributeKey<String> APP = AttributeKey.valueOf("APP");
+	public static final AttributeKey<String> REMOTE_APP = AttributeKey.valueOf("REMOTE_APP");
+	public static final AttributeKey<InterfAb> INTERF_AB = AttributeKey.valueOf("INTERF_AB");
 	public static final AttributeKey<Host> REMOTE_HOST = AttributeKey.valueOf("REMOTE_HOST");
 	public static final AttributeKey<ClientHandshaker> CLIENT_HANDSHAKE = AttributeKey.valueOf("CLIENT_HANDSHAKER");
 	public static final AttributeKey<ChannelPromise> HANDSHAKE_PROMISE = AttributeKey.valueOf("HANDSHAKE_PROMISE");

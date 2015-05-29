@@ -4,7 +4,8 @@ package eastwind.io.common;
 public class Request {
 
 	private long id;
-	private String type;
+	private String interf;
+	private String name;
 	private Object[] args;
 
 	public long getId() {
@@ -15,12 +16,20 @@ public class Request {
 		this.id = id;
 	}
 
-	public String getType() {
-		return type;
+	public String getInterf() {
+		return interf;
 	}
 
-	public void setType(String type) {
-		this.type = type;
+	public void setInterf(String interf) {
+		this.interf = interf;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
 	}
 
 	public Object[] getArgs() {

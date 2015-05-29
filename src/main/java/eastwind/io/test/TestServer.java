@@ -15,14 +15,8 @@ public class TestServer {
 		eastWindServer.setCheckPing(false);
 		eastWindServer.setParentThreads(1);
 		eastWindServer.setPort(12468);
-//		cioServer.setServerHandshaker(new ServerHandshaker() {
-//			@Override
-//			public void prepare(Channel channel, Map<String, Object> out) {
-//				System.out.println("server prepare");
-//			}
-//		});
 		eastWindServer.registerProvider(new HelloProviderImpl());
-		eastWindServer.init().start();
+		eastWindServer.start();
 	}
 
 	public static void main(String[] args) throws IOException {

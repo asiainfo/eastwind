@@ -85,7 +85,8 @@ public class InvocationFutureHandler implements InvocationHandler {
 	private void setUpInvocationFuture(InvocationFuture<?> invocationFuture, Host host, Method method, Object[] args) {
 		Request request = new Request();
 		request.setId(timedIdSequence100.newId());
-		request.setType(method.getName());
+		request.setInterf(method.getDeclaringClass().getCanonicalName());
+		request.setName(method.getName());
 		request.setArgs(args);
 
 		invocationFuture.setApp(providerGroup.getApp());

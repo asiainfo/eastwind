@@ -6,8 +6,13 @@ import io.netty.channel.SimpleChannelInboundHandler;
 
 import java.util.List;
 
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import eastwind.io.ChannelAttr;
 import eastwind.io.Session;
+import eastwind.io.common.Messaging;
 import eastwind.io.common.Ping;
 import eastwind.io.common.Request;
 import eastwind.io.common.Respone;
@@ -15,6 +20,8 @@ import eastwind.io.common.ShutdownObj;
 
 @Sharable
 public class ServerInboundHandler extends SimpleChannelInboundHandler<Object> {
+
+	private static Logger logger = LoggerFactory.getLogger(ServerInboundHandler.class);
 
 	private List<Filter> filters;
 	private ProviderManager providerManager;
@@ -28,14 +35,14 @@ public class ServerInboundHandler extends SimpleChannelInboundHandler<Object> {
 
 	@Override
 	public void channelActive(ChannelHandlerContext ctx) throws Exception {
-		System.out.println("connected from:" + ctx.channel().remoteAddress());
+		logger.info("{}->:connected", ctx.channel().remoteAddress());
 		serverCount.incrementClientCount();
 		super.channelActive(ctx);
 	}
 
 	@Override
 	public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-		System.out.println("deconnected from:" + ctx.channel().remoteAddress());
+		logger.info("{}->:closed", ctx.channel().remoteAddress());
 		serverCount.decrementClientCount();
 		super.channelInactive(ctx);
 	}
@@ -52,6 +59,13 @@ public class ServerInboundHandler extends SimpleChannelInboundHandler<Object> {
 
 		} else if (msg instanceof Request) {
 			Request request = (Request) msg;
+
+			if (!StringUtils.isNumeric(request.getInterf())) {
+				String interf = request.getInterf();
+				String id = providerManager.getInterfId(interf);
+				Messaging messaging = new Messaging(Messaging.INTERF_ID, 0, new String[] { interf, id });
+				ctx.channel().writeAndFlush(messaging);
+			}
 
 			// shutdown
 			if (serverCount.isShutdown()) {
@@ -75,7 +89,7 @@ public class ServerInboundHandler extends SimpleChannelInboundHandler<Object> {
 	}
 
 	private void handleRequest(ChannelHandlerContext ctx, Request request) {
-		ProviderHandler handler = providerManager.get(request.getType());
+		ProviderHandler handler = providerManager.get(request.getInterf(), request.getName());
 
 		FilterChain filterChain = new FilterChain(handler, ctx.channel(), filters, request);
 		filterChain.doNextFilter();

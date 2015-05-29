@@ -6,23 +6,15 @@ import java.net.SocketAddress;
 import eastwind.io.bioclient.EastWindClient;
 import eastwind.io.bioclient.NetState;
 import eastwind.io.bioclient.NetStateListener;
+import eastwind.io.common.Host;
 
 public class TestBioClient {
 
 	public static void main(String[] args) throws IOException {
 		final EastWindClient cioClient = new EastWindClient("test-bio-client").start();
-		cioClient.connect("127.0.0.1", 19999);
+		Host host = new Host("127.0.0.1", 12468);
+		cioClient.connect(host);
 		cioClient.addNetStateListener(new NetStateListener() {
-			@Override
-			public boolean oneOff() {
-				return true;
-			}
-
-			@Override
-			public NetState ExecuteIfOnState() {
-				return NetState.CONNECTED;
-			}
-
 			@Override
 			public void stateChanged(SocketAddress socketAddress, NetState netState) {
 				System.out.println(netState);

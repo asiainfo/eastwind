@@ -8,6 +8,9 @@ import io.netty.handler.codec.ByteToMessageCodec;
 
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.alibaba.fastjson.JSON;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
@@ -18,14 +21,18 @@ import eastwind.io.common.Ping;
 
 public class WindCodec extends ByteToMessageCodec<Object> {
 
+	private static Logger logger = LoggerFactory.getLogger(WindCodec.class);
+
 	@Override
 	protected void encode(ChannelHandlerContext ctx, Object msg, ByteBuf out) throws Exception {
 		ByteBuf buf = ctx.alloc().buffer();
 		if (msg instanceof Ping) {
-			System.out.println("ping ->");
+			logger.debug("->{}:ping", ctx.channel().remoteAddress());
 			buf.writeShort(0);
 		} else {
-			System.out.println(ctx.channel() + " send:" + JSON.toJSONString(msg));
+			if (logger.isInfoEnabled()) {
+				logger.info("->{}:{}", ctx.channel().remoteAddress(), JSON.toJSONString(msg));
+			}
 			buf.writeShort(1);
 			Output output = IoPut.outPut();
 			output.clear();
@@ -45,7 +52,7 @@ public class WindCodec extends ByteToMessageCodec<Object> {
 		short v = in.readShort();
 		switch (v) {
 		case 0:
-			System.out.println("ping <-");
+			logger.debug("{}->:ping", ctx.channel().remoteAddress());
 			out.add(Ping.instance);
 			break;
 		case 1:
@@ -54,7 +61,9 @@ public class WindCodec extends ByteToMessageCodec<Object> {
 			input.setInputStream(bbis);
 			Kryo kryo = KryoFactory.getLocalKryo();
 			Object obj = kryo.readClassAndObject(input);
-			System.out.println(ctx.channel() + " receive:" + JSON.toJSONString(obj));
+			if (logger.isInfoEnabled()) {
+				logger.info("{}->:{}", ctx.channel().remoteAddress(), JSON.toJSONString(obj));
+			}
 			out.add(obj);
 			break;
 		}

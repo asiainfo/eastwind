@@ -2,17 +2,19 @@ package eastwind.io.common;
 
 public class Messaging {
 
+	public static final int INTERF_ID = 11;
+	
 	private int type;
-	private long sequentId;
+	private long id;
 	private Object data;
 
 	public Messaging() {
 
 	}
 
-	public Messaging(int type, long sequentId, Object data) {
+	public Messaging(int type, long id, Object data) {
 		this.type = type;
-		this.sequentId = sequentId;
+		this.id = id;
 		this.data = data;
 	}
 
@@ -23,13 +25,13 @@ public class Messaging {
 	public void setType(int type) {
 		this.type = type;
 	}
-	
-	public long getSequentId() {
-		return sequentId;
+
+	public long getId() {
+		return id;
 	}
 
-	public void setSequentId(long sequentId) {
-		this.sequentId = sequentId;
+	public void setId(long id) {
+		this.id = id;
 	}
 
 	public Object getData() {

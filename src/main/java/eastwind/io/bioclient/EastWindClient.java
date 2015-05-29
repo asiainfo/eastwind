@@ -4,10 +4,13 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.net.Socket;
-import java.util.LinkedList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
@@ -20,13 +23,22 @@ import java.util.concurrent.locks.ReentrantLock;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
+import com.google.common.collect.Maps;
 
+import eastwind.io.common.CommonUtils;
+import eastwind.io.common.Handshake;
+import eastwind.io.common.Host;
 import eastwind.io.common.InvocationFuture;
 import eastwind.io.common.InvocationFuturePool;
 import eastwind.io.common.KryoFactory;
-import eastwind.io.common.RequestInvocationHandler;
+import eastwind.io.common.Messaging;
+import eastwind.io.common.MessagingHandler;
+import eastwind.io.common.MessagingHandlerManager;
+import eastwind.io.common.Ping;
+import eastwind.io.common.Request;
 import eastwind.io.common.Respone;
-import eastwind.io.common.SubmitRequest;
+import eastwind.io.common.TimedIdSequence100;
+import eastwind.io.nioclient.InterfAb;
 
 public class EastWindClient {
 
@@ -37,8 +49,8 @@ public class EastWindClient {
 	private NetState netState = NetState.LOST;
 	private List<NetStateListener> netStateListeners = new CopyOnWriteArrayList<>();
 
-	private volatile String ip;
-	private volatile int port;
+	private volatile Host host;
+	private InterfAb interfAb = new InterfAb();
 	private volatile boolean firstConnect = false;
 
 	private boolean shutdown = false;
@@ -49,12 +61,18 @@ public class EastWindClient {
 
 	private ExecutorService exe = Executors.newFixedThreadPool(3);
 
-	private BlockingQueue<InvocationFuture<?>> sendQueue = new LinkedBlockingQueue<>();
-	private RequestInvocationHandler requestInvocationHandler = new RequestInvocationHandler(new BioSubmitRequest());
+	private InvocationFutureHandler invocationFutureHandler = new InvocationFutureHandler();
 	private InvocationFuturePool invocationFuturePool = new InvocationFuturePool();
+	private MessagingHandlerManager messagingHandlerManager = new MessagingHandlerManager();
+
+	private BlockingQueue<InvocationFuture<?>> sendQueue = new LinkedBlockingQueue<>();
 	private WriteThread writeThread;
 	private ReadThread readThread;
 
+	private Map<Class<?>, Object> providers = Maps.newHashMap();
+	private ClientHandshaker clientHandshaker;
+
+	private int timeout;
 	private long lastReadTime = System.currentTimeMillis();
 
 	public EastWindClient(String app) {
@@ -69,42 +87,58 @@ public class EastWindClient {
 		return this;
 	}
 
-	public void connect(String ip, int port) {
-		this.ip = ip;
-		this.port = port;
+	public void connect(Host host) {
+		this.host = host;
 		firstConnect = true;
 
 		lock.lock();
-		toConnect.signal();
+		toConnect.signalAll();
 		lock.unlock();
 	}
 
-	public <T> T createInvoker(Class<T> interf) {
-		Object obj = Proxy.newProxyInstance(this.getClass().getClassLoader(), new Class<?>[] { interf },
-				requestInvocationHandler);
+	@SuppressWarnings("unchecked")
+	public <T> T createProvider(Class<T> interf) {
+		Object obj = providers.get(interf);
+		synchronized (providers) {
+			if (obj == null) {
+				obj = Proxy.newProxyInstance(this.getClass().getClassLoader(), new Class<?>[] { interf },
+						invocationFutureHandler);
+				providers.put(interf, obj);
+			}
+		}
 		return (T) obj;
 	}
 
+	public void registerHandler(MessagingHandler messagingHandler) {
+		messagingHandlerManager.addHandler(messagingHandler);
+	}
+
 	public void addNetStateListener(NetStateListener netStateListener) {
-		if (netState == netStateListener.ExecuteIfOnState()) {
-			invokeListener(netStateListener);
-			if (!netStateListener.oneOff()) {
-				this.netStateListeners.add(netStateListener);
-			}
-		} else {
-			this.netStateListeners.add(netStateListener);
-		}
+		this.netStateListeners.add(netStateListener);
 	}
 
 	public void setReconnectTime(int reconnectTime) {
 		this.reconnectTime = reconnectTime;
 	}
 
-	public boolean isConnected() {
-		if (socket == null) {
-			return false;
-		}
-		return socket.isConnected();
+	public Host getHost() {
+		return host;
+	}
+
+	public void setHost(Host host) {
+		this.host = host;
+	}
+
+	public int getTimeout() {
+		return timeout;
+	}
+
+	public void setTimeout(int timeout) {
+		this.timeout = timeout;
+	}
+
+	public void setClientHandshaker(ClientHandshaker clientHandshaker) {
+		this.clientHandshaker = clientHandshaker;
 	}
 
 	private void invokeListener(NetStateListener netStateListener) {
@@ -120,61 +154,32 @@ public class EastWindClient {
 	}
 
 	private void notifyNetStateListener() {
-		exe.execute(new Runnable() {
-			@Override
-			public void run() {
-				List<NetStateListener> oneOffs = new LinkedList<NetStateListener>();
-				for (int i = 0; i < netStateListeners.size(); i++) {
-					NetStateListener netStateListener = netStateListeners.get(i);
-					invokeListener(netStateListener);
-					if (netStateListener.oneOff()) {
-						oneOffs.add(netStateListener);
-					}
-				}
-				if (oneOffs.size() > 0) {
-					netStateListeners.removeAll(oneOffs);
-				}
-			}
-		});
+		for (int i = 0; i < netStateListeners.size(); i++) {
+			NetStateListener netStateListener = netStateListeners.get(i);
+			invokeListener(netStateListener);
+		}
 	}
 
 	private void connect0() {
 		try {
 			firstConnect = false;
-			socket = new Socket(ip, port);
-			netState = NetState.CONNECTED;
-			System.out.println("connect ok: " + ip + ":" + port);
-
+			socket = new Socket(host.getIp(), host.getPort());
+			netState = NetState.HANDSHAKING;
+			System.out.println("connect ok: " + host);
 			lock.lock();
 			connected.signalAll();
 			lock.unlock();
 		} catch (IOException e) {
-			System.out.println("connect fail: " + ip + ":" + port);
+			System.out.println("connect fail: " + host);
 			netState = NetState.LOST;
 		}
 		notifyNetStateListener();
 	}
 
-	private void write0(InvocationFuture<?> rf) {
+	private void writeInvocation(InvocationFuture<?> rf) {
 		invocationFuturePool.put(rf);
-		Output output = IoPut.outPut();
-		output.clear();
-		FrugalOutputStream fos = (FrugalOutputStream) output.getOutputStream();
-		fos.reset();
-		Kryo kryo = KryoFactory.getLocalKryo();
-		kryo.writeClassAndObject(output, rf.getRequest());
-		output.flush();
 		try {
-			OutputStream os = socket.getOutputStream();
-			int count = fos.count() + 2;
-
-			os.write(count >> 8);
-			os.write(count);
-			os.write(0);
-			os.write(1);
-
-			os.write(fos.buf(), 0, fos.count());
-			os.flush();
+			writeObject(rf.getRequest());
 		} catch (IOException e) {
 			invocationFuturePool.remove(rf.getId());
 			rf.fail();
@@ -184,17 +189,24 @@ public class EastWindClient {
 		}
 	}
 
-	private class BioSubmitRequest implements SubmitRequest {
+	private void writeObject(Object object) throws IOException {
+		Output output = IoPut.outPut();
+		output.clear();
+		FrugalOutputStream fos = (FrugalOutputStream) output.getOutputStream();
+		fos.reset();
+		Kryo kryo = KryoFactory.getLocalKryo();
+		kryo.writeClassAndObject(output, object);
+		output.flush();
+		OutputStream os = socket.getOutputStream();
+		int count = fos.count() + 2;
 
-		@Override
-		public void submit(InvocationFuture<?> invocationFuture) {
-			if (netState == NetState.LOST) {
-				invocationFuture.fail();
-				return;
-			}
-			invocationFuturePool.put(invocationFuture);
-			sendQueue.add(invocationFuture);
-		}
+		os.write(count >> 8);
+		os.write(count);
+		os.write(0);
+		os.write(1);
+
+		os.write(fos.buf(), 0, fos.count());
+		os.flush();
 	}
 
 	private Object read0() throws IOException {
@@ -221,10 +233,46 @@ public class EastWindClient {
 		return obj;
 	}
 
+	class InvocationFutureHandler implements InvocationHandler {
+
+		private TimedIdSequence100 timedIdSequence100 = new TimedIdSequence100();
+
+		@Override
+		public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+			if (Object.class.equals(method.getDeclaringClass())) {
+				return method.invoke(this, args);
+			}
+			if (netState != NetState.ACTIVE) {
+				throw new RuntimeException("network is not active now");
+			}
+			InvocationFuture<?> invocationFuture = InvocationFuture.INVOCATION_FUTURE_LOCAL.get();
+			if (netState == NetState.LOST) {
+				invocationFuture.fail();
+			} else {
+				Request request = new Request();
+				request.setId(timedIdSequence100.newId());
+				request.setInterf(method.getDeclaringClass().getCanonicalName());
+				request.setName(method.getName());
+				request.setArgs(args);
+
+				invocationFuture.setRequest(request);
+				invocationFuturePool.put(invocationFuture);
+				sendQueue.add(invocationFuture);
+			}
+
+			return returnVal(method.getReturnType());
+		}
+
+		private Object returnVal(Class<?> c) {
+			// boolean, byte, char, short, int, long, float, and double
+			return c.isPrimitive() ? 0 : null;
+		}
+	}
+
 	private class WriteThread extends Thread {
 
 		public WriteThread() {
-			super("cioclient-write-thread");
+			super("eastwind-write-thread");
 		}
 
 		@Override
@@ -234,7 +282,7 @@ public class EastWindClient {
 					break;
 				}
 
-				if (netState != NetState.CONNECTED) {
+				if (netState != NetState.ACTIVE) {
 					if (!firstConnect) {
 						lock.lock();
 						try {
@@ -246,14 +294,31 @@ public class EastWindClient {
 						}
 					}
 
-					if (ip != null && ip.trim() != "") {
+					if (host != null) {
 						connect0();
 					}
 
 				} else {
 					try {
-						InvocationFuture<?> rf = sendQueue.take();
-						write0(rf);
+						InvocationFuture<?> rf = sendQueue.poll(timeout, TimeUnit.MILLISECONDS);
+						if (rf == null) {
+							if (System.currentTimeMillis() - lastReadTime > timeout + 15000) {
+								if (!socket.isClosed()) {
+									try {
+										socket.close();
+									} catch (IOException e) {
+										// close quietly
+									}
+								}
+							} else {
+								try {
+									writeObject(Ping.instance);
+								} catch (IOException e) {
+								}
+							}
+						} else {
+							writeInvocation(rf);
+						}
 					} catch (InterruptedException e) {
 						continue;
 					}
@@ -266,7 +331,7 @@ public class EastWindClient {
 	private class ReadThread extends Thread {
 
 		public ReadThread() {
-			super("cioclient-read-thread");
+			super("eastwind-read-thread");
 		}
 
 		@Override
@@ -296,22 +361,70 @@ public class EastWindClient {
 					obj = read0();
 				} catch (IOException e) {
 					netState = NetState.LOST;
+					notifyNetStateListener();
 					writeThread.interrupt();
 					continue;
 				}
 
 				lastReadTime = System.currentTimeMillis();
 				if (obj instanceof Respone) {
-					final Respone<?> respone = (Respone<?>) obj;
-					exe.execute(new Runnable() {
-						@Override
-						public void run() {
-							InvocationFuture rf = invocationFuturePool.remove(respone.getId());
-							rf.done(respone);
-						}
-					});
+					handRespone((Respone<?>) obj);
+				} else if (obj instanceof Handshake) {
+					handHandshake((Handshake) obj);
+				} else if (obj instanceof Messaging) {
+					handMessaging((Messaging) obj);
 				}
 			} // for
 		} // run
+
+		private void handHandshake(Handshake handshake) {
+			Map<String, Object> in = Collections.unmodifiableMap(handshake.getAttributes());
+			if (handshake.getStep() == 1) {
+				interfAb.ackUuid(handshake.getApp());
+				Map<String, Object> out = Maps.newHashMap();
+				if (clientHandshaker == null) {
+					// TODO
+				} else {
+					clientHandshaker.prepare(EastWindClient.this, in, out);
+				}
+
+				Handshake hs = new Handshake();
+				hs.setApp(app);
+				hs.setAttributes(out);
+				hs.setStep(2);
+				hs.setUuid(CommonUtils.UUID);
+				try {
+					netState = NetState.HANDSHAKING;
+					writeObject(hs);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			} else if (handshake.getStep() == 3) {
+				interfAb.ackUuid(handshake.getApp());
+				if (clientHandshaker != null) {
+					clientHandshaker.handshakeComplete(in);
+				}
+				netState = NetState.ACTIVE;
+				notifyNetStateListener();
+			}
+		}
+
+		private void handRespone(final Respone<?> respone) {
+			exe.execute(new Runnable() {
+				@Override
+				public void run() {
+					InvocationFuture rf = invocationFuturePool.remove(respone.getId());
+					rf.done(respone);
+				}
+			});
+		}
+
+		private void handMessaging(Messaging messaging) {
+			int type = messaging.getType();
+			List<MessagingHandler> handlers = messagingHandlerManager.getHandlers(type);
+			for (MessagingHandler handler : handlers) {
+				handler.handle(messaging);
+			}
+		}
 	} // read thread
 }

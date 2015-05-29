@@ -15,11 +15,16 @@ import io.netty.handler.timeout.ReadTimeoutHandler;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.google.common.collect.Lists;
 
 import eastwind.io.WindCodec;
 
 public class EastWindServer {
+
+	private static Logger logger = LoggerFactory.getLogger(EastWindServer.class);
 
 	public volatile boolean isShutdown = false;
 
@@ -46,7 +51,7 @@ public class EastWindServer {
 		this.app = app;
 	}
 
-	public EastWindServer init() {
+	public EastWindServer start() {
 		serverBootstrap = new ServerBootstrap();
 		serverBootstrap.group(new NioEventLoopGroup(parentThreads), new NioEventLoopGroup(childThreads));
 		serverBootstrap.channel(NioServerSocketChannel.class);
@@ -59,9 +64,7 @@ public class EastWindServer {
 				sc.pipeline().addLast("lengthFieldPrepender", new LengthFieldPrepender(2, true));
 				sc.pipeline().addLast("lengthDecoder", new LengthFieldBasedFrameDecoder(65535, 0, 2, 0, 2));
 				sc.pipeline().addLast("windCodec", new WindCodec());
-				if (serverHandshaker != null) {
-					sc.pipeline().addLast(new ServerHandshakeHandler(app, serverHandshaker));
-				}
+				sc.pipeline().addLast(new ServerHandshakeHandler(app, serverHandshaker));
 				sc.pipeline().addLast(new ServerInboundHandler(filters, providerManager, serverCount));
 			}
 		});
@@ -85,14 +88,11 @@ public class EastWindServer {
 				}
 			}
 		});
-		return this;
-	}
 
-	public EastWindServer start() {
 		serverBootstrap.bind(ip, port).addListener(new ChannelFutureListener() {
 			@Override
 			public void operationComplete(ChannelFuture future) throws Exception {
-				System.out.println(app + ":" + port + " start ok");
+				logger.info("{}:{} started", ip, port);
 			}
 		});
 		return this;
@@ -145,5 +145,5 @@ public class EastWindServer {
 		providerManager.register(provider);
 		return provider;
 	}
-	
+
 }
