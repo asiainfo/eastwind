@@ -9,6 +9,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.net.Socket;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
@@ -28,6 +29,7 @@ import com.google.common.collect.Maps;
 import eastwind.io.common.CommonUtils;
 import eastwind.io.common.Handshake;
 import eastwind.io.common.Host;
+import eastwind.io.common.InterfAb;
 import eastwind.io.common.InvocationFuture;
 import eastwind.io.common.InvocationFuturePool;
 import eastwind.io.common.KryoFactory;
@@ -38,7 +40,6 @@ import eastwind.io.common.Ping;
 import eastwind.io.common.Request;
 import eastwind.io.common.Respone;
 import eastwind.io.common.TimedIdSequence100;
-import eastwind.io.nioclient.InterfAb;
 
 public class EastWindClient {
 
@@ -69,7 +70,7 @@ public class EastWindClient {
 	private WriteThread writeThread;
 	private ReadThread readThread;
 
-	private Map<Class<?>, Object> providers = Maps.newHashMap();
+	private Map<Class<?>, Object> providers = new HashMap<Class<?>, Object>();
 	private ClientHandshaker clientHandshaker;
 
 	private int timeout;

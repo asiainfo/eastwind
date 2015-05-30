@@ -63,7 +63,7 @@ public class SessionGroup {
 		if (session == null) {
 			session = new Session(id, channel);
 			session.setAttributes(attributes);
-			if (CommonUtils.putIfAbsent(sessions, id, session) == session) {
+			if (sessions.putIfAbsent(id, session) == session) {
 				for (SessionListener listener : listeners) {
 					listener.created(session);
 				}

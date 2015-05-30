@@ -12,6 +12,7 @@ import com.google.common.collect.Maps;
 
 import eastwind.io.ChannelAttr;
 import eastwind.io.common.Handshake;
+import eastwind.io.common.InterfAb;
 
 public class ClientHandshakeHandler extends SimpleChannelInboundHandler<Handshake> {
 

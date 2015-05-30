@@ -18,6 +18,7 @@ import com.google.common.collect.Maps;
 
 import eastwind.io.WindCodec;
 import eastwind.io.common.Host;
+import eastwind.io.common.InterfAb;
 import eastwind.io.common.InvocationFuturePool;
 import eastwind.io.common.TimedIdSequence100;
 

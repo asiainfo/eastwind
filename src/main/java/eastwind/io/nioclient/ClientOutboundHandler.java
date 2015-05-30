@@ -9,6 +9,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import eastwind.io.ChannelAttr;
 import eastwind.io.common.Host;
+import eastwind.io.common.InterfAb;
 import eastwind.io.common.Request;
 
 public class ClientOutboundHandler extends ChannelOutboundHandlerAdapter {

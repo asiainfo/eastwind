@@ -1,4 +1,4 @@
-package eastwind.io.nioclient;
+package eastwind.io.common;
 
 import java.util.concurrent.ConcurrentMap;
 

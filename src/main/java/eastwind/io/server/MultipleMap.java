@@ -5,6 +5,8 @@ import java.util.concurrent.ConcurrentMap;
 
 import com.google.common.collect.Maps;
 
+import eastwind.io.common.CommonUtils;
+
 /**
  * 大数据量map,分多次遍历
  */
@@ -54,7 +56,8 @@ public class MultipleMap<K, V> implements Iterable<V> {
 	}
 
 	public V putIfAbsent(K k, V v) {
-		return getShardByKey(k).putIfAbsent(k, v);
+		ConcurrentMap<K, V> map = getShardByKey(k);
+		return CommonUtils.putIfAbsent(map, k, v);
 	}
 
 	public V remove(K k) {

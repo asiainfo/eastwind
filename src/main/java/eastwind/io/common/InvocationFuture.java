@@ -1,9 +1,8 @@
 package eastwind.io.common;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-
-import com.google.common.collect.Lists;
 
 public class InvocationFuture<R> {
 
@@ -35,7 +34,7 @@ public class InvocationFuture<R> {
 
 	private synchronized List<InvocationFuture<R>> getSubInvocationFutures0() {
 		if (subInvocationFutures == null) {
-			subInvocationFutures = Lists.newLinkedList();
+			subInvocationFutures = new ArrayList<InvocationFuture<R>>(0);
 		}
 		return subInvocationFutures;
 	}

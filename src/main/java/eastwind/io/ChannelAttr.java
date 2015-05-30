@@ -4,8 +4,8 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelPromise;
 import io.netty.util.AttributeKey;
 import eastwind.io.common.Host;
+import eastwind.io.common.InterfAb;
 import eastwind.io.nioclient.ClientHandshaker;
-import eastwind.io.nioclient.InterfAb;
 
 public class ChannelAttr {
 

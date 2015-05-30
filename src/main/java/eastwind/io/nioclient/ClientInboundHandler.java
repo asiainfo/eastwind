@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import eastwind.io.ChannelAttr;
+import eastwind.io.common.InterfAb;
 import eastwind.io.common.InvocationFuture;
 import eastwind.io.common.InvocationFuturePool;
 import eastwind.io.common.Messaging;

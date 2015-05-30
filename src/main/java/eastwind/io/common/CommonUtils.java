@@ -2,8 +2,6 @@ package eastwind.io.common;
 
 import java.util.concurrent.ConcurrentMap;
 
-import eastwind.io.server.MultipleMap;
-
 public class CommonUtils {
 
 	public static String UUID;
@@ -17,14 +15,6 @@ public class CommonUtils {
 	}
 
 	public static <K, V> V putIfAbsent(ConcurrentMap<K, V> map, K key, V value) {
-		V present = map.putIfAbsent(key, value);
-		if (present == null) {
-			return value;
-		}
-		return present;
-	}
-
-	public static <K, V> V putIfAbsent(MultipleMap<K, V> map, K key, V value) {
 		V present = map.putIfAbsent(key, value);
 		if (present == null) {
 			return value;
