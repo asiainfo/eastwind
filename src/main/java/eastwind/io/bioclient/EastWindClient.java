@@ -24,7 +24,6 @@ import java.util.concurrent.locks.ReentrantLock;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
-import com.google.common.collect.Maps;
 
 import eastwind.io.common.CommonUtils;
 import eastwind.io.common.Handshake;
@@ -382,7 +381,7 @@ public class EastWindClient {
 			Map<String, Object> in = Collections.unmodifiableMap(handshake.getAttributes());
 			if (handshake.getStep() == 1) {
 				interfAb.ackUuid(handshake.getApp());
-				Map<String, Object> out = Maps.newHashMap();
+				Map<String, Object> out = new HashMap<String, Object>();
 				if (clientHandshaker == null) {
 					// TODO
 				} else {

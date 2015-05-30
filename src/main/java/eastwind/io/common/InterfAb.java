@@ -1,14 +1,13 @@
 package eastwind.io.common;
 
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-
-import com.google.common.collect.Maps;
 
 // interface简称
 public class InterfAb {
 
 	private String uuid;
-	private ConcurrentMap<String, String> interfIds = Maps.newConcurrentMap();
+	private ConcurrentMap<String, String> interfIds = new ConcurrentHashMap<String, String>();
 
 	public void ackUuid(String uuid) {
 		if (!uuid.equals(this.uuid)) {
