@@ -38,12 +38,16 @@ public class EastWindClient {
 	private InvocationFuturePool invocationFuturePool = new InvocationFuturePool();
 	private ConcurrentMap<Host, InterfAb> interfAbs = Maps.newConcurrentMap();
 
+	private boolean started;
+
 	public EastWindClient(String app) {
 		this.app = app;
+		bootstrap = new Bootstrap();
+		channelGuard = new ChannelGuard(bootstrap);
 	}
 
 	public EastWindClient start() {
-		bootstrap = new Bootstrap();
+		started = true;
 		bootstrap.group(new NioEventLoopGroup(threads)).channel(NioSocketChannel.class);
 		bootstrap.handler(new ChannelInitializer<SocketChannel>() {
 			@Override
@@ -52,7 +56,7 @@ public class EastWindClient {
 					sc.pipeline().addLast("readTimeoutHandler", new ReadTimeoutHandler(aliveTimeout));
 				}
 				sc.pipeline().addLast("lengthFieldPrepender", new LengthFieldPrepender(2, true));
-				sc.pipeline().addLast("lengthDecoder", new LengthFieldBasedFrameDecoder(65535, 0, 2, 0, 2));
+				sc.pipeline().addLast("lengthDecoder", new LengthFieldBasedFrameDecoder(65535, 0, 2, -2, 0));
 				sc.pipeline().addLast("windCodec", new WindCodec());
 				sc.pipeline().addLast(new ClientHandshakeHandler(app));
 				sc.pipeline().addLast(new ClientOutboundHandler(interfAbs));
@@ -60,13 +64,16 @@ public class EastWindClient {
 			}
 		});
 
-		channelGuard = new ChannelGuard(bootstrap);
-
 		channelGuard.start();
-
+		synchronized (providerGroups) {
+			for (ProviderGroup pg : providerGroups) {
+				for (Host host : pg.getHosts()) {
+					channelGuard.add(pg.getApp(), host, pg.getClientHandshaker());
+				}
+			}
+		}
 		// TimeoutRunner timeoutRunner = new TimeoutRunner(invocationFuturePool,
 		// invokeTimeout);
-		// ScheduledExecutor.ses.scheduleWithFixedDelay(timeoutRunner, 1, 1,
 		// TimeUnit.SECONDS);
 		return this;
 	}
@@ -83,7 +90,9 @@ public class EastWindClient {
 				providerGroups.add(pg);
 				for (Host host : hosts) {
 					interfAbs.putIfAbsent(host, new InterfAb());
-					channelGuard.add(app, host, clientHandshaker);
+					if (started) {
+						channelGuard.add(app, host, clientHandshaker);
+					}
 				}
 			}
 		}

@@ -7,6 +7,8 @@ import eastwind.io.bioclient.EastWindClient;
 import eastwind.io.bioclient.NetState;
 import eastwind.io.bioclient.NetStateListener;
 import eastwind.io.common.Host;
+import eastwind.io.common.InvocationBuilder;
+import eastwind.io.common.InvocationListener;
 
 public class TestBioClient {
 
@@ -17,7 +19,16 @@ public class TestBioClient {
 		cioClient.addNetStateListener(new NetStateListener() {
 			@Override
 			public void stateChanged(SocketAddress socketAddress, NetState netState) {
-				System.out.println(netState);
+				if (netState == NetState.ACTIVE) {
+					System.out.println(netState);
+					HelloProvider helloProvider = cioClient.createProvider(HelloProvider.class);
+					InvocationBuilder.builder().listen(helloProvider.hello("bio"), new InvocationListener<String>() {
+						@Override
+						protected void onSuccess(String result) {
+							System.out.println(result);
+						}
+					});
+				}
 			}
 		});
 		System.in.read();

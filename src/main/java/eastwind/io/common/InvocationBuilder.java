@@ -1,8 +1,5 @@
-package eastwind.io.nioclient;
+package eastwind.io.common;
 
-import eastwind.io.common.Host;
-import eastwind.io.common.InvocationFuture;
-import eastwind.io.common.InvocationListener;
 
 public class InvocationBuilder {
 

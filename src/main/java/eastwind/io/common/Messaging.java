@@ -2,7 +2,7 @@ package eastwind.io.common;
 
 public class Messaging {
 
-	public static final int INTERF_ID = 11;
+	public static final int INTERF_ID = -1;
 	
 	private int type;
 	private long id;

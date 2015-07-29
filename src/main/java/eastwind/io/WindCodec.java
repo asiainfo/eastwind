@@ -25,23 +25,21 @@ public class WindCodec extends ByteToMessageCodec<Object> {
 
 	@Override
 	protected void encode(ChannelHandlerContext ctx, Object msg, ByteBuf out) throws Exception {
-		ByteBuf buf = ctx.alloc().buffer();
 		if (msg instanceof Ping) {
 			logger.debug("->{}:ping", ctx.channel().remoteAddress());
-			buf.writeShort(0);
+			out.writeShort(0);
 		} else {
 			if (logger.isInfoEnabled()) {
 				logger.info("->{}:{}", ctx.channel().remoteAddress(), JSON.toJSONString(msg));
 			}
-			buf.writeShort(1);
+			out.writeShort(1);
 			Output output = IoPut.outPut();
 			output.clear();
-			output.setOutputStream(new ByteBufOutputStream(buf));
+			output.setOutputStream(new ByteBufOutputStream(out));
 			Kryo kryo = KryoFactory.getLocalKryo();
 			kryo.writeClassAndObject(output, msg);
 			output.flush();
 		}
-		ctx.writeAndFlush(buf);
 	}
 
 	@Override
@@ -52,7 +50,7 @@ public class WindCodec extends ByteToMessageCodec<Object> {
 		short v = in.readShort();
 		switch (v) {
 		case 0:
-			logger.debug("{}->:ping", ctx.channel().remoteAddress());
+			logger.info("{}->:ping", ctx.channel().remoteAddress());
 			out.add(Ping.instance);
 			break;
 		case 1:

@@ -19,6 +19,10 @@ public class ChannelAttr {
 	public static final AttributeKey<ChannelPromise> HANDSHAKE_PROMISE = AttributeKey.valueOf("HANDSHAKE_PROMISE");
 	public static final AttributeKey<Session> SESSION = AttributeKey.valueOf("SESSION");
 
+	public static Channel getChannel() {
+		return ChannelAttr.CHANNEL_TL.get();
+	}
+	
 	public static void setId(Channel channel, int id) {
 		set(channel, ID, id);
 	}

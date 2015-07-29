@@ -39,8 +39,10 @@ public class Session {
 
 	public void setChannel(Channel channel) {
 		this.lastAccessedTime = CommonUtils.currentTimeSeconds();
-		this.channel = new WeakReference<Channel>(channel);
-		ChannelAttr.set(channel, ChannelAttr.SESSION, this);
+		if (this.channel != null) {
+			this.channel = new WeakReference<Channel>(channel);
+			ChannelAttr.set(channel, ChannelAttr.SESSION, this);
+		}
 	}
 
 	public void refreshAccessedTime() {
@@ -54,8 +56,17 @@ public class Session {
 		return null;
 	}
 
-	public Object getAttribute(String name) {
-		return attributes == null ? null : attributes.get(name);
+	@SuppressWarnings("unchecked")
+	public <T> T getAttribute(String name, Class<T> cls) {
+		if (attributes == null) {
+			return null;
+		}
+		return (T) attributes.get(name);
+	}
+
+	public boolean isActive() {
+		Channel channel = getChannel();
+		return channel != null && channel.isActive();
 	}
 
 	public void setAttribute(String name, Object value) {

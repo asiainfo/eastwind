@@ -7,9 +7,9 @@ import java.util.concurrent.TimeUnit;
 import com.google.common.collect.Lists;
 
 import eastwind.io.common.Host;
+import eastwind.io.common.InvocationBuilder;
 import eastwind.io.common.InvocationListener;
 import eastwind.io.nioclient.EastWindClient;
-import eastwind.io.nioclient.InvocationBuilder;
 
 public class TestClient {
 
@@ -30,7 +30,8 @@ public class TestClient {
 		final String remoteApp = "test-server";
 		TestClient testClient = new TestClient();
 		EastWindClient eastWindClient = testClient.getEastWindClient();
-		List<Host> hosts = Lists.newArrayList(new Host("127.0.0.1", 12468));
+		Host host = new Host("127.0.0.1", 12468);
+		List<Host> hosts = Lists.newArrayList(host);
 		eastWindClient.createProviderGroup(remoteApp, hosts, null);
 		HelloProvider helloProvider = eastWindClient.getProvider(remoteApp, HelloProvider.class);
 		InvocationBuilder.builder().async().listen(helloProvider.hello("eastwind1"), new InvocationListener<String>() {
@@ -40,7 +41,7 @@ public class TestClient {
 			}
 		});
 		System.out.println("----");
-		TimeUnit.SECONDS.sleep(1);
+		TimeUnit.SECONDS.sleep(5);
 		System.out.println(helloProvider.hello("eastwind2"));
 		System.out.println(helloProvider.hello("eastwind3"));
 		System.in.read();

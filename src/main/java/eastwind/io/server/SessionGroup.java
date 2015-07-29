@@ -50,12 +50,12 @@ public class SessionGroup {
 		return sessions.get(id);
 	}
 
-	public boolean isOnline(int uid) {
+	public boolean isActive(int uid) {
 		Session session = sessions.get(uid);
 		if (session == null) {
 			return false;
 		}
-		return session.getChannel() != null || session.getChannel().isActive();
+		return session.isActive();
 	}
 
 	public Session createSession(int id, Map<String, Object> attributes, Channel channel) {

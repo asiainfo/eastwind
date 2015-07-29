@@ -1,8 +1,8 @@
 package eastwind.io.common;
 
-public abstract class MessagingHandler {
+public interface MessagingHandler {
 	
-	public abstract int type();
+	int type();
 	
-	public abstract void handle(Messaging messaging);
+	void handle(Messaging messaging);
 }

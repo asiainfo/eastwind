@@ -9,9 +9,9 @@ import java.util.UUID;
 import com.google.common.collect.Lists;
 
 import eastwind.io.common.Host;
+import eastwind.io.common.InvocationBuilder;
 import eastwind.io.common.InvocationListener;
 import eastwind.io.nioclient.EastWindClient;
-import eastwind.io.nioclient.InvocationBuilder;
 import eastwind.io.server.EastWindServer;
 
 public class TestCluster0 {

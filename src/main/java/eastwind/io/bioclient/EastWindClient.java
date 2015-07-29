@@ -21,6 +21,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
+import com.alibaba.fastjson.JSON;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
@@ -45,9 +46,13 @@ public class EastWindClient {
 	private String app;
 	private volatile Socket socket;
 
-	private int reconnectTime = 30;
+	private int reconnectTime = 15 * 1000;
 	private NetState netState = NetState.LOST;
 	private List<NetStateListener> netStateListeners = new CopyOnWriteArrayList<>();
+
+	private int timeout = 60 * 1000;
+	private long lastReadTime = System.currentTimeMillis();
+	private long lastWriteTime = System.currentTimeMillis();
 
 	private volatile Host host;
 	private InterfAb interfAb = new InterfAb();
@@ -71,9 +76,6 @@ public class EastWindClient {
 
 	private Map<Class<?>, Object> providers = new HashMap<Class<?>, Object>();
 	private ClientHandshaker clientHandshaker;
-
-	private int timeout;
-	private long lastReadTime = System.currentTimeMillis();
 
 	public EastWindClient(String app) {
 		this.app = app;
@@ -165,6 +167,7 @@ public class EastWindClient {
 			firstConnect = false;
 			socket = new Socket(host.getIp(), host.getPort());
 			netState = NetState.HANDSHAKING;
+			lastWriteTime = System.currentTimeMillis();
 			System.out.println("connect ok: " + host);
 			lock.lock();
 			connected.signalAll();
@@ -179,6 +182,7 @@ public class EastWindClient {
 	private void writeInvocation(InvocationFuture<?> rf) {
 		invocationFuturePool.put(rf);
 		try {
+			System.out.println("->" + host + ":" + JSON.toJSONString(rf.getRequest()));
 			writeObject(rf.getRequest());
 		} catch (IOException e) {
 			invocationFuturePool.remove(rf.getId());
@@ -190,23 +194,32 @@ public class EastWindClient {
 	}
 
 	private void writeObject(Object object) throws IOException {
-		Output output = IoPut.outPut();
-		output.clear();
-		FrugalOutputStream fos = (FrugalOutputStream) output.getOutputStream();
-		fos.reset();
-		Kryo kryo = KryoFactory.getLocalKryo();
-		kryo.writeClassAndObject(output, object);
-		output.flush();
+		lastWriteTime = System.currentTimeMillis();
 		OutputStream os = socket.getOutputStream();
-		int count = fos.count() + 2;
+		if (object instanceof Ping) {
+			os.write(0);
+			os.write(4);
+			os.write(0);
+			os.write(0);
+			os.flush();
+		} else {
+			Output output = IoPut.outPut();
+			output.clear();
+			FrugalOutputStream fos = (FrugalOutputStream) output.getOutputStream();
+			fos.reset();
+			Kryo kryo = KryoFactory.getLocalKryo();
+			kryo.writeClassAndObject(output, object);
+			output.flush();
+			int count = fos.count() + 4;
 
-		os.write(count >> 8);
-		os.write(count);
-		os.write(0);
-		os.write(1);
+			os.write(count >> 8);
+			os.write(count);
+			os.write(0);
+			os.write(1);
 
-		os.write(fos.buf(), 0, fos.count());
-		os.flush();
+			os.write(fos.buf(), 0, fos.count());
+			os.flush();
+		}
 	}
 
 	private Object read0() throws IOException {
@@ -220,9 +233,13 @@ public class EastWindClient {
 
 		int len = fos.buf()[0] << 8 | fos.buf()[1];
 		int v = fos.buf()[2] << 8 | fos.buf()[3];
-
+		
+		if (len == 4 && v == 0) {
+			return Ping.instance;
+		}
+		
 		fos.reset();
-		for (int i = 0; i < len - 2; i++) {
+		for (int i = 0; i < len - 4; i++) {
 			fos.write(is.read());
 		}
 
@@ -246,6 +263,9 @@ public class EastWindClient {
 				throw new RuntimeException("network is not active now");
 			}
 			InvocationFuture<?> invocationFuture = InvocationFuture.INVOCATION_FUTURE_LOCAL.get();
+			if (invocationFuture == null) {
+				invocationFuture = new InvocationFuture<Object>();
+			}
 			if (netState == NetState.LOST) {
 				invocationFuture.fail();
 			} else {
@@ -282,11 +302,11 @@ public class EastWindClient {
 					break;
 				}
 
-				if (netState != NetState.ACTIVE) {
+				if (netState == NetState.LOST) {
 					if (!firstConnect) {
 						lock.lock();
 						try {
-							toConnect.await(reconnectTime, TimeUnit.SECONDS);
+							toConnect.await(reconnectTime, TimeUnit.MILLISECONDS);
 						} catch (InterruptedException e) {
 							continue;
 						} finally {
@@ -302,7 +322,7 @@ public class EastWindClient {
 					try {
 						InvocationFuture<?> rf = sendQueue.poll(timeout, TimeUnit.MILLISECONDS);
 						if (rf == null) {
-							if (System.currentTimeMillis() - lastReadTime > timeout + 15000) {
+							if (System.currentTimeMillis() - lastWriteTime > timeout + 15000) {
 								if (!socket.isClosed()) {
 									try {
 										socket.close();
@@ -359,6 +379,10 @@ public class EastWindClient {
 				Object obj = null;
 				try {
 					obj = read0();
+					if (obj instanceof Ping) {
+					} else {
+						System.out.println(host + "->:" + JSON.toJSONString(obj));
+					}
 				} catch (IOException e) {
 					netState = NetState.LOST;
 					notifyNetStateListener();

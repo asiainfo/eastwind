@@ -49,10 +49,10 @@ public class EastWindServer {
 
 	public EastWindServer(String app) {
 		this.app = app;
+		serverBootstrap = new ServerBootstrap();
 	}
 
 	public EastWindServer start() {
-		serverBootstrap = new ServerBootstrap();
 		serverBootstrap.group(new NioEventLoopGroup(parentThreads), new NioEventLoopGroup(childThreads));
 		serverBootstrap.channel(NioServerSocketChannel.class);
 		serverBootstrap.childHandler(new ChannelInitializer<SocketChannel>() {
@@ -62,7 +62,7 @@ public class EastWindServer {
 					sc.pipeline().addLast("readTimeoutHandler", new ReadTimeoutHandler(channelTimeout));
 				}
 				sc.pipeline().addLast("lengthFieldPrepender", new LengthFieldPrepender(2, true));
-				sc.pipeline().addLast("lengthDecoder", new LengthFieldBasedFrameDecoder(65535, 0, 2, 0, 2));
+				sc.pipeline().addLast("lengthDecoder", new LengthFieldBasedFrameDecoder(65535, 0, 2, -2, 0));
 				sc.pipeline().addLast("windCodec", new WindCodec());
 				sc.pipeline().addLast(new ServerHandshakeHandler(app, serverHandshaker));
 				sc.pipeline().addLast(new ServerInboundHandler(filters, providerManager, serverCount));
