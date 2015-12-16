@@ -1,7 +1,7 @@
 package eastwind.io.test;
 
 
-public interface HelloProvider {
+public interface Hello {
 
 	public String hello(String name);
 

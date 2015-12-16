@@ -21,7 +21,7 @@ public class TestBioClient {
 			public void stateChanged(SocketAddress socketAddress, NetState netState) {
 				if (netState == NetState.ACTIVE) {
 					System.out.println(netState);
-					HelloProvider helloProvider = cioClient.createProvider(HelloProvider.class);
+					Hello helloProvider = cioClient.createProvider(Hello.class);
 					InvocationBuilder.builder().listen(helloProvider.hello("bio"), new InvocationListener<String>() {
 						@Override
 						protected void onSuccess(String result) {

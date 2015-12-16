@@ -33,7 +33,7 @@ public class TestClient {
 		Host host = new Host("127.0.0.1", 12468);
 		List<Host> hosts = Lists.newArrayList(host);
 		eastWindClient.createProviderGroup(remoteApp, hosts, null);
-		HelloProvider helloProvider = eastWindClient.getProvider(remoteApp, HelloProvider.class);
+		Hello helloProvider = eastWindClient.getProvider(remoteApp, Hello.class);
 		InvocationBuilder.builder().async().listen(helloProvider.hello("eastwind1"), new InvocationListener<String>() {
 			@Override
 			public void operationComplete(String result, Throwable th) {

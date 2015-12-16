@@ -15,7 +15,7 @@ public class TestServer {
 		eastWindServer.setCheckPing(false);
 		eastWindServer.setParentThreads(1);
 		eastWindServer.setPort(12468);
-		eastWindServer.registerProvider(new HelloProviderImpl());
+		eastWindServer.registerProvider(new HelloImpl());
 		eastWindServer.start();
 	}
 

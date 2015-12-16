@@ -1,6 +1,6 @@
 package eastwind.io.test;
 
-public class HelloProviderImpl implements HelloProvider {
+public class HelloImpl implements Hello {
 
 	@Override
 	public String hello(String name) {

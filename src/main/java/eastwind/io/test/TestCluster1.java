@@ -21,7 +21,7 @@ public class TestCluster1 {
 	private EastWindClient eastWindClient;
 	private EastWindServer eastWindServer;
 
-	private HelloProvider helloProvider;
+	private Hello helloProvider;
 
 	private Host host;
 	private List<Host> hosts;
@@ -34,13 +34,13 @@ public class TestCluster1 {
 		eastWindClient = new EastWindClient(app);
 		eastWindClient.start();
 		eastWindClient.createProviderGroup(app, hosts, new ClusterClientHandshaker(app, host));
-		helloProvider = eastWindClient.getProvider(app, HelloProvider.class);
+		helloProvider = eastWindClient.getProvider(app, Hello.class);
 
 		eastWindServer = new EastWindServer(app);
 		eastWindServer.setPort(host.getPort());
 		eastWindServer.setParentThreads(1);
 		eastWindServer.setServerHandshaker(new ClusterServerHandshaker(uuid, eastWindClient.getChannelGuard()));
-		eastWindServer.registerProvider(new HelloProviderImpl());
+		eastWindServer.registerProvider(new HelloImpl());
 		eastWindServer.start();
 	}
 
@@ -62,7 +62,7 @@ public class TestCluster1 {
 		this.hosts.remove(id);
 	}
 
-	public HelloProvider getHelloProvider() {
+	public Hello getHelloProvider() {
 		return helloProvider;
 	}
 
