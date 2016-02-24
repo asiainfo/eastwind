@@ -19,19 +19,17 @@ import eastwind.io2.MessageListener;
 import eastwind.io2.ObjectCodec;
 import eastwind.io2.ObjectHandlerRegistry;
 import eastwind.io2.ObjectInboundHandler;
-import eastwind.io2.client.RpcContextPool;
 
 public class Server {
 
 	private static Logger logger = LoggerFactory.getLogger(Server.class);
 
 	private ServerBootstrap serverBootstrap = new ServerBootstrap();
-	private RpcContextPool rpcContextPool = new RpcContextPool();
 	private ObjectHandlerRegistry objectHandlerRegistry = new ObjectHandlerRegistry();
 	private String ip = "127.0.0.1";
 	private int port = 12468;
 
-	private int parentThreads = 0;
+	private int parentThreads = 1;
 	private int childThreads = 0;
 
 	public void start() {
@@ -42,7 +40,7 @@ public class Server {
 			protected void initChannel(SocketChannel sc) throws Exception {
 				sc.pipeline().addLast("codec", new ObjectCodec());
 				sc.pipeline().addLast("handshakeHandler", new ServerHandshakeHandler());
-				sc.pipeline().addLast("objectHandler", new ObjectInboundHandler(rpcContextPool, objectHandlerRegistry));
+				sc.pipeline().addLast("objectHandler", new ObjectInboundHandler(null, objectHandlerRegistry));
 			}
 		});
 		serverBootstrap.option(ChannelOption.SO_REUSEADDR, true);
@@ -66,8 +64,9 @@ public class Server {
 		Server server = new Server();
 		server.registerMessageListener(new MessageListener<String>() {
 			@Override
-			public void onMessage(String message) {
+			public Object onMessage(String message) {
 				System.out.println("-------" + message);
+				return 1;
 			}
 		});
 		server.registerRpcHandler(new HelloImpl());

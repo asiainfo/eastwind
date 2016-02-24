@@ -5,38 +5,38 @@ import eastwind.io.common.Host;
 public class RpcBuilder {
 
 	@SuppressWarnings("rawtypes")
-	private RpcContext rpcContext = new RpcContext();
+	private Rpc rpcConfig = new Rpc();
 
 	public static RpcBuilder build() {
 		RpcBuilder rb = new RpcBuilder();
-		RpcContext.LOCAL.set(rb.rpcContext);
+		Rpc.LOCAL.set(rb.rpcConfig);
 		return rb.sync();
 	}
 
 	public RpcBuilder sync() {
-		rpcContext.setSync(true);
+		rpcConfig.setSync(true);
 		return this;
 	}
 
 	public RpcBuilder async() {
-		rpcContext.setSync(false);
+		rpcConfig.setSync(false);
 		return this;
 	}
 
 	public RpcBuilder host(Host host) {
-		rpcContext.setHost(host);
+		rpcConfig.setHost(host);
 		return this;
 	}
 
 	@SuppressWarnings("unchecked")
 	public <R> R addListener(R r, ResultListener<R> listener) {
-		rpcContext.addListener(listener);
+		rpcConfig.addListener(listener);
 		return r;
 	}
 
 	@SuppressWarnings("unchecked")
 	public <T> T addVoidListener(T t, VoidListener listener) {
-		rpcContext.addListener(listener);
+		rpcConfig.addListener(listener);
 		return t;
 	}
 }

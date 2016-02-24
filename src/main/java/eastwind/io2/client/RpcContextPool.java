@@ -5,13 +5,13 @@ import java.util.concurrent.ConcurrentMap;
 
 public class RpcContextPool {
 
-	private ConcurrentMap<Long, RpcContext<?>> rpcContexts = new ConcurrentHashMap<Long, RpcContext<?>>();
+	private ConcurrentMap<Long, Rpc<?>> rpcContexts = new ConcurrentHashMap<Long, Rpc<?>>();
 
-	public void put(RpcContext<?> rpcContext) {
+	public void put(Rpc<?> rpcContext) {
 		rpcContexts.put(rpcContext.getId(), rpcContext);
 	}
 
-	public RpcContext<?> remove(Long id) {
+	public Rpc<?> remove(Long id) {
 		return rpcContexts.remove(id);
 	}
 

@@ -9,54 +9,78 @@ import io.netty.handler.codec.ByteToMessageCodec;
 import java.util.List;
 
 import com.alibaba.fastjson.JSON;
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
 
 public class ObjectCodec extends ByteToMessageCodec<Object> {
 
-	public static final byte PING = 0;
-	public static final byte SIMPLE = 0x55;
-	public static final byte RPC = (byte) 0xaa;
+	private static final byte PING = 0;
+	private static final byte SIMPLE = 0x55;
+	private static final byte HEADED_OBJECT = 0x79;
 
-	private SelfDescribedSerializer internalSerializer = new KryoSerializer();
-	private SelfDescribedSerializer contentSerializer = internalSerializer;
+	private SelfDescribedSerializer contentSerializer = new KryoSerializer();
 
 	@Override
 	protected void encode(ChannelHandlerContext ctx, Object message, ByteBuf out) throws Exception {
 		if (message instanceof Ping) {
 			out.writeByte(0);
-		} else if (message instanceof Request || message instanceof Response) {
-			ByteBuf headerBuf = ctx.alloc().buffer();
-			headerBuf.writeByte(RPC);
-			headerBuf.writeMedium(0);
+		} else if (message instanceof HeadedObject) {
+			HeadedObject headedObject = (HeadedObject) message;
+			Header header = headedObject.getHeader();
 
-			int headerFrom = headerBuf.writerIndex();
-			int contentFrom = out.writerIndex();
+			ByteBuf headerBuf = ctx.alloc().buffer(64);
+			headerBuf.writeByte(HEADED_OBJECT);
+			headerBuf.writeMedium(0);
 			headerBuf.writeShort(0);
 
-			if (message instanceof Request) {
-				writeRequest(message, headerBuf, out);
-			} else if (message instanceof Response) {
-				writeResponse(message, headerBuf, out);
+			Kryo kryo = KryoUtil.getKryo();
+			Output output = KryoUtil.getOutPut();
+			write(headerBuf, kryo, output, header, false);
+
+			int i = headerBuf.writerIndex();
+			headerBuf.writerIndex(4);
+			headerBuf.writeShort(i - 6);
+			if (header.getSize() == 0) {
+				headerBuf.writerIndex(i);
+			} else {
+				if (header.getSize() == 1) {
+					contentSerializer.write(new ByteBufOutputStream(out), headedObject.getObj());
+				} else if (header.getSize() > 1) {
+					headerBuf.writerIndex(i);
+					headerBuf.writeShort(0);
+					Object[] objs = (Object[]) headedObject.getObj();
+					int[] objLens = new int[objs.length];
+					ByteBufOutputStream os = new ByteBufOutputStream(out);
+					for (int j = 0; j < objs.length; j++) {
+						int k = out.writerIndex();
+						contentSerializer.write(os, objs[j]);
+						objLens[j] = out.writerIndex() - k;
+					}
+
+					write(headerBuf, kryo, output, objLens, false);
+
+					int t = headerBuf.writerIndex();
+					headerBuf.writerIndex(i);
+					headerBuf.writeShort(t - i - 2);
+					i = t;
+				}
+
+				headerBuf.writerIndex(1);
+				headerBuf.writeMedium(i - 4 + out.writerIndex());
+				headerBuf.writerIndex(i);
 			}
 
-			int headerNow = headerBuf.writerIndex();
-			headerBuf.writerIndex(headerFrom);
-			int headerLen = headerNow - headerFrom;
-			headerBuf.writeShort(headerLen - 2);
-
-			int contentNow = out.writerIndex();
-			headerBuf.writerIndex(headerFrom - 3);
-			int contentLen = contentNow - contentFrom;
-			headerBuf.writeMedium(headerLen + contentLen);
-			headerBuf.writerIndex(headerNow);
-
 			ctx.write(headerBuf);
-			
-			System.out.println("encode:" + JSON.toJSONString(message));
 		} else {
 			out.writeByte(SIMPLE);
 			out.writeMedium(0);
 			int from = out.writerIndex();
-			internalSerializer.write(new ByteBufOutputStream(out), message);
+
+			Kryo kryo = KryoUtil.getKryo();
+			Output output = KryoUtil.getOutPut();
+			write(out, kryo, output, message, true);
+
 			int now = out.writerIndex();
 			out.writerIndex(from - 3);
 			out.writeMedium(now - from);
@@ -64,31 +88,14 @@ public class ObjectCodec extends ByteToMessageCodec<Object> {
 		}
 	}
 
-	private void writeRequest(Object message, ByteBuf headerBuf, ByteBuf contentBuf) {
-		Request request = (Request) message;
-		int contentFrom = contentBuf.writerIndex();
-		ByteBufOutputStream bbos = new ByteBufOutputStream(contentBuf);
-		if (RequestHeader.isMessage(request.getHeader())) {
-			contentSerializer.write(bbos, request.getArg());
-			request.getHeader().setParamLens(new int[] { contentBuf.writerIndex() - contentFrom });
-		} else if (RequestHeader.isRpc(request.getHeader())) {
-			Object[] args = (Object[]) request.getArg();
-			int[] paramLens = new int[args.length];
-			for (int i = 0; i < args.length; i++) {
-				int wi = contentBuf.writerIndex();
-				contentSerializer.write(bbos, args[i]);
-				paramLens[i] = contentBuf.writerIndex() - wi;
-			}
-			request.getHeader().setParamLens(paramLens);
+	private void write(ByteBuf buf, Kryo kryo, Output output, Object obj, boolean cls) {
+		output.setOutputStream(new ByteBufOutputStream(buf));
+		if (cls) {
+			kryo.writeClassAndObject(output, obj);
+		} else {
+			kryo.writeObject(output, obj);
 		}
-		internalSerializer.write(new ByteBufOutputStream(headerBuf), request.getHeader());
-	}
-
-	private void writeResponse(Object message, ByteBuf headerBuf, ByteBuf contentBuf) {
-		Response response = (Response) message;
-		ByteBufOutputStream bbos = new ByteBufOutputStream(contentBuf);
-		contentSerializer.write(bbos, response.getResult());
-		internalSerializer.write(new ByteBufOutputStream(headerBuf), response.getHeader());
+		output.flush();
 	}
 
 	@Override
@@ -101,61 +108,48 @@ public class ObjectCodec extends ByteToMessageCodec<Object> {
 				in.markReaderIndex();
 				int model = in.readByte();
 				int len = in.readMedium();
-				if (in.readableBytes() >= len) {
-
-					if (model == RPC) {
-						int headerLen = in.readShort();
-						Object header = internalSerializer.read(new ByteBufInputStream(in, headerLen));
-						ByteBuf contentBuf = in.slice(in.readerIndex(), len - headerLen - 2);
-						in.skipBytes(contentBuf.readableBytes());
-						if (header instanceof RequestHeader) {
-							decodeRequest(out, header, contentBuf);
-						} else if (header instanceof ResponseHeader) {
-							decodeResponse(out, header, contentBuf);
-						}
-
-					} else if (model == SIMPLE) {
-						Object obj = internalSerializer.read(new ByteBufInputStream(in, len));
-						logDecode(obj);
-						out.add(obj);
-					}
-				} else {
+				if (in.readableBytes() < len) {
 					in.resetReaderIndex();
+				} else {
+					if (model == SIMPLE) {
+						Kryo kryo = KryoUtil.getKryo();
+						Input input = KryoUtil.getInPut();
+						input.setInputStream(new ByteBufInputStream(in, len));
+						Object obj = kryo.readClassAndObject(input);
+
+						System.out.println(JSON.toJSONString(obj));
+						out.add(obj);
+					} else if (model == HEADED_OBJECT) {
+						int headerLen = in.readShort();
+						HeadedObject headedObject = new HeadedObject();
+
+						Kryo kryo = KryoUtil.getKryo();
+						Input input = KryoUtil.getInPut();
+						input.setInputStream(new ByteBufInputStream(in, headerLen));
+						Header header = kryo.readObject(input, Header.class);
+
+						headedObject.setHeader(header);
+						if (header.getSize() == 1) {
+							Object obj = contentSerializer.read(new ByteBufInputStream(in, len - headerLen - 2));
+							headedObject.setObj(obj);
+						} else if (header.getSize() > 1) {
+							int sizeLen = in.readShort();
+
+							input.setInputStream(new ByteBufInputStream(in, sizeLen));
+							int[] sizes = kryo.readObject(input, int[].class);
+
+							Object[] objs = new Object[sizes.length];
+							for (int i = 0; i < sizes.length; i++) {
+								objs[i] = contentSerializer.read(new ByteBufInputStream(in, sizes[i]));
+							}
+							headedObject.setObjs(objs);
+						}
+						System.out.println(JSON.toJSONString(headedObject));
+						out.add(headedObject);
+					}
 				}
 			}
 		}
-	}
-
-	private void decodeResponse(List<Object> out, Object header, ByteBuf buf) {
-		ResponseHeader responseHeader = (ResponseHeader) header;
-		Response response = new Response();
-		response.setHeader(responseHeader);
-		Object content = contentSerializer.read(new ByteBufInputStream(buf));
-		response.setResult(content);
-		out.add(response);
-		logDecode(response);
-	}
-
-	private void decodeRequest(List<Object> out, Object header, ByteBuf buf) {
-		RequestHeader requestHeader = (RequestHeader) header;
-		Request request = new Request();
-		request.setHeader(requestHeader);
-		if (RequestHeader.isMessage(requestHeader)) {
-			Object content = contentSerializer.read(new ByteBufInputStream(buf));
-			request.setArg(content);
-		} else if (RequestHeader.isRpc(requestHeader)) {
-			Object[] args = new Object[requestHeader.getParamLens().length];
-			for (int i = 0; i < args.length; i++) {
-				args[i] = contentSerializer.read(new ByteBufInputStream(buf, requestHeader.getParamLens()[i]));
-			}
-			request.setArg(args);
-		}
-		out.add(request);
-		logDecode(request);
-	}
-
-	private void logDecode(Object obj) {
-		System.out.println("decode:" + JSON.toJSONString(obj));
 	}
 
 }

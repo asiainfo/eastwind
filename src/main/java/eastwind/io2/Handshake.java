@@ -6,28 +6,28 @@ import eastwind.io.common.Host;
 
 public class Handshake {
 
-	private String uuid;
-	private String preUuid;
+	private String myUuid;
+	private String yourUuid;
 	private String app;
 	// 作为服务端时的地址和端口
 	private Host host;
 	private boolean success;
 	private Map<Object, Object> properties;
 
-	public String getUuid() {
-		return uuid;
+	public String getMyUuid() {
+		return myUuid;
 	}
 
-	public void setUuid(String uuid) {
-		this.uuid = uuid;
+	public void setMyUuid(String myUuid) {
+		this.myUuid = myUuid;
 	}
 
-	public String getPreUuid() {
-		return preUuid;
+	public String getYourUuid() {
+		return yourUuid;
 	}
 
-	public void setPreUuid(String preUuid) {
-		this.preUuid = preUuid;
+	public void setYourUuid(String yourUuid) {
+		this.yourUuid = yourUuid;
 	}
 
 	public String getApp() {

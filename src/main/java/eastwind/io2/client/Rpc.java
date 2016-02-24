@@ -7,9 +7,9 @@ import eastwind.io.common.Host;
 import eastwind.io2.Request;
 import eastwind.io2.Response;
 
-public class RpcContext<R> {
+public class Rpc<R> {
 
-	public static ThreadLocal<RpcContext<?>> LOCAL = new ThreadLocal<RpcContext<?>>();
+	public static ThreadLocal<Rpc<?>> LOCAL = new ThreadLocal<Rpc<?>>();
 	
 	private boolean sync = true;
 	private Host host;

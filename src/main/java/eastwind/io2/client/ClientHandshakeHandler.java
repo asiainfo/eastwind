@@ -15,25 +15,10 @@ public class ClientHandshakeHandler extends ChannelDuplexHandler {
 	// }
 
 	@Override
-	public void channelActive(ChannelHandlerContext ctx) throws Exception {
-		ClientChannel cc = ClientChannel.get(ctx.channel());
-		cc.addConnectedTimes();
-		cc.setLastConnectedTime(System.currentTimeMillis());
-
-		ClientHandshake clientHandshake = getHandshake(ctx);
-		Handshake handshake = new Handshake();
-		handshake.setSuccess(true);
-		handshake.setApp(clientContext.getApp());
-		handshake.setUuid(clientContext.getUuid());
-		handshake.setProperties(clientHandshake.prepare());
-		ctx.channel().writeAndFlush(handshake);
-	}
-
-	@Override
 	public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-		ClientChannel cc = ClientChannel.get(ctx.channel());
-		cc.setLastCloseTime(System.currentTimeMillis());
-		cc.setHandshakePromise(null);
+		OutboundChannel oc = OutboundChannel.get(ctx.channel());
+		oc.setLastCloseTime(System.currentTimeMillis());
+		oc.setHandshakePromise(null);
 		super.channelInactive(ctx);
 	}
 
@@ -52,7 +37,7 @@ public class ClientHandshakeHandler extends ChannelDuplexHandler {
 	public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
 		if (msg instanceof Handshake) {
 			Handshake handshake = (Handshake) msg;
-			ClientChannel clientChannel = ClientChannel.get(ctx.channel());
+			OutboundChannel clientChannel = OutboundChannel.get(ctx.channel());
 			if (handshake.isSuccess()) {
 				this.state = 1;
 				clientChannel.getHandshakePromise().setSuccess();
@@ -65,7 +50,7 @@ public class ClientHandshakeHandler extends ChannelDuplexHandler {
 	}
 
 	private ClientHandshake getHandshake(ChannelHandlerContext ctx) {
-		ClientChannel cc = ClientChannel.get(ctx.channel());
+		OutboundChannel cc = OutboundChannel.get(ctx.channel());
 		ClientHandshake clientHandshake = cc.getClientHandshake();
 		if (clientHandshake == null) {
 			clientHandshake = DefaultClientHandshake.INSTANCE;

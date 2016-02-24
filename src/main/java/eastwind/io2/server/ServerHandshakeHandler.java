@@ -29,7 +29,7 @@ public class ServerHandshakeHandler extends ChannelDuplexHandler {
 				this.state = success ? 1 : -1;
 
 				Handshake handshakeOut = new Handshake();
-				handshakeOut.setUuid(serverContext.getUuid());
+				handshakeOut.setMyUuid(serverContext.getUuid());
 				handshakeOut.setApp(serverContext.getName());
 				handshakeOut.setHost(serverContext.getHost());
 				handshakeOut.setSuccess(success);

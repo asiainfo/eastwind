@@ -5,8 +5,9 @@ import io.netty.channel.SimpleChannelInboundHandler;
 
 import java.util.List;
 
-import eastwind.io2.client.RpcContext;
+import eastwind.io2.client.OutboundChannel;
 import eastwind.io2.client.RpcContextPool;
+import eastwind.io2.client.RpcMediacy;
 
 public class ObjectInboundHandler extends SimpleChannelInboundHandler<Object> {
 
@@ -33,7 +34,7 @@ public class ObjectInboundHandler extends SimpleChannelInboundHandler<Object> {
 				RpcHandler handler = objectHandlerRegistry.getRpcHandler(header.getNamespace(),
 						header.getParamLens().length);
 				Object result = handler.invoke((Object[]) request.getArg());
-				
+
 				ResponseHeader responseHeader = new ResponseHeader();
 				responseHeader.setId(header.getId());
 				Response response = new Response();
@@ -43,9 +44,15 @@ public class ObjectInboundHandler extends SimpleChannelInboundHandler<Object> {
 			}
 		} else if (message instanceof Response) {
 			Response response = (Response) message;
-			@SuppressWarnings("rawtypes")
-			RpcContext rpcContext = rpcContextPool.remove(response.getHeader().getId());
-			rpcContext.done(response);
+			OutboundChannel cc = OutboundChannel.get(ctx.channel());
+			RpcMediacy rpcMediacy = cc.removeRpcMediacy(response.getHeader().getId());
+			rpcMediacy.setResponse(response);
+//			if (rpcContextPool != null) {
+//				Response response = (Response) message;
+//				@SuppressWarnings("rawtypes")
+//				Rpc rpcContext = rpcContextPool.remove(response.getHeader().getId());
+//				rpcContext.done(response);
+//			}
 		}
 	}
 
