@@ -17,13 +17,18 @@ public class HeadedObject {
 		return obj;
 	}
 
+	public void setTh(Throwable th) {
+		this.header.setSize((byte) 1);
+		this.obj = th;
+	}
+	
 	public void setObj(Object obj) {
-		this.header.setSize(1);
+		this.header.setSize((byte) 1);
 		this.obj = obj;
 	}
 
 	public void setObjs(Object[] objs) {
-		this.header.setSize(objs.length);
+		this.header.setSize((byte) objs.length);
 		this.obj = objs;
 	}
 }

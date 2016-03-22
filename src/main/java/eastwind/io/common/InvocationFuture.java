@@ -9,7 +9,7 @@ public class InvocationFuture<R> {
 	public static ThreadLocal<InvocationFuture<?>> INVOCATION_FUTURE_LOCAL = new ThreadLocal<InvocationFuture<?>>();
 
 	private Request request;
-	private Respone<R> respone;
+	private Response<R> respone;
 
 	private long time = System.currentTimeMillis();
 	private int timeout = 10000;
@@ -79,7 +79,7 @@ public class InvocationFuture<R> {
 		getSubInvocationFutures0().add(invocationFuture);
 	}
 
-	public void done(Respone<R> respone) {
+	public void done(Response<R> respone) {
 		synchronized (this) {
 			this.stat[0] = 1;
 			this.respone = respone;
@@ -154,11 +154,11 @@ public class InvocationFuture<R> {
 		this.request = request;
 	}
 
-	public Respone<R> getRespone() {
+	public Response<R> getRespone() {
 		return respone;
 	}
 
-	public void setRespone(Respone<R> respone) {
+	public void setRespone(Response<R> respone) {
 		this.respone = respone;
 	}
 

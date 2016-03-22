@@ -23,12 +23,12 @@ import io.netty.handler.codec.http.HttpServerCodec;
 
 /**
  */
-public class WebSocketServerInitializer extends ChannelInitializer<SocketChannel> {
+public class WebPushHandlerInitializer extends ChannelInitializer<SocketChannel> {
 
 	private Upgrader upgrader;
 	private ChannelManager channelManager;
 
-    public WebSocketServerInitializer(Upgrader upgrader, ChannelManager channelManager) {
+    public WebPushHandlerInitializer(Upgrader upgrader, ChannelManager channelManager) {
 		this.upgrader = upgrader;
 		this.channelManager = channelManager;
 	}
@@ -38,6 +38,7 @@ public class WebSocketServerInitializer extends ChannelInitializer<SocketChannel
         ChannelPipeline pipeline = ch.pipeline();
         pipeline.addLast(new HttpServerCodec());
         pipeline.addLast(new HttpObjectAggregator(65536));
-        pipeline.addLast(new WebSocketServerHandler(upgrader, channelManager));
+        pipeline.addLast(new WebMessageEncoder());
+        pipeline.addLast(new WebPushHandler(upgrader, channelManager));
     }
 }

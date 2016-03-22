@@ -12,7 +12,7 @@ import eastwind.io.common.InterfAb;
 import eastwind.io.common.InvocationFuture;
 import eastwind.io.common.InvocationFuturePool;
 import eastwind.io.common.Messaging;
-import eastwind.io.common.Respone;
+import eastwind.io.common.Response;
 import eastwind.io.common.ShutdownObj;
 
 @Sharable
@@ -43,9 +43,9 @@ public class ClientInboundHandler extends SimpleChannelInboundHandler<Object> {
 	@SuppressWarnings("unchecked")
 	@Override
 	protected void channelRead0(ChannelHandlerContext ctx, Object msg) throws Exception {
-		if (msg instanceof Respone) {
+		if (msg instanceof Response) {
 			@SuppressWarnings("rawtypes")
-			Respone respone = (Respone) msg;
+			Response respone = (Response) msg;
 			InvocationFuture<?> invocationFuture = requestPool.remove(respone.getId());
 			if (respone.getResult() instanceof ShutdownObj) {
 				channelGuard.shutdown(invocationFuture.getHost());

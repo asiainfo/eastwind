@@ -8,6 +8,7 @@ import java.util.List;
 import eastwind.io2.client.OutboundChannel;
 import eastwind.io2.client.RpcContextPool;
 import eastwind.io2.client.RpcMediacy;
+import eastwind.io3.RpcHandler;
 
 public class ObjectInboundHandler extends SimpleChannelInboundHandler<Object> {
 

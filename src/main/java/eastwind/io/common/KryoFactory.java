@@ -18,7 +18,7 @@ public class KryoFactory {
 	public static Kryo getKryo() {
 		Kryo kryo = new Kryo();
 		kryo.register(Request.class, 11);
-		kryo.register(Respone.class, 12);
+		kryo.register(Response.class, 12);
 		kryo.register(Messaging.class, 13);
 		kryo.register(Host.class, 14);
 		kryo.register(Handshake.class, 15);

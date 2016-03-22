@@ -9,7 +9,8 @@ public class Header {
 	private long id;
 	private byte model;
 	private String namespace;
-	private int size;
+	private byte size;
+	private boolean th;
 	
 	public long getId() {
 		return id;
@@ -35,12 +36,20 @@ public class Header {
 		this.namespace = namespace;
 	}
 
-	public int getSize() {
+	public byte getSize() {
 		return size;
 	}
 
-	public void setSize(int size) {
+	public void setSize(byte size) {
 		this.size = size;
+	}
+
+	public boolean isTh() {
+		return th;
+	}
+
+	public void setTh(boolean th) {
+		this.th = th;
 	}
 
 }

@@ -12,6 +12,8 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
+import eastwind.io3.RpcHandler;
+
 public class ObjectHandlerRegistry {
 
 	private Map<Class<?>, CopyOnWriteArrayList<MessageListener<Object>>> messageListeners = Maps.newHashMap();
@@ -48,7 +50,7 @@ public class ObjectHandlerRegistry {
 
 		for (Method method : methods) {
 			synchronized (rpcHandlers) {
-				RpcHandler rpcHandler = new RpcHandler(instance, method);
+				RpcHandler rpcHandler = new RpcHandler(instance, method, "");
 				String key = EastwindUtils.getDefaultNamespace(method);
 				List<RpcHandler> handlers = rpcHandlers.get(key);
 				if (handlers == null) {

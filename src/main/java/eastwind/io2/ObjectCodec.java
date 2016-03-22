@@ -8,6 +8,9 @@ import io.netty.handler.codec.ByteToMessageCodec;
 
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.alibaba.fastjson.JSON;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
@@ -15,6 +18,8 @@ import com.esotericsoftware.kryo.io.Output;
 
 public class ObjectCodec extends ByteToMessageCodec<Object> {
 
+	private static Logger logger = LoggerFactory.getLogger(ObjectCodec.class);
+	
 	private static final byte PING = 0;
 	private static final byte SIMPLE = 0x55;
 	private static final byte HEADED_OBJECT = 0x79;
@@ -117,7 +122,7 @@ public class ObjectCodec extends ByteToMessageCodec<Object> {
 						input.setInputStream(new ByteBufInputStream(in, len));
 						Object obj = kryo.readClassAndObject(input);
 
-						System.out.println(JSON.toJSONString(obj));
+						logDecode(obj);
 						out.add(obj);
 					} else if (model == HEADED_OBJECT) {
 						int headerLen = in.readShort();
@@ -144,7 +149,7 @@ public class ObjectCodec extends ByteToMessageCodec<Object> {
 							}
 							headedObject.setObjs(objs);
 						}
-						System.out.println(JSON.toJSONString(headedObject));
+						logDecode(headedObject);
 						out.add(headedObject);
 					}
 				}
@@ -152,4 +157,7 @@ public class ObjectCodec extends ByteToMessageCodec<Object> {
 		}
 	}
 
+	private void logDecode(Object obj) {
+		logger.info("decode:{}", JSON.toJSONString(obj));
+	}
 }

@@ -7,7 +7,6 @@ import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.http.QueryStringDecoder;
-import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import io.netty.util.concurrent.GenericFutureListener;
 
 import java.io.BufferedReader;
@@ -20,15 +19,14 @@ public class WebPush {
 	private ServerBootstrap b = new ServerBootstrap();
 	private Upgrader upgrader = null;
 
-	ChannelManager channelManager = new ChannelManager();
-	
+	private ChannelManager channelManager = new ChannelManager();
+
 	public void start() {
 		EventLoopGroup bossGroup = new NioEventLoopGroup(Runtime.getRuntime().availableProcessors());
 		EventLoopGroup workerGroup = new NioEventLoopGroup();
-		
 
 		b.group(bossGroup, workerGroup).channel(NioServerSocketChannel.class);
-		b.childHandler(new WebSocketServerInitializer(upgrader, channelManager));
+		b.childHandler(new WebPushHandlerInitializer(upgrader, channelManager));
 		b.bind(port).addListener(new GenericFutureListener<ChannelFuture>() {
 			@Override
 			public void operationComplete(ChannelFuture future) throws Exception {
@@ -53,7 +51,7 @@ public class WebPush {
 	public void setPort(int port) {
 		this.port = port;
 	}
-	
+
 	public static void main(String[] args) throws IOException {
 		WebPush webPush = new WebPush();
 		webPush.setPort(18442);
@@ -69,14 +67,14 @@ public class WebPush {
 		};
 		webPush.setUpgrader(upgrader);
 		webPush.start();
-		
+
 		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 		for (;;) {
 			String line = br.readLine();
 			if (!line.trim().equals("")) {
 				ChannelGroup channelGroup = webPush.channelManager.getGroup("/default");
 				if (channelGroup != null) {
-					channelGroup.writeAndFlush(new TextWebSocketFrame(line));
+					channelGroup.writeAndFlush(line);
 				}
 			}
 		}

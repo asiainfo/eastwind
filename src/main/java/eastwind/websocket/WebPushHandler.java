@@ -17,6 +17,7 @@ package eastwind.websocket;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
@@ -35,19 +36,22 @@ import io.netty.handler.codec.http.websocketx.PongWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshakerFactory;
+import io.netty.util.AttributeKey;
 import io.netty.util.CharsetUtil;
 
 /**
  * Handles handshakes and messages
  */
-public class WebSocketServerHandler extends SimpleChannelInboundHandler<Object> {
+public class WebPushHandler extends SimpleChannelInboundHandler<Object> {
+
+	public static AttributeKey<Boolean> UPGRADED = AttributeKey.valueOf("UPGRADED");
 
 	private Upgrader upgrader;
 	private ChannelManager channelManager;
 
 	private WebSocketServerHandshaker handshaker;
-	
-	public WebSocketServerHandler(Upgrader upgrader, ChannelManager channelManager) {
+
+	public WebPushHandler(Upgrader upgrader, ChannelManager channelManager) {
 		this.upgrader = upgrader;
 		this.channelManager = channelManager;
 	}
@@ -69,7 +73,8 @@ public class WebSocketServerHandler extends SimpleChannelInboundHandler<Object> 
 	private void handleHttpRequest(ChannelHandlerContext ctx, FullHttpRequest req) {
 		// Handle a bad request.
 		if (!req.getDecoderResult().isSuccess()) {
-			sendHttpResponse(ctx, req, new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.BAD_REQUEST));
+			sendHttpResponse(ctx, req,
+					new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.BAD_REQUEST));
 			return;
 		}
 
@@ -86,27 +91,26 @@ public class WebSocketServerHandler extends SimpleChannelInboundHandler<Object> 
 			return;
 		}
 
-		// Handshake
-		WebSocketServerHandshakerFactory wsFactory = new WebSocketServerHandshakerFactory(getWebSocketLocation(req,
-				upgrade.getGroup()), null, true);
-		handshaker = wsFactory.newHandshaker(req);
-		if (handshaker == null) {
-			WebSocketServerHandshakerFactory.sendUnsupportedVersionResponse(ctx.channel());
-		} else {
-			handshaker.handshake(ctx.channel(), req);
-			channelManager.addChannel(upgrade.getUid(), ctx.channel());
-			channelManager.joinGroup(upgrade.getGroup(), ctx.channel());
-			
-			FullHttpResponse res = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK);
-			res.headers().set(HttpHeaders.Names.CONTENT_TYPE, "text/html; charset=UTF-8");
-			sendHttpResponse(ctx, req, res);
-			return;
+		Channel channel = ctx.channel();
+
+		// websocket
+		if ("Upgrade".equals(req.headers().get(HttpHeaders.Names.CONNECTION))
+				&& "websocket".equals(req.headers().get(HttpHeaders.Names.UPGRADE))) {
+			// Handshake
+			WebSocketServerHandshakerFactory wsFactory = new WebSocketServerHandshakerFactory(getWebSocketLocation(req,
+					upgrade.getGroup()), null, true);
+			handshaker = wsFactory.newHandshaker(req);
+			if (handshaker == null) {
+				WebSocketServerHandshakerFactory.sendUnsupportedVersionResponse(channel);
+				return;
+			} else {
+				handshaker.handshake(channel, req);
+				channel.attr(UPGRADED).set(Boolean.TRUE);
+			}
 		}
 
-		FullHttpResponse res = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.NOT_FOUND);
-		sendHttpResponse(ctx, req, res);
-		return;
-
+		channelManager.addChannel(upgrade.getUid(), channel);
+		channelManager.joinGroup(upgrade.getGroup(), channel);
 	}
 
 	private void handleWebSocketFrame(ChannelHandlerContext ctx, WebSocketFrame frame) {

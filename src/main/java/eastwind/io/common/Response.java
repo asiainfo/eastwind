@@ -1,16 +1,16 @@
 package eastwind.io.common;
 
-public class Respone<R> {
+public class Response<R> {
 
 	private long id;
 	private R result;
 	private Throwable th;
 
-	public Respone() {
+	public Response() {
 
 	}
 
-	public Respone(long id) {
+	public Response(long id) {
 		this.id = id;
 	}
 

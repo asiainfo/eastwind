@@ -15,7 +15,7 @@ import eastwind.io.Session;
 import eastwind.io.common.Messaging;
 import eastwind.io.common.Ping;
 import eastwind.io.common.Request;
-import eastwind.io.common.Respone;
+import eastwind.io.common.Response;
 import eastwind.io.common.ShutdownObj;
 
 @Sharable
@@ -69,7 +69,7 @@ public class ServerInboundHandler extends SimpleChannelInboundHandler<Object> {
 
 			// shutdown
 			if (serverCount.isShutdown()) {
-				Respone<Object> respone = new Respone<Object>(request.getId());
+				Response<Object> respone = new Response<Object>(request.getId());
 				respone.setResult(new ShutdownObj());
 				ctx.channel().writeAndFlush(respone);
 				return;
@@ -94,7 +94,7 @@ public class ServerInboundHandler extends SimpleChannelInboundHandler<Object> {
 		FilterChain filterChain = new FilterChain(handler, ctx.channel(), filters, request);
 		filterChain.doNextFilter();
 
-		Respone<Object> respone = new Respone<Object>(request.getId());
+		Response<Object> respone = new Response<Object>(request.getId());
 		respone.setResult(filterChain.getResult());
 		if (filterChain.getTh() != null) {
 			filterChain.getTh().printStackTrace();

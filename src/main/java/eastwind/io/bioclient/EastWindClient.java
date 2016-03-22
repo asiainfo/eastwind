@@ -38,7 +38,7 @@ import eastwind.io.common.MessagingHandler;
 import eastwind.io.common.MessagingHandlerManager;
 import eastwind.io.common.Ping;
 import eastwind.io.common.Request;
-import eastwind.io.common.Respone;
+import eastwind.io.common.Response;
 import eastwind.io.common.TimedIdSequence100;
 
 public class EastWindClient {
@@ -391,8 +391,8 @@ public class EastWindClient {
 				}
 
 				lastReadTime = System.currentTimeMillis();
-				if (obj instanceof Respone) {
-					handRespone((Respone<?>) obj);
+				if (obj instanceof Response) {
+					handRespone((Response<?>) obj);
 				} else if (obj instanceof Handshake) {
 					handHandshake((Handshake) obj);
 				} else if (obj instanceof Messaging) {
@@ -433,7 +433,7 @@ public class EastWindClient {
 			}
 		}
 
-		private void handRespone(final Respone<?> respone) {
+		private void handRespone(final Response<?> respone) {
 			exe.execute(new Runnable() {
 				@Override
 				public void run() {
