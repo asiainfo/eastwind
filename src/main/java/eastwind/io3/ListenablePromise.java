@@ -12,7 +12,7 @@ public class ListenablePromise<V> extends AbstractFuture<V> implements Delayed {
 	protected long time;
 	protected long expiration;
 
-	private long exeTime;
+	protected long exeTime;
 
 	public void succeeded() {
 		super.set(null);
@@ -26,6 +26,10 @@ public class ListenablePromise<V> extends AbstractFuture<V> implements Delayed {
 		super.setException(th);
 	}
 
+	public void setAttach(Object attach) {
+		this.attach = attach;
+	}
+
 	public Object getAttach() {
 		return attach;
 	}
@@ -36,6 +40,7 @@ public class ListenablePromise<V> extends AbstractFuture<V> implements Delayed {
 
 	public void setTimeAndExpiration(long time, long expiration) {
 		this.time = time;
+		this.expiration = expiration;
 		this.exeTime = this.time + this.expiration;
 	}
 

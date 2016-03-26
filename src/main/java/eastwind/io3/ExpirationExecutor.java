@@ -1,72 +1,117 @@
 package eastwind.io3;
 
+import java.io.IOException;
+import java.util.Random;
 import java.util.concurrent.DelayQueue;
 import java.util.concurrent.TimeUnit;
-
-import eastwind.io.common.NamedThreadFactory;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ExpirationExecutor {
 
-	private byte executorSize;
+	private Thread t;
 
-	private Executor[] executors;
+	private volatile DelayQueue<ListenablePromise<?>> current;
+	private DelayQueue<ListenablePromise<?>>[] queues;
 
-	private NamedThreadFactory threadFactory = new NamedThreadFactory("ExpirationExecutor");
-
-	public ExpirationExecutor(byte executorSize) {
-		this.executorSize = executorSize;
-		this.executors = new Executor[executorSize];
+	public static void main(String[] args) throws IOException {
+		ExpirationExecutor expirationExecutor = new ExpirationExecutor();
+		for (int i = 0; i < 100; i++) {
+			expirationExecutor.add(lp());
+		}
+		System.in.read();
 	}
 
-	public <V> void add(ListenablePromise<V> promise) {
-		int i = (byte) ((promise.getId() >> 1) & executorSize);
-		Executor exe = executors[i];
-		if (exe == null) {
-			synchronized (executors) {
-				if (exe == null) {
-					exe = new Executor();
-					exe.q = new DelayQueue<ListenablePromise<?>>();
-					exe.thread = threadFactory.newThread(new ExpirationRunner(exe.q));
-					exe.thread.start();
+	static Random random = new Random(System.currentTimeMillis());
+	static AtomicInteger i = new AtomicInteger();
+
+	private static ListenablePromise<?> lp() {
+		ListenablePromise<Void> t = new ListenablePromise<Void>();
+		t.setAttach(i.incrementAndGet());
+		t.setTimeAndExpiration(System.currentTimeMillis(), random.nextInt(10000));
+		t.addListener(new OperationListener<ListenablePromise<Void>>() {
+			@Override
+			public void operationComplete(ListenablePromise<Void> t) {
+				System.out.println(t.getAttach() + ":" + System.currentTimeMillis() + "--" + t.exeTime + "--"
+						+ t.expiration);
+			}
+		});
+		return t;
+	}
+
+	@SuppressWarnings("unchecked")
+	public ExpirationExecutor() {
+		queues = new DelayQueue[8];
+		for (int i = 0; i < queues.length; i++) {
+			queues[i] = new DelayQueue<ListenablePromise<?>>();
+		}
+
+		t = new Thread(new Runnable() {
+			@Override
+			public void run() {
+				for (;;) {
+					ListenablePromise<?> pressing = null;
+					for (DelayQueue<ListenablePromise<?>> q : queues) {
+						ListenablePromise<?> lp = q.peek();
+						if (lp != null && (pressing == null || lp.compareTo(pressing) < 0)) {
+							pressing = lp;
+							current = q;
+						}
+					}
+					if (Thread.interrupted()) {
+						continue;
+					}
+					try {
+						if (pressing == null) {
+							TimeUnit.SECONDS.sleep(2);
+						} else {
+							ListenablePromise<?> lp = current.poll(2, TimeUnit.SECONDS);
+							if (lp != null && !lp.isDone()) {
+								lp.failed(new TimeoutException());
+							}
+						}
+					} catch (InterruptedException e) {
+						if (Thread.interrupted()) {
+							continue;
+						}
+					}
 				}
 			}
-		}
-		exe.q.add(promise);
+		});
+		t.start();
 	}
 
-	public <V> void remove(ListenablePromise<V> promise) {
-		if (promise.getDelay(TimeUnit.MILLISECONDS) > 100) {
-			int i = (byte) ((promise.getId() >> 1) & executorSize);
-			Executor exe = executors[i];
-			exe.q.remove(promise);
-		}
-	}
-	
-	private static class Executor {
-		Thread thread;
-		DelayQueue<ListenablePromise<?>> q;
+	public void add(ListenablePromise<?> promise) {
+		int i = (byte) ((promise.getId() >> 1) & queues.length);
+		DelayQueue<ListenablePromise<?>> q = queues[i];
+		ListenablePromise<?> oldHead = q.peek();
+		q.add(promise);
+		checkCurrentQueue(oldHead, q);
 	}
 
-	private static class ExpirationRunner implements Runnable {
+	public void remove(ListenablePromise<?> promise) {
+		int i = (byte) ((promise.getId() >> 1) & queues.length);
+		DelayQueue<ListenablePromise<?>> q = queues[i];
+		ListenablePromise<?> oldHead = q.peek();
+		q.remove(promise);
+		checkCurrentQueue(oldHead, q);
+	}
 
-		DelayQueue<ListenablePromise<?>> q;
-
-		public ExpirationRunner(DelayQueue<ListenablePromise<?>> q) {
-			this.q = q;
+	private void checkCurrentQueue(ListenablePromise<?> oldHead, DelayQueue<ListenablePromise<?>> q) {
+		if (q == current) {
+			return;
 		}
-
-		@Override
-		public void run() {
-			for (;;) {
-				try {
-					ListenablePromise<?> lp = q.take();
-					lp.failed(null);
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
+		ListenablePromise<?> clp = null;
+		if (current == null || (clp = current.peek()) == null) {
+			t.interrupt();
+			return;
 		}
-
+		ListenablePromise<?> qlp = q.peek();
+		if (oldHead == qlp) {
+			return;
+		}
+		if (qlp.compareTo(clp) == -1) {
+			t.interrupt();
+		}
 	}
 }
