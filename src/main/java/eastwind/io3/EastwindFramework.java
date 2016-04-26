@@ -11,25 +11,24 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 
-import java.util.List;
 import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import eastwind.io.common.Host;
 import eastwind.io2.ObjectCodec;
 
-public class EastwindFramework extends GenericApplication implements Registrable {
+public class EastwindFramework extends Application implements Registrable {
 
 	private static Logger logger = LoggerFactory.getLogger(EastwindFramework.class);
 
 	private Bootstrap bootstrap = new Bootstrap();
 	private ServerBootstrap serverBootstrap;
+	private TransportContext transportContext = new TransportContext(this, new MillisX10Sequence());
 	private ObjectHandlerRegistry objectHandlerRegistry = new ObjectHandlerRegistry();
 	private int port = 12468;
 
-	private ApplicationManager applicationManager = new ApplicationManager(this, bootstrap);
+	private ApplicationManager applicationManager = new ApplicationManager(transportContext, bootstrap);
 
 	public EastwindFramework(String group) {
 		this(group, true);
@@ -44,9 +43,14 @@ public class EastwindFramework extends GenericApplication implements Registrable
 	}
 
 	public void start() {
+		DelayedExecutor delayedExecutor = transportContext.getDelayedExecutor();
+		//TODO
+		
 		bootstrap.group(new NioEventLoopGroup(2)).channel(NioSocketChannel.class);
-		final FrameworkInboundHandler frameworkHandler = new FrameworkInboundHandler(false, this, applicationManager);
-		final ObjectInboundHandler objectHandler = new ObjectInboundHandler(objectHandlerRegistry, applicationManager);
+		final FrameworkInboundHandler frameworkHandler = new FrameworkInboundHandler(false, transportContext,
+				applicationManager, objectHandlerRegistry);
+		final ObjectInboundHandler objectHandler = new ObjectInboundHandler(objectHandlerRegistry, applicationManager,
+				transportContext);
 		final HeadedObjectCodec headedObjectCodec = new HeadedObjectCodec();
 		bootstrap.handler(new ChannelInitializer<SocketChannel>() {
 			@Override
@@ -61,8 +65,8 @@ public class EastwindFramework extends GenericApplication implements Registrable
 		if (serverBootstrap != null) {
 			serverBootstrap.group(new NioEventLoopGroup(2), new NioEventLoopGroup());
 			serverBootstrap.channel(NioServerSocketChannel.class);
-			final FrameworkInboundHandler serverFrameworkHandler = new FrameworkInboundHandler(true, this,
-					applicationManager);
+			final FrameworkInboundHandler serverFrameworkHandler = new FrameworkInboundHandler(true, transportContext,
+					applicationManager, objectHandlerRegistry);
 			serverBootstrap.childHandler(new ChannelInitializer<SocketChannel>() {
 				@Override
 				protected void initChannel(SocketChannel sc) throws Exception {
@@ -87,8 +91,8 @@ public class EastwindFramework extends GenericApplication implements Registrable
 		this.port = port;
 	}
 
-	public TransportableApplicationGroup setApplicationConfig(String group, List<Host> hosts) {
-		return applicationManager.setApplicationConfig(group, hosts);
+	public ApplicationManager getApplicationManager() {
+		return applicationManager;
 	}
 
 	@Override

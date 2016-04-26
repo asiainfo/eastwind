@@ -1,6 +1,6 @@
 package eastwind.io3;
 
-public class Request {
+public class Request implements Unique, Headed {
 
 	private long id;
 	private String namespace;
@@ -29,4 +29,5 @@ public class Request {
 	public void setArgs(Object[] args) {
 		this.args = args;
 	}
+
 }

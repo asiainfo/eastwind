@@ -1,13 +1,33 @@
 package eastwind.io3;
 
-import java.lang.reflect.Method;
+public class RpcDescriptor implements FrameworkObject {
 
-import com.google.common.util.concurrent.AbstractFuture;
+	private String interf;
+	private String method;
+	private String[] parameterTypes;
 
-public class RpcDescriptor extends AbstractFuture<Boolean> {
+	public String getInterf() {
+		return interf;
+	}
 
-	private Method method;
-	private String alias;
-	
-	
+	public void setInterf(String interf) {
+		this.interf = interf;
+	}
+
+	public String getMethod() {
+		return method;
+	}
+
+	public void setMethod(String method) {
+		this.method = method;
+	}
+
+	public String[] getParameterTypes() {
+		return parameterTypes;
+	}
+
+	public void setParameterTypes(String[] parameterTypes) {
+		this.parameterTypes = parameterTypes;
+	}
+
 }

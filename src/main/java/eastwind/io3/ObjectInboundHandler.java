@@ -4,17 +4,20 @@ import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 
-import java.util.List;
+import java.io.IOException;
 
 @Sharable
 public class ObjectInboundHandler extends SimpleChannelInboundHandler<Object> {
 
 	private ObjectHandlerRegistry objectHandlerRegistry;
 	private ApplicationManager applicationManager;
-	
-	public ObjectInboundHandler(ObjectHandlerRegistry objectHandlerRegistry, ApplicationManager applicationManager) {
+	private TransportContext transportContext;
+
+	public ObjectInboundHandler(ObjectHandlerRegistry objectHandlerRegistry, ApplicationManager applicationManager,
+			TransportContext transportContext) {
 		this.objectHandlerRegistry = objectHandlerRegistry;
 		this.applicationManager = applicationManager;
+		this.transportContext = transportContext;
 	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
@@ -28,25 +31,16 @@ public class ObjectInboundHandler extends SimpleChannelInboundHandler<Object> {
 			response.setId(request.getId());
 			response.setResult(result);
 			ctx.writeAndFlush(response);
-		} else if (message instanceof Response){
+		} else if (message instanceof Response) {
 			Response response = (Response) message;
-			TransportableApplication ta = ctx.channel().attr(ChannelAttr.APPLICATION).get();
-			RpcPromise rpcPromise = ta.remove(response.getId());
-			if (rpcPromise != null) {
-				rpcPromise.succeeded(response);
-			}
-		} else {
-			TransportableApplication ta = ctx.channel().attr(ChannelAttr.APPLICATION).get();
-			List<MessageListener<Object>> listeners = objectHandlerRegistry.getMessageListeners(message.getClass());
-			for (MessageListener listener : listeners) {
-				listener.onMessage(message, ta.getTransport(ctx.channel()));
-			}
+			ListenablePromise lp = transportContext.remove(response.getId());
+			lp.succeeded(response.getResult());
 		}
 	}
 
 	@Override
 	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-		if (!ctx.channel().isActive()) {
+		if (cause.getClass().equals(IOException.class)) {
 			return;
 		}
 		super.exceptionCaught(ctx, cause);

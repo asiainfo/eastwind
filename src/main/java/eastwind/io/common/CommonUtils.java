@@ -1,6 +1,10 @@
 package eastwind.io.common;
 
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.concurrent.ConcurrentMap;
+
+import eastwind.io3.MessageListener;
 
 public class CommonUtils {
 
@@ -8,6 +12,23 @@ public class CommonUtils {
 	
 	static {
 		UUID = java.util.UUID.randomUUID().toString();
+	}
+	
+	public static Class<?> getGenericType(Class<?> src, Class<?> interf) {
+		for (Type type : src.getGenericInterfaces()) {
+			if (type instanceof ParameterizedType) {
+				ParameterizedType pt = (ParameterizedType) type;
+				if (pt.getRawType().equals(interf)) {
+					Type tp = pt.getActualTypeArguments()[0];
+					if (tp instanceof Class<?>) {
+						return (Class<?>) tp;
+					} else {
+						return (Class<?>) ((ParameterizedType)tp).getRawType();
+					}
+				}
+			}
+		}
+		return null;
 	}
 	
 	public static long currentTimeSeconds() {
@@ -30,4 +51,5 @@ public class CommonUtils {
 		return new Host("127.0.0.1", Integer.parseInt(uri.trim()));
 	}
 
+	
 }

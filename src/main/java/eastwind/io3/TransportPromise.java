@@ -1,33 +1,32 @@
 package eastwind.io3;
 
+public class TransportPromise<V> extends ListenablePromise<V> {
 
-
-public class TransportPromise extends ExecutableFuture<Transport> {
-
-	private Transport transport;
+	protected boolean reconnect;
+	protected int losts;
+	protected DelayedTask pingTask;
 	
-	public TransportPromise(Transport transport) {
-		this.transport = transport;
+	public boolean isReconnect() {
+		return reconnect;
 	}
 
-	public void addListener(final OperationListener<TransportPromise> listener) {
-		super.addListener(new Runnable() {
-			@Override
-			public void run() {
-				listener.operationComplete(TransportPromise.this);
-			}
-		}, GlobalExecutor.EVENT_EXECUTOR);
-	}
-	
-	public Transport getTransport() {
-		return transport;
+	public void setReconnect(boolean reconnect) {
+		this.reconnect = reconnect;
 	}
 
-	public void succeeded() {
-		super.set(transport);
+	public int getLosts() {
+		return losts;
 	}
 
-	public void failed(Throwable th) {
-		super.setException(th);
+	public void clearLosts() {
+		this.losts = 0;
+	}
+
+	public DelayedTask getPingTask() {
+		return pingTask;
+	}
+
+	public void setPingTask(DelayedTask pingTask) {
+		this.pingTask = pingTask;
 	}
 }

@@ -31,6 +31,7 @@ public class ObjectCodec extends ByteToMessageCodec<Object> {
 		if (message instanceof Ping) {
 			out.writeByte(0);
 		} else if (message instanceof HeadedObject) {
+			logEncode(message);
 			HeadedObject headedObject = (HeadedObject) message;
 			Header header = headedObject.getHeader();
 
@@ -78,6 +79,7 @@ public class ObjectCodec extends ByteToMessageCodec<Object> {
 
 			ctx.write(headerBuf);
 		} else {
+			logEncode(message);
 			out.writeByte(SIMPLE);
 			out.writeMedium(0);
 			int from = out.writerIndex();
@@ -103,6 +105,10 @@ public class ObjectCodec extends ByteToMessageCodec<Object> {
 		output.flush();
 	}
 
+	private void logEncode(Object obj) {
+		logger.info("encode:{}", JSON.toJSONString(obj));
+	}
+	
 	@Override
 	protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
 		if (in.readableBytes() > 0) {

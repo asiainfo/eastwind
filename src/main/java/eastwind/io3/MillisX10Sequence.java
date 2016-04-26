@@ -1,14 +1,14 @@
 package eastwind.io3;
 
-public class Milx10Sequence {
+public class MillisX10Sequence implements Sequence {
 
 	private long last;
 
-	public Milx10Sequence() {
+	public MillisX10Sequence() {
 		this.last = System.currentTimeMillis() * 10;
 	}
 
-	public synchronized long create() {
+	public synchronized long get() {
 		long now = System.currentTimeMillis() * 10;
 		if (now <= last) {
 			now = ++last;

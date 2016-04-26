@@ -1,7 +1,20 @@
 package eastwind.io3;
 
-public interface Application extends Group {
+public class Application implements Group {
 
-	public String getUuid();
+	protected String uuid;
+	protected String group;
+
+	public Application(String group) {
+		this.group = group;
+	}
+
+	public String getUuid() {
+		return uuid;
+	}
+
+	public String getGroup() {
+		return group;
+	}
 	
 }

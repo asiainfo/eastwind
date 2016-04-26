@@ -13,6 +13,7 @@ import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
+import eastwind.io.common.CommonUtils;
 import eastwind.io.test.Hello;
 import eastwind.io.test.HelloImpl;
 
@@ -111,16 +112,7 @@ public class ObjectHandlerRegistry implements Registrable {
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public void registerMessageListener(MessageListener messageListener) {
-		Class<Object> cls = null;
-		for (Type type : messageListener.getClass().getGenericInterfaces()) {
-			if (type instanceof ParameterizedType) {
-				ParameterizedType pt = (ParameterizedType) type;
-				if (pt.getRawType().equals(MessageListener.class)) {
-					cls = (Class<Object>) pt.getActualTypeArguments()[0];
-					break;
-				}
-			}
-		}
+		Class<?> cls = CommonUtils.getGenericType(messageListener.getClass(), MessageListener.class);
 		CopyOnWriteArrayList<MessageListener<Object>> listeners = messageListeners.get(cls);
 		if (listeners == null) {
 			listeners = new CopyOnWriteArrayList<MessageListener<Object>>();

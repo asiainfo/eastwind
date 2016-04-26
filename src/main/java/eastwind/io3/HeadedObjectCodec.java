@@ -7,34 +7,30 @@ import io.netty.handler.codec.MessageToMessageCodec;
 import java.util.List;
 
 @Sharable
-public class HeadedObjectCodec extends MessageToMessageCodec<HeadedObject, Object> {
+public class HeadedObjectCodec extends MessageToMessageCodec<HeadedObject, Headed> {
 
 	@Override
-	protected void encode(ChannelHandlerContext ctx, Object msg, List<Object> out) throws Exception {
-		if (msg instanceof FrameworkObject) {
-			ctx.write(msg);
-		} else {
-			HeadedObject ho = new HeadedObject();
-			Header header = new Header();
-			ho.setHeader(header);
-			if (msg instanceof Request) {
-				Request request = (Request) msg;
-				header.setModel(Header.REQUEST);
-				header.setId(request.getId());
-				header.setNamespace(request.getNamespace());
-				ho.setObjs(request.getArgs());
-			} else if (msg instanceof Response) {
-				Response response = (Response) msg;
-				header.setModel(Header.RESPONSE);
-				header.setId(response.getId());
-				if (response.getTh() != null) {
-					ho.setTh(response.getTh());
-				} else {
-					ho.setObj(response.getResult());
-				}
+	protected void encode(ChannelHandlerContext ctx, Headed msg, List<Object> out) throws Exception {
+		HeadedObject ho = new HeadedObject();
+		Header header = new Header();
+		ho.setHeader(header);
+		if (msg instanceof Request) {
+			Request request = (Request) msg;
+			header.setModel(Header.REQUEST);
+			header.setId(request.getId());
+			header.setNamespace(request.getNamespace());
+			ho.setObjs(request.getArgs());
+		} else if (msg instanceof Response) {
+			Response response = (Response) msg;
+			header.setModel(Header.RESPONSE);
+			header.setId(response.getId());
+			if (response.getTh() != null) {
+				ho.setTh(response.getTh());
+			} else {
+				ho.setObj(response.getResult());
 			}
-			out.add(ho);
 		}
+		out.add(ho);
 	}
 
 	@Override
