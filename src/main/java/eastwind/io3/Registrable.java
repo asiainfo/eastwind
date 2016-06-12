@@ -2,8 +2,8 @@ package eastwind.io3;
 
 public interface Registrable {
 
-	public void registerRpcHandler(Object instance);
+	public void registerHandler(Object instance);
 	
-	public <T> void registerMessageListener(MessageListener<T> messageListener);
+	public <T> void registerListener(MessageListener<T> messageListener);
 	
 }

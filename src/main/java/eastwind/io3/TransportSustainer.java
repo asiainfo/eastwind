@@ -4,21 +4,14 @@ import java.util.Map;
 
 import com.google.common.collect.Maps;
 
-public class TransportContext {
+public class TransportSustainer {
 
-	protected Application localApplication;
 	protected Sequence sequence;
-	protected DelayedExecutor delayedExecutor;
 	@SuppressWarnings("rawtypes")
 	protected Map<Long, ListenablePromise> promises = Maps.newConcurrentMap();
 
-	public TransportContext(Application localApplication, Sequence sequence) {
-		this.localApplication = localApplication;
+	public TransportSustainer(Sequence sequence) {
 		this.sequence = sequence;
-	}
-
-	public Application getLocalApplication() {
-		return localApplication;
 	}
 
 	public Sequence getSequence() {
@@ -35,8 +28,4 @@ public class TransportContext {
 		return this.promises.remove(id);
 	}
 
-	public DelayedExecutor getDelayedExecutor() {
-		return delayedExecutor;
-	}
-	
 }

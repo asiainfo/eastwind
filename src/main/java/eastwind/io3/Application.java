@@ -1,5 +1,6 @@
 package eastwind.io3;
 
+
 public class Application implements Group {
 
 	protected String uuid;
@@ -13,6 +14,7 @@ public class Application implements Group {
 		return uuid;
 	}
 
+	@Override
 	public String getGroup() {
 		return group;
 	}

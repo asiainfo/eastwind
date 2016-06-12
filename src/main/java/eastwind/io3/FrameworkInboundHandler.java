@@ -9,14 +9,14 @@ import io.netty.channel.SimpleChannelInboundHandler;
 public class FrameworkInboundHandler extends SimpleChannelInboundHandler<FrameworkObject> {
 
 	private boolean server;
-	private TransportContext transportContext;
+	private TransportSustainer transportSustainer;
 	private ApplicationManager applicationManager;
 	private ObjectHandlerRegistry objectHandlerRegistry;
 
-	public FrameworkInboundHandler(boolean server, TransportContext transportContext,
+	public FrameworkInboundHandler(boolean server, TransportSustainer transportSustainer,
 			ApplicationManager applicationManager, ObjectHandlerRegistry objectHandlerRegistry) {
 		this.server = server;
-		this.transportContext = transportContext;
+		this.transportSustainer = transportSustainer;
 		this.applicationManager = applicationManager;
 		this.objectHandlerRegistry = objectHandlerRegistry;
 	}
@@ -37,7 +37,7 @@ public class FrameworkInboundHandler extends SimpleChannelInboundHandler<Framewo
 			if (uo.isCall()) {
 				handleCall(ctx, uo);
 			} else {
-				ListenablePromise lp = transportContext.remove(uo.getId());
+				ListenablePromise lp = transportSustainer.remove(uo.getId());
 				if (lp != null) {
 					lp.succeeded(uo.getObj());
 				}
@@ -76,9 +76,18 @@ public class FrameworkInboundHandler extends SimpleChannelInboundHandler<Framewo
 	private void handleCall(ChannelHandlerContext ctx, UniqueObject uo) throws ClassNotFoundException {
 		Object o = uo.getObj();
 		Channel channel = ctx.channel();
-		if (o instanceof RpcDescriptor) {
-			RpcDescriptor rd = (RpcDescriptor) o;
-			RpcHandler handler = objectHandlerRegistry.getRpcHandler(rd.getInterf(), rd.getMethod(), rd.getParameterTypes());
+		if (o instanceof Handling) {
+			Handling handling = (Handling) o;
+			RemoteApplication ra = applicationManager.getTransport(ctx.channel()).getRemoteApplication();
+			if (ra.getMessage(handling.getId()) != null) {
+				writeBack(ctx, uo, 1);
+			} else {
+				writeBack(ctx, uo, 0);
+			}
+		} else if (o instanceof HandlerDescriptor) {
+			HandlerDescriptor hd = (HandlerDescriptor) o;
+			RpcHandler handler = objectHandlerRegistry.getHandler(hd.getInterf(), hd.getMethod(),
+					hd.getParameterTypes());
 			String alias = handler.getAlias();
 			writeBack(ctx, uo, alias);
 		} else if (o instanceof Handshake) {
@@ -89,11 +98,11 @@ public class FrameworkInboundHandler extends SimpleChannelInboundHandler<Framewo
 	}
 
 	private void writeBack(ChannelHandlerContext ctx, UniqueObject uo, Object result) {
-		UniqueObject uo2 = new UniqueObject();
-		uo2.setCall(false);
-		uo2.setId(uo.getId());
-		uo2.setObj(result);
-		ctx.writeAndFlush(uo2);
+		UniqueObject back = new UniqueObject();
+		back.setCall(false);
+		back.setId(uo.getId());
+		back.setObj(result);
+		ctx.writeAndFlush(back);
 	}
 
 	@Override

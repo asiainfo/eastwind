@@ -20,15 +20,15 @@ public class Transport extends Application {
 
 	protected WeakReference<Channel> channelRef;
 	protected int state;
-	protected TransportContext transportContext;
+	protected TransportSustainer transportSustainer;
 	protected RemoteApplication remoteApplication;
 
-	public Transport(String group, TransportContext transportContext) {
+	public Transport(String group, TransportSustainer transportSustainer) {
 		super(group);
-		this.transportContext = transportContext;
+		this.transportSustainer = transportSustainer;
 	}
 
-	public boolean isActive() {
+	public boolean isReady() {
 		Channel channel = getChannel();
 		return channel != null && channel.isActive() && state == READY;
 	}
@@ -39,28 +39,29 @@ public class Transport extends Application {
 
 	@SuppressWarnings("rawtypes")
 	public TransportPromise publish(Unique message, Object attach) {
-		final TransportPromise tp = new TransportPromise();
-		long id = transportContext.getSequence().get();
-		message.setId(id);
+		final TransportPromise tp = new TransportPromise(this);
+		if (message.getId() == 0) {
+			message.setId(transportSustainer.getSequence().get());
+		}
+		tp.setId(message.getId());
 		tp.setMessage(message);
-		tp.setId(id);
 		tp.setAttach(attach);
-		transportContext.add(tp);
-		publish0(message, tp);
+		publish0(tp);
+		transportSustainer.add(tp);
 		return tp;
 	}
 
 	@SuppressWarnings("rawtypes")
-	protected void publish0(Unique message, final TransportPromise tp) {
+	protected void publish0(final TransportPromise tp) {
 		Channel channel = getChannel();
 		if (channel == null || !channel.isActive()) {
 			tp.failed(null);
 		} else {
-			channel.writeAndFlush(message).addListener(new GenericFutureListener<ChannelFuture>() {
+			channel.writeAndFlush(tp.getMessage()).addListener(new GenericFutureListener<ChannelFuture>() {
 				@Override
 				public void operationComplete(ChannelFuture future) throws Exception {
 					if (future.isSuccess()) {
-						transportContext.add(tp);
+						transportSustainer.add(tp);
 					} else {
 						tp.failed(future.cause());
 					}

@@ -1,6 +1,6 @@
 package eastwind.io3;
 
-public class RpcDescriptor implements FrameworkObject {
+public class HandlerDescriptor implements FrameworkObject {
 
 	private String interf;
 	private String method;

@@ -12,10 +12,14 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 
 import java.util.UUID;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import eastwind.io.common.NamedThreadFactory;
 import eastwind.io2.ObjectCodec;
 
 public class EastwindFramework extends Application implements Registrable {
@@ -24,11 +28,14 @@ public class EastwindFramework extends Application implements Registrable {
 
 	private Bootstrap bootstrap = new Bootstrap();
 	private ServerBootstrap serverBootstrap;
-	private TransportContext transportContext = new TransportContext(this, new MillisX10Sequence());
+	private TransportSustainer transportSustainer = new TransportSustainer(new MillisX10Sequence());
 	private ObjectHandlerRegistry objectHandlerRegistry = new ObjectHandlerRegistry();
 	private int port = 12468;
 
-	private ApplicationManager applicationManager = new ApplicationManager(transportContext, bootstrap);
+	private int threads = 256;
+	private ThreadPoolExecutor executor;
+
+	private ApplicationManager applicationManager = new ApplicationManager(transportSustainer, bootstrap);
 
 	public EastwindFramework(String group) {
 		this(group, true);
@@ -43,14 +50,14 @@ public class EastwindFramework extends Application implements Registrable {
 	}
 
 	public void start() {
-		DelayedExecutor delayedExecutor = transportContext.getDelayedExecutor();
-		//TODO
-		
+		executor = new ThreadPoolExecutor(4, threads, 6, TimeUnit.MINUTES, new SynchronousQueue<Runnable>(),
+				new NamedThreadFactory("message-executor"));
+
 		bootstrap.group(new NioEventLoopGroup(2)).channel(NioSocketChannel.class);
-		final FrameworkInboundHandler frameworkHandler = new FrameworkInboundHandler(false, transportContext,
+		final FrameworkInboundHandler frameworkHandler = new FrameworkInboundHandler(false, transportSustainer,
 				applicationManager, objectHandlerRegistry);
-		final ObjectInboundHandler objectHandler = new ObjectInboundHandler(objectHandlerRegistry, applicationManager,
-				transportContext);
+		final ObjectInboundHandler objectHandler = new ObjectInboundHandler(applicationManager, objectHandlerRegistry,
+				transportSustainer, executor);
 		final HeadedObjectCodec headedObjectCodec = new HeadedObjectCodec();
 		bootstrap.handler(new ChannelInitializer<SocketChannel>() {
 			@Override
@@ -65,8 +72,8 @@ public class EastwindFramework extends Application implements Registrable {
 		if (serverBootstrap != null) {
 			serverBootstrap.group(new NioEventLoopGroup(2), new NioEventLoopGroup());
 			serverBootstrap.channel(NioServerSocketChannel.class);
-			final FrameworkInboundHandler serverFrameworkHandler = new FrameworkInboundHandler(true, transportContext,
-					applicationManager, objectHandlerRegistry);
+			final FrameworkInboundHandler serverFrameworkHandler = new FrameworkInboundHandler(true,
+					transportSustainer, applicationManager, objectHandlerRegistry);
 			serverBootstrap.childHandler(new ChannelInitializer<SocketChannel>() {
 				@Override
 				protected void initChannel(SocketChannel sc) throws Exception {
@@ -91,18 +98,26 @@ public class EastwindFramework extends Application implements Registrable {
 		this.port = port;
 	}
 
+	public void setThreads(int threads) {
+		this.threads = threads;
+	}
+
 	public ApplicationManager getApplicationManager() {
 		return applicationManager;
 	}
 
-	@Override
-	public <T> void registerMessageListener(MessageListener<T> messageListener) {
-		objectHandlerRegistry.registerMessageListener(messageListener);
+	public <T> T createInvoker(String group, Class<T> interf) {
+		return null;
 	}
 
 	@Override
-	public void registerRpcHandler(Object instance) {
-		objectHandlerRegistry.registerRpcHandler(instance);
+	public <T> void registerListener(MessageListener<T> messageListener) {
+		objectHandlerRegistry.registerListener(messageListener);
+	}
+
+	@Override
+	public void registerHandler(Object instance) {
+		objectHandlerRegistry.registerHandler(instance);
 	}
 
 }

@@ -9,8 +9,11 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
+import java.util.WeakHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.apache.commons.lang3.StringUtils;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -19,31 +22,33 @@ import eastwind.io.common.Host;
 
 public class ApplicationManager {
 
-	private TransportContext transportContext;
+	private Application application;
+	private TransportSustainer transportSustainer;
 
 	private AtomicInteger configId = new AtomicInteger();
 
 	private Map<String, GroupConfig> groupConfigs = Maps.newHashMap();
-	private Map<String, RemoteApplicationGroup> groups = Maps.newHashMap();
-
+	private Map<String, ApplicationGroup> groups = Maps.newHashMap();
+	
+	private WeakHashMap<Channel, Transport> transports = new WeakHashMap<Channel, Transport>();
 	private Map<Host, List<ServerTransport>> serverTransports = Maps.newHashMap();
 
 	private Bootstrap bootstrap;
 
-	public ApplicationManager(TransportContext transportContext, Bootstrap bootstrap) {
-		this.transportContext = transportContext;
+	public ApplicationManager(TransportSustainer transportSustainer, Bootstrap bootstrap) {
+		this.transportSustainer = transportSustainer;
 		this.bootstrap = bootstrap;
 	}
 
-	public RemoteApplicationGroup getGroup(String group) {
-		RemoteApplicationGroup ag = groups.get(group);
+	public ApplicationGroup getGroup(String group) {
+		ApplicationGroup ag = groups.get(group);
 		if (ag != null) {
 			return ag;
 		}
 		synchronized (groups) {
 			ag = groups.get(group);
 			if (ag == null) {
-				ag = new RemoteApplicationGroup(group);
+				ag = new ApplicationGroup(group);
 				groups.put(group, ag);
 			}
 		}
@@ -64,21 +69,34 @@ public class ApplicationManager {
 	}
 
 	public Handshake access(Handshake hs, Channel channel) {
-		RemoteApplicationGroup group = getGroup(hs.getGroup());
+		ApplicationGroup group = getGroup(hs.getGroup());
 		RemoteApplication ra = group.get(hs.getMyUuid());
-		Transport transport = new Transport(ra.getGroup(), transportContext);
+		Transport transport = new Transport(ra.getGroup(), transportSustainer);
 		transport.setChannel(channel);
 		transport.handshake(hs, ra);
 		ra.addTransport(transport);
+		transports.put(channel, transport);
+		Handshake back = handshakeObj();
+		return back;
+	}
 
-		Handshake hs2 = new Handshake();
-		hs2.setGroup(transportContext.getLocalApplication().getGroup());
-		hs2.setMyUuid(transportContext.getLocalApplication().getUuid());
-		return hs2;
+	public Transport getTransport(Channel channel) {
+		return transports.get(channel);
+	}
+	
+	private Handshake handshakeObj() {
+		Handshake hs = new Handshake();
+		hs.setGroup(application.getGroup());
+		hs.setMyUuid(application.getUuid());
+		return hs;
 	}
 
 	public void depend(String group) {
-		getGroupConfig(group).dependent = true;
+		GroupConfig gc = getGroupConfig(group);
+		gc.dependent = true;
+		for (ServerConfig sc : gc.configs) {
+			connect(sc, 0);
+		}
 	}
 
 	public void addConfig(String group, Host host) {
@@ -94,17 +112,143 @@ public class ApplicationManager {
 		connect0(st, 0);
 	}
 
-	private class GroupTransportInvocationHandler implements InvocationHandler {
+	public class RemoteInvocationHandler implements InvocationHandler {
+
 		private String group;
+
 		@Override
 		public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+			InvocationMode mode = InvocationMode.TL.get();
+			if (mode == null) {
+				mode = InvocationMode.DEFAULT;
+			} else {
+				InvocationMode.TL.set(null);
+			}
+			Host host = mode.getHost();
+			if (host != null) {
+				handleSingInvoke(mode, method, args);
+			}
+			return null;
+		}
+
+		private void handleSingInvoke(InvocationMode mode, Method method, Object[] args) {
+			Host host = mode.getHost();
+			GroupConfig gc = getGroupConfig(group);
+			if (!gc.dependent) {
+				depend(group);
+			}
+			ApplicationGroup g = groups.get(group);
+			ServerTransport st = g.getTransport(host);
+			if (st == null) {
+				// throw
+			}
+			if (st.isReady()) {
+				ListenablePromise<String> lp = st.acceptable(method);
+				if (lp.isDone()) {
+					if (lp.getNow() == null) {
+						// throw
+					} else {
+						Request r = new Request();
+						r.setNamespace(lp.getNow());
+						r.setArgs(args);
+						@SuppressWarnings("rawtypes")
+						TransportPromise tp = st.publish(r, null);
+						
+					}
+				} else {
+					// add listener
+				}
+			} else {
+				
+			}
+		}
+	}
+	
+	
+	private class GroupInvocationHandler implements InvocationHandler {
+		private String group;
+
+		@Override
+		public Object invoke(Object proxy, final Method method, Object[] args) throws Throwable {
 			if (Object.class.equals(method.getDeclaringClass())) {
 				return method.invoke(this, args);
 			}
-			RemoteApplicationGroup g = groups.get(group);
-			ServerTransport st = g.next();
-			
-			return null;
+			ApplicationGroup g = groups.get(group);
+			if (g == null) {
+				GroupConfig gc = groupConfigs.get(group);
+				if (gc == null || gc.configs.size() == 0) {
+					// TODO throw exception
+				}
+				if (!gc.dependent) {
+					depend(group);
+				}
+			}
+			Request request = new Request();
+			request.setArgs(args);
+
+			@SuppressWarnings({ "unchecked", "rawtypes" })
+			GroupTransportPromise promise = new GroupTransportPromise(request, method, g.getTransports());
+			return promise.get();
+		}
+	}
+
+	private class GroupTransportPromise<V> extends ListenablePromise<V> implements OperationListener<ServerTransport> {
+
+		private Request request;
+		private Method method;
+		private ServerTransport current;
+		private List<ServerTransport> transports;
+
+		public GroupTransportPromise(Request request, Method method, List<ServerTransport> transports) {
+			this.request = request;
+			this.method = method;
+			this.transports = transports;
+			for (ServerTransport st : transports) {
+				st.addHandshakeListener(this);
+			}
+		}
+
+		@Override
+		public void operationComplete(final ServerTransport st) {
+			if (st.getState() == Transport.CONNECT_FAIL) {
+				this.transports.remove(st);
+				checkValid();
+			} else if (st.getState() == Transport.READY) {
+				ListenablePromise<String> lp = st.acceptable(method);
+				lp.addListener(new OperationListener<ListenablePromise<String>>() {
+					@SuppressWarnings("unchecked")
+					@Override
+					public void operationComplete(ListenablePromise<String> t) {
+						if (t.getNow() == null) {
+							transports.remove(st);
+							checkValid();
+						} else {
+							if (current == null) {
+								current = st;
+								@SuppressWarnings("rawtypes")
+								TransportPromise tp = current.publish(request, current);
+								tp.addListener(new OperationListener<ListenablePromise<V>>() {
+									@Override
+									public void operationComplete(ListenablePromise<V> lp) {
+										@SuppressWarnings("rawtypes")
+										TransportPromise tp = (TransportPromise) lp;
+										if (tp.getTh() == null) {
+											GroupTransportPromise.this.succeeded((V) tp.getNow());
+										}
+									}
+								});
+							}
+						}
+					}
+				});
+			}
+		}
+
+		private void checkValid() {
+			if (transports.size() == 0) {
+				// TODO
+				// super.failed(th);
+			}
 		}
 	}
 
@@ -112,19 +256,23 @@ public class ApplicationManager {
 	public <T> T createInvoker(String group, Class<?> interf) {
 		return null;
 	}
-	
-	private InvocationHandler handler = new GroupTransportInvocationHandler();
-	
+
+	private InvocationHandler handler = new GroupInvocationHandler();
+
 	private ServerTransport connect(ServerConfig conf, int n) {
 		ServerTransport st = getTransport(conf.getHost(), conf.getId());
 		if (st == null) {
-			st = new ServerTransport(conf, transportContext, this);
+			st = new ServerTransport(conf, transportSustainer, this);
 			List<ServerTransport> l = serverTransports.get(conf.getHost());
 			if (l == null) {
 				l = Lists.newLinkedList();
 				serverTransports.put(conf.getHost(), l);
 			}
 			l.add(st);
+			if (!StringUtils.isBlank(conf.getGroup())) {
+				ApplicationGroup group = getGroup(conf.getGroup());
+				group.add(st);
+			}
 		}
 		connect0(st, 0);
 		return st;
@@ -132,11 +280,18 @@ public class ApplicationManager {
 
 	private void connect0(ServerTransport st, int n) {
 		if (st.acquire()) {
+			Channel c = st.getChannel();
+			if (c != null) {
+				transports.remove(c);
+			}
+			st.reset();
 			Host host = st.getServerConfig().getHost();
 			ChannelFuture cf = bootstrap.connect(host.getIp(), host.getPort());
-			st.setChannel(cf.channel());
-			cf.channel().closeFuture().addListener(new RetryListener(st, n));
-			cf.addListener(new HandshakeListener(transportContext, st));
+			c = cf.channel();
+			st.setChannel(c);
+			transports.put(c, st);
+			c.closeFuture().addListener(new RetryListener(st, n));
+			cf.addListener(new HandshakeListener(st));
 		}
 	}
 
@@ -162,7 +317,7 @@ public class ApplicationManager {
 		return null;
 	}
 
-	class RetryListener implements GenericFutureListener<ChannelFuture> {
+	private class RetryListener implements GenericFutureListener<ChannelFuture> {
 
 		private ServerTransport st;
 		private int n;
@@ -175,7 +330,6 @@ public class ApplicationManager {
 		@Override
 		public void operationComplete(ChannelFuture future) throws Exception {
 			if (st.getChannel() == future.channel()) {
-				System.out.println(n + " closed");
 				st.setState(Transport.CONNECT_FAIL);
 				if (n == 0) {
 					connect0(st, 1);
@@ -198,11 +352,9 @@ public class ApplicationManager {
 
 	private class HandshakeListener implements GenericFutureListener<ChannelFuture> {
 
-		private TransportContext tc;
 		private ServerTransport st;
 
-		private HandshakeListener(TransportContext tc, ServerTransport st) {
-			this.tc = tc;
+		private HandshakeListener(ServerTransport st) {
 			this.st = st;
 		}
 
@@ -210,10 +362,7 @@ public class ApplicationManager {
 		public void operationComplete(ChannelFuture future) throws Exception {
 			if (future.isSuccess()) {
 				st.setState(Transport.HANDSHAKE);
-				Handshake hs = new Handshake();
-				hs.setGroup(tc.getLocalApplication().getGroup());
-				hs.setMyUuid(tc.getLocalApplication().getUuid());
-
+				Handshake hs = handshakeObj();
 				UniqueObject uo = new UniqueObject();
 				uo.setCall(true);
 				uo.setObj(hs);
@@ -224,9 +373,9 @@ public class ApplicationManager {
 					@Override
 					public void operationComplete(ListenablePromise<Handshake> lp) {
 						Handshake hs = lp.getNow();
-						RemoteApplicationGroup g = getGroup(hs.getGroup());
-						RemoteApplication ra = g.get(hs.getYourUuid());
-						ra.addServerTransport(st);
+						ApplicationGroup g = getGroup(hs.getGroup());
+						RemoteApplication a = g.get(hs.getYourUuid());
+						a.addServerTransport(st);
 						st.handshake(hs, g.get(hs.getMyUuid()));
 					}
 				});

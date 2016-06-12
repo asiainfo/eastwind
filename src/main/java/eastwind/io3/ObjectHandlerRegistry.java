@@ -44,11 +44,11 @@ public class ObjectHandlerRegistry implements Registrable {
 
 	private List<HanlderObj> hanlderObjs = Lists.newArrayList();
 
-	public RpcHandler getRpcHandler(String namespace) {
+	public RpcHandler getHandler(String namespace) {
 		return rpcHandlers.get(namespace).get(0);
 	}
 
-	public void registerRpcHandler(Object obj) {
+	public void registerHandler(Object obj) {
 		List<Class<?>> interfs = Lists.newArrayList();
 		addGenericInterfaces(interfs, obj.getClass());
 		for (int i = 0; i < interfs.size(); i++) {
@@ -76,11 +76,11 @@ public class ObjectHandlerRegistry implements Registrable {
 		hanlderObjs.add(ho);
 	}
 
-	public List<MessageListener<Object>> getMessageListeners(Class<?> cls) {
+	public List<MessageListener<Object>> getListeners(Class<?> cls) {
 		return messageListeners.get(cls);
 	}
 
-	public RpcHandler getRpcHandler(String interf, String method, String[] parameterTypes)
+	public RpcHandler getHandler(String interf, String method, String[] parameterTypes)
 			throws ClassNotFoundException {
 		Class<?> cls = Class.forName(interf);
 		Class<?>[] pts = new Class<?>[parameterTypes.length];
@@ -111,7 +111,7 @@ public class ObjectHandlerRegistry implements Registrable {
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public void registerMessageListener(MessageListener messageListener) {
+	public void registerListener(MessageListener messageListener) {
 		Class<?> cls = CommonUtils.getGenericType(messageListener.getClass(), MessageListener.class);
 		CopyOnWriteArrayList<MessageListener<Object>> listeners = messageListeners.get(cls);
 		if (listeners == null) {
@@ -207,9 +207,9 @@ public class ObjectHandlerRegistry implements Registrable {
 
 	public static void main(String[] args) throws ClassNotFoundException {
 		ObjectHandlerRegistry or = new ObjectHandlerRegistry();
-		or.registerRpcHandler(new HelloImpl());
-		RpcHandler rpcHandler = or.getRpcHandler(Hello.class.getCanonicalName(), "hello",
+		or.registerHandler(new HelloImpl());
+		RpcHandler handler = or.getHandler(Hello.class.getCanonicalName(), "hello",
 				new String[] { String.class.getCanonicalName() });
-		System.out.println(JSON.toJSONString(rpcHandler));
+		System.out.println(JSON.toJSONString(handler));
 	}
 }

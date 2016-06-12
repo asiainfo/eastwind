@@ -12,7 +12,7 @@ public class TestServer {
 	public static void main(String[] args) throws IOException {
 		EastwindFramework ef = new EastwindFramework("test-server");
 		ef.start();
-		ef.registerRpcHandler(new HelloImpl());
+		ef.registerHandler(new HelloImpl());
 //		ef.registerMessageListener(new MessageListener<String>() {
 //			@Override
 //			public void onMessage(String message, Transport transport) {

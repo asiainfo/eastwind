@@ -7,10 +7,10 @@ public class ListenablePromise<V> extends AbstractFuture<V> implements Unique {
 	protected long id;
 	protected Unique message;
 	protected Object attach;
-	protected long time;
-	protected long expiration;
+	protected long time = System.currentTimeMillis();
 	protected V v;
-
+	protected Throwable th;
+	
 	public void succeeded() {
 		super.set(null);
 	}
@@ -21,6 +21,7 @@ public class ListenablePromise<V> extends AbstractFuture<V> implements Unique {
 	}
 
 	public void failed(Throwable th) {
+		this.th = th;
 		super.setException(th);
 	}
 
@@ -40,6 +41,10 @@ public class ListenablePromise<V> extends AbstractFuture<V> implements Unique {
 		this.message = message;
 	}
 
+	public Throwable getTh() {
+		return th;
+	}
+
 	public V getNow() {
 		return v;
 	}
@@ -48,21 +53,12 @@ public class ListenablePromise<V> extends AbstractFuture<V> implements Unique {
 		this.id = id;
 	}
 
-	public void setTimeAndExpiration(long time, long expiration) {
-		this.time = time;
-		this.expiration = expiration;
-	}
-
 	public long getId() {
 		return id;
 	}
 
 	public long getTime() {
 		return time;
-	}
-
-	public long getExpiration() {
-		return expiration;
 	}
 
 	public void addListener(final OperationListener<ListenablePromise<V>> listener) {

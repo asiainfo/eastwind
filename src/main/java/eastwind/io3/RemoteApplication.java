@@ -12,25 +12,15 @@ import eastwind.io.common.Host;
 
 public class RemoteApplication extends Application {
 
+	private Map<Long, HandlingMessage> handings = Maps.newHashMap();
 	private List<Transport> transports;
 	private List<ServerTransport> serverTransports;
 	private Map<Method, ListenablePromise<String>> acceptMethods = Maps.newHashMap();
-	private int i;
 	
 	public RemoteApplication(String group) {
 		super(group);
 	}
 
-	public ServerTransport next() {
-		if (i >= serverTransports.size()) {
-			if (i != 0) {
-				i = 0;
-			}
-			return null;
-		}
-		return serverTransports.get(i++);
-	}
-	
 	public void setUuid(String uuid) {
 		super.uuid = uuid;
 	}
@@ -71,6 +61,18 @@ public class RemoteApplication extends Application {
 			}
 		}
 		return null;
+	}
+	
+	public void addMessage(HandlingMessage handlingMessage) {
+		handings.put(handlingMessage.getId(), handlingMessage);
+	}
+	
+	public void removeMessage(Long id) {
+		handings.remove(id);
+	}
+	
+	public HandlingMessage getMessage(Long id) {
+		return handings.get(id);
 	}
 	
 	private List<ServerTransport> getServerTransports() {

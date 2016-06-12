@@ -67,8 +67,8 @@ public class DelayedExecutor {
 		operations.put(cls, delayedListener);
 	}
 	
-	public DelayedTask submit(Object task, long millis) {
-		DelayedTask dt = new DelayedTask(sequence.get(), task, millis);
+	public DelayedTask submit(Object obj, long millis) {
+		DelayedTask dt = new DelayedTask(sequence.get(), obj, millis);
 		submit0(dt);
 		return dt;
 	}
@@ -86,11 +86,11 @@ public class DelayedExecutor {
 		checkCurrentQueue(oldHead, q);
 	}
 
-	public void cancel(long id) {
-		int i = (byte) ((id >> 1) & cardinal);
+	public void cancel(DelayedTask dt) {
+		int i = (byte) ((dt.id >> 1) & cardinal);
 		DelayQueue<DelayedTask> q = queues[i];
 		DelayedTask oldHead = q.peek();
-		q.remove(id);
+		q.remove(dt);
 		checkCurrentQueue(oldHead, q);
 	}
 	

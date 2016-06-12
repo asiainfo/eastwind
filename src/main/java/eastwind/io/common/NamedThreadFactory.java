@@ -15,8 +15,11 @@ public class NamedThreadFactory implements ThreadFactory {
 		namePrefix = name + "-thread-";
 	}
 
+	int i = 0;
+	
 	@Override
 	public Thread newThread(Runnable r) {
+		System.out.println("thread-" + i++);
 		Thread t = new Thread(group, r, namePrefix + threadNumber.getAndIncrement(), 0);
 		if (t.isDaemon())
 			t.setDaemon(false);

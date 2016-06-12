@@ -2,16 +2,26 @@ package eastwind.io3;
 
 public class TransportPromise<V> extends ListenablePromise<V> {
 
-	protected boolean reconnect;
+	protected boolean retry;
+	protected int nrcy;
 	protected int losts;
-	protected DelayedTask pingTask;
+	protected DelayedTask checkTask;
+	protected Transport transport;
 	
-	public boolean isReconnect() {
-		return reconnect;
+	public TransportPromise(Transport transport) {
+		this.transport = transport;
 	}
 
-	public void setReconnect(boolean reconnect) {
-		this.reconnect = reconnect;
+	public boolean isRetry() {
+		return retry;
+	}
+
+	public void setRetry(boolean retry) {
+		this.retry = retry;
+	}
+
+	public void lost() {
+		this.losts++;
 	}
 
 	public int getLosts() {
@@ -22,11 +32,16 @@ public class TransportPromise<V> extends ListenablePromise<V> {
 		this.losts = 0;
 	}
 
-	public DelayedTask getPingTask() {
-		return pingTask;
+	public DelayedTask getCheckTask() {
+		return checkTask;
 	}
 
-	public void setPingTask(DelayedTask pingTask) {
-		this.pingTask = pingTask;
+	public void setCheckTask(DelayedTask checkTask) {
+		this.checkTask = checkTask;
 	}
+
+	public Transport getTransport() {
+		return transport;
+	}
+
 }
