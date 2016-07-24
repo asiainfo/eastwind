@@ -5,11 +5,13 @@ import java.util.concurrent.TimeUnit;
 
 public class DelayedTask implements Delayed, Unique {
 	long id;
+	String type;
 	Object obj;
 	long exeTime;
 
-	public DelayedTask(long id, Object obj, long delay) {
+	public DelayedTask(long id, String type, Object obj, long delay) {
 		this.id = id;
+		this.type = type;
 		this.obj = obj;
 		setExeTime(this, delay);
 	}

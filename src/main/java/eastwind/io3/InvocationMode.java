@@ -9,6 +9,7 @@ public class InvocationMode {
 	static {
 		DEFAULT.timeout = 10000;
 		DEFAULT.retry = 1;
+		DEFAULT.sync = true;
 	}
 
 	public static ThreadLocal<InvocationMode> TL = new ThreadLocal<InvocationMode>();

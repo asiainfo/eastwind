@@ -6,8 +6,6 @@ import java.util.concurrent.TimeUnit;
 
 import com.google.common.collect.Maps;
 
-import eastwind.io.common.CommonUtils;
-
 public class DelayedExecutor {
 
 	private Thread t;
@@ -15,8 +13,8 @@ public class DelayedExecutor {
 	private volatile DelayQueue<DelayedTask> current;
 	private DelayQueue<DelayedTask>[] queues;
 	private int cardinal;
-	private Map<Class<?>, DelayedListener<?>> operations = Maps.newHashMap();
-	
+	private Map<String, DelayedListener<?>> operations = Maps.newHashMap();
+
 	@SuppressWarnings("unchecked")
 	public DelayedExecutor() {
 		queues = new DelayQueue[16];
@@ -24,7 +22,7 @@ public class DelayedExecutor {
 			queues[i] = new DelayQueue<DelayedTask>();
 		}
 		cardinal = queues.length - 1;
-		
+
 		t = new Thread(new Runnable() {
 			@Override
 			public void run() {
@@ -47,7 +45,7 @@ public class DelayedExecutor {
 							DelayedTask dt = current.poll(1, TimeUnit.SECONDS);
 							if (dt != null) {
 								@SuppressWarnings("rawtypes")
-								DelayedListener ol = operations.get(dt.obj.getClass());
+								DelayedListener ol = operations.get(dt.type);
 								ol.timeUp(dt.obj, DelayedExecutor.this);
 							}
 						}
@@ -63,12 +61,11 @@ public class DelayedExecutor {
 	}
 
 	public void register(DelayedListener<?> delayedListener) {
-		Class<?> cls = CommonUtils.getGenericType(delayedListener.getClass(), DelayedListener.class);
-		operations.put(cls, delayedListener);
+		operations.put(delayedListener.type(), delayedListener);
 	}
-	
-	public DelayedTask submit(Object obj, long millis) {
-		DelayedTask dt = new DelayedTask(sequence.get(), obj, millis);
+
+	public DelayedTask submit(String type, Object obj, long millis) {
+		DelayedTask dt = new DelayedTask(sequence.get(), type, obj, millis);
 		submit0(dt);
 		return dt;
 	}
@@ -77,7 +74,7 @@ public class DelayedExecutor {
 		dt.setExeTime(dt, millis);
 		submit0(dt);
 	}
-	
+
 	private void submit0(DelayedTask dt) {
 		int i = (byte) ((dt.id >> 1) & cardinal);
 		DelayQueue<DelayedTask> q = queues[i];
@@ -93,7 +90,7 @@ public class DelayedExecutor {
 		q.remove(dt);
 		checkCurrentQueue(oldHead, q);
 	}
-	
+
 	private void checkCurrentQueue(DelayedTask oldHead, DelayQueue<DelayedTask> q) {
 		if (q == current) {
 			return;

@@ -45,7 +45,7 @@ public class ObjectInboundHandler extends SimpleChannelInboundHandler<Object> {
 						Response response = new Response();
 						response.setId(request.getId());
 						response.setResult(hm.getResponse());
-						ctx.writeAndFlush(response).addListener(new FlushListener(app, hm));
+						ctx.writeAndFlush(response).addListener(new CleanListener(app, hm));
 					} catch (Exception e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
@@ -59,12 +59,12 @@ public class ObjectInboundHandler extends SimpleChannelInboundHandler<Object> {
 		}
 	}
 
-	static class FlushListener implements GenericFutureListener<ChannelFuture> {
+	static class CleanListener implements GenericFutureListener<ChannelFuture> {
 
 		RemoteApplication app;
 		HandlingMessage message;
 		
-		public FlushListener(RemoteApplication app, HandlingMessage message) {
+		public CleanListener(RemoteApplication app, HandlingMessage message) {
 			this.app = app;
 			this.message = message;
 		}

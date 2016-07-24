@@ -1,6 +1,7 @@
 package eastwind.io3;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
@@ -19,12 +20,31 @@ public class ApplicationGroup implements Group {
 	private ReadLock readLock = lock.readLock();
 	private WriteLock writeLock = lock.writeLock();
 
+	private volatile boolean dependent;
+	private List<ServerConfig> configs = Lists.newArrayList();
+	
 	private ArrayList<ServerTransport> transports = Lists.newArrayList();
 	private ArrayList<RemoteApplication> applications = Lists.newArrayList();
 	private Map<Class<?>, Object> invokers = Maps.newHashMap();
 
 	private int i = 0;
 
+	public boolean isDependent() {
+		return dependent;
+	}
+
+	public void setDependent(boolean dependent) {
+		this.dependent = dependent;
+	}
+
+	public List<ServerConfig> getConfigs() {
+		return configs;
+	}
+
+	public void addConfig(ServerConfig sc) {
+		this.configs.add(sc);
+	}
+	
 	public ApplicationGroup(String group) {
 		this.group = group;
 	}

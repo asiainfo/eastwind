@@ -16,15 +16,25 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 
+import eastwind.io3.HeadedObject;
+import eastwind.io3.Header;
+import eastwind.io3.UniqueObject;
+
 public class ObjectCodec extends ByteToMessageCodec<Object> {
 
 	private static Logger logger = LoggerFactory.getLogger(ObjectCodec.class);
-	
+
 	private static final byte PING = 0;
 	private static final byte SIMPLE = 0x55;
 	private static final byte HEADED_OBJECT = 0x79;
 
 	private SelfDescribedSerializer contentSerializer = new KryoSerializer();
+
+	@Override
+	public void channelActive(ChannelHandlerContext ctx) throws Exception {
+		logger.info("active:" + ctx);
+		super.channelActive(ctx);
+	}
 
 	@Override
 	protected void encode(ChannelHandlerContext ctx, Object message, ByteBuf out) throws Exception {
@@ -105,10 +115,6 @@ public class ObjectCodec extends ByteToMessageCodec<Object> {
 		output.flush();
 	}
 
-	private void logEncode(Object obj) {
-		logger.info("encode:{}", JSON.toJSONString(obj));
-	}
-	
 	@Override
 	protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
 		if (in.readableBytes() > 0) {
@@ -163,7 +169,29 @@ public class ObjectCodec extends ByteToMessageCodec<Object> {
 		}
 	}
 
+	private void logEncode(Object obj) {
+		logger.info("encode:{}-{}", contentType(obj), JSON.toJSONString(obj));
+	}
+
 	private void logDecode(Object obj) {
-		logger.info("decode:{}", JSON.toJSONString(obj));
+		logger.info("decode:{}-{}", contentType(obj), JSON.toJSONString(obj));
+	}
+
+	private String contentType(Object obj) {
+		if (obj instanceof HeadedObject) {
+			HeadedObject ho = (HeadedObject) obj;
+			switch (ho.getHeader().getModel()) {
+			case Header.MESSAGE:
+				return "Message";
+			case Header.REQUEST:
+				return "Request";
+			case Header.RESPONSE:
+				return "Response";
+			}
+		} else if (obj instanceof UniqueObject) {
+			UniqueObject uo = (UniqueObject) obj;
+			return uo.getObj().getClass().getSimpleName();
+		}
+		return obj.getClass().getSimpleName();
 	}
 }

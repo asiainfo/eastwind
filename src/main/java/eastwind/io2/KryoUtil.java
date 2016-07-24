@@ -4,6 +4,8 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 
+import eastwind.io3.Header;
+
 public class KryoUtil {
 
 	private static ThreadLocal<Kryo> KRYO_LOCAL = new ThreadLocal<Kryo>() {

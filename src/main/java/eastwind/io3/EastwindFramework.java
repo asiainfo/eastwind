@@ -15,9 +15,12 @@ import java.util.UUID;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.util.concurrent.Atomics;
 
 import eastwind.io.common.NamedThreadFactory;
 import eastwind.io2.ObjectCodec;
@@ -34,8 +37,9 @@ public class EastwindFramework extends Application implements Registrable {
 
 	private int threads = 256;
 	private ThreadPoolExecutor executor;
-
-	private ApplicationManager applicationManager = new ApplicationManager(transportSustainer, bootstrap);
+	private AtomicBoolean started = new AtomicBoolean(false);
+	
+	private ApplicationManager applicationManager = new ApplicationManager(this, transportSustainer, bootstrap);
 
 	public EastwindFramework(String group) {
 		this(group, true);
@@ -88,7 +92,7 @@ public class EastwindFramework extends Application implements Registrable {
 			serverBootstrap.bind(port).addListener(new ChannelFutureListener() {
 				@Override
 				public void operationComplete(ChannelFuture future) throws Exception {
-					logger.info("start at port:{}", port);
+					logger.info("{} started, port:{}", group, port);
 				}
 			});
 		}
@@ -107,17 +111,25 @@ public class EastwindFramework extends Application implements Registrable {
 	}
 
 	public <T> T createInvoker(String group, Class<T> interf) {
+		checkStart();
 		return null;
 	}
 
 	@Override
 	public <T> void registerListener(MessageListener<T> messageListener) {
+		checkStart();
 		objectHandlerRegistry.registerListener(messageListener);
 	}
 
 	@Override
 	public void registerHandler(Object instance) {
+		checkStart();
 		objectHandlerRegistry.registerHandler(instance);
 	}
 
+	private void checkStart() {
+		if (started.get() == false && started.compareAndSet(false, true)) {
+			start();
+		}
+	}
 }

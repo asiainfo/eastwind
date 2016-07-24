@@ -65,7 +65,7 @@ public class ListenablePromise<V> extends AbstractFuture<V> implements Unique {
 		super.addListener(new Runnable() {
 			@Override
 			public void run() {
-				listener.operationComplete(ListenablePromise.this);
+				listener.complete(ListenablePromise.this);
 			}
 		}, GlobalExecutor.EVENT_EXECUTOR);
 	}

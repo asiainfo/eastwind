@@ -23,8 +23,8 @@ public class ServerTransport extends Transport {
 	public void addHandshakeListener(final OperationListener<ServerTransport> listener) {
 		handshakePromise.addListener(new OperationListener<ListenablePromise<ServerTransport>>() {
 			@Override
-			public void operationComplete(ListenablePromise<ServerTransport> t) {
-				listener.operationComplete(ServerTransport.this);
+			public void complete(ListenablePromise<ServerTransport> t) {
+				listener.complete(ServerTransport.this);
 			}
 		});
 	}
@@ -38,10 +38,16 @@ public class ServerTransport extends Transport {
 	@Override
 	protected void publish0(final TransportPromise tp) {
 		Channel channel = getChannel();
+		Object message = tp.getMessage();
 		if (isReady()) {
-			channel.writeAndFlush(tp.getMessage()).addListener(new FlushListener(tp));
+			channel.writeAndFlush(message).addListener(new RetryListener(tp));
+			return;
 		}
-		
+		if (state == HANDSHAKE
+				&& (message instanceof UniqueObject && ((UniqueObject) message).getObj() instanceof Handshake)) {
+			channel.writeAndFlush(message);
+			return;
+		}
 		if (channel == null || !channel.isActive() || state == CONNECT_FAIL) {
 			retry(tp);
 			return;
@@ -54,11 +60,11 @@ public class ServerTransport extends Transport {
 		tp.setRetry(true);
 		addHandshakeListener(new OperationListener<ServerTransport>() {
 			@Override
-			public void operationComplete(ServerTransport t) {
+			public void complete(ServerTransport t) {
 				Channel channel = getChannel();
 				if (t.isReady()) {
 					tp.setRetry(false);
-					channel.writeAndFlush(tp.getMessage()).addListener(new FlushListener(tp));
+					channel.writeAndFlush(tp.getMessage()).addListener(new RetryListener(tp));
 				} else {
 					// TODO fail
 				}
@@ -66,23 +72,23 @@ public class ServerTransport extends Transport {
 		});
 	}
 
-	private class FlushListener implements GenericFutureListener<ChannelFuture> {
-	
+	private class RetryListener implements GenericFutureListener<ChannelFuture> {
+
 		@SuppressWarnings("rawtypes")
 		private TransportPromise tp;
-		
+
 		@SuppressWarnings({ "rawtypes" })
-		public FlushListener(TransportPromise tp) {
+		public RetryListener(TransportPromise tp) {
 			this.tp = tp;
 		}
-	
+
 		@Override
 		public void operationComplete(ChannelFuture future) throws Exception {
 			if (!future.isSuccess()) {
 				retry(tp);
 			}
 		}
-		
+
 	}
 
 	public boolean acquire() {
@@ -121,6 +127,10 @@ public class ServerTransport extends Transport {
 	}
 
 	public void reset() {
+		ListenablePromise<ServerTransport> lp = this.handshakePromise;
+		if (lp != null && !lp.isDone()) {
+			lp.cancel(true);
+		}
 		this.handshakePromise = new ListenablePromise<ServerTransport>();
 	}
 

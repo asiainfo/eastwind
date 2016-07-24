@@ -6,6 +6,15 @@ public class Request implements Unique, Headed {
 	private String namespace;
 	private Object[] args;
 
+	public Request() {
+		
+	}
+	
+	public Request(String namespace, Object[] args) {
+		this.namespace = namespace;
+		this.args = args;
+	}
+
 	public long getId() {
 		return id;
 	}

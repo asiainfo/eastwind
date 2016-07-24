@@ -14,12 +14,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import eastwind.io.common.Host;
-import eastwind.io2.HeadedObject;
-import eastwind.io2.Header;
 import eastwind.io2.ObjectCodec;
 import eastwind.io2.ObjectHandlerRegistry;
 import eastwind.io2.ObjectInboundHandler;
 import eastwind.io2.TimeSequence10;
+import eastwind.io3.HeadedObject;
+import eastwind.io3.Header;
 
 public class Client {
 

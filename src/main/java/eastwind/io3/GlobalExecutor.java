@@ -12,4 +12,9 @@ public class GlobalExecutor {
 			"SCHEDULED_EXECUTOR"));
 	public static ExecutorService EVENT_EXECUTOR = Executors.newFixedThreadPool(2, new NamedThreadFactory("EVENT_EXECUTOR"));
 
+	public static DelayedExecutor DELAYED_EXECUTOR = new DelayedExecutor();
+	
+	static {
+		DELAYED_EXECUTOR.register(new TransportTicker());
+	}
 }
