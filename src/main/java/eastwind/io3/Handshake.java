@@ -6,6 +6,15 @@ public class Handshake implements FrameworkObject {
 	private String myUuid;
 	private String yourUuid;
 
+	public Handshake() {
+	}
+
+	public Handshake(String group, String myUuid, String yourUuid) {
+		this.group = group;
+		this.myUuid = myUuid;
+		this.yourUuid = yourUuid;
+	}
+
 	public String getGroup() {
 		return group;
 	}

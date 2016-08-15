@@ -8,13 +8,13 @@ import java.lang.reflect.Method;
 
 public class ServerTransport extends Transport {
 
-	private ServerConfig serverConfig;
-	private ApplicationManager applicationManager;
+	private RemoteConfig remoteConfig;
+	private RemoteAppManager applicationManager;
 
-	public ServerTransport(ServerConfig serverConfig, TransportSustainer transportSustainer,
-			ApplicationManager applicationManager) {
-		super(serverConfig.getGroup(), transportSustainer);
-		this.serverConfig = serverConfig;
+	public ServerTransport(RemoteConfig remoteConfig, PromiseSustainer promiseSustainer,
+			RemoteAppManager applicationManager) {
+		super(remoteConfig.getGroup(), promiseSustainer);
+		this.remoteConfig = remoteConfig;
 		this.applicationManager = applicationManager;
 	}
 
@@ -36,7 +36,7 @@ public class ServerTransport extends Transport {
 
 	@SuppressWarnings("rawtypes")
 	@Override
-	protected void publish0(final TransportPromise tp) {
+	protected void send0(final TransmitPromise tp) {
 		Channel channel = getChannel();
 		Object message = tp.getMessage();
 		if (isReady()) {
@@ -55,7 +55,7 @@ public class ServerTransport extends Transport {
 	}
 
 	@SuppressWarnings("rawtypes")
-	private void retry(final TransportPromise tp) {
+	private void retry(final TransmitPromise tp) {
 		applicationManager.connectNow(this);
 		tp.setRetry(true);
 		addHandshakeListener(new OperationListener<ServerTransport>() {
@@ -75,10 +75,10 @@ public class ServerTransport extends Transport {
 	private class RetryListener implements GenericFutureListener<ChannelFuture> {
 
 		@SuppressWarnings("rawtypes")
-		private TransportPromise tp;
+		private TransmitPromise tp;
 
 		@SuppressWarnings({ "rawtypes" })
-		public RetryListener(TransportPromise tp) {
+		public RetryListener(TransmitPromise tp) {
 			this.tp = tp;
 		}
 
@@ -117,13 +117,13 @@ public class ServerTransport extends Transport {
 		}
 		hd.setParameterTypes(pts);
 		uo.setObj(hd);
-		lp = super.publish(uo, null);
+		lp = super.send(uo, null);
 		remoteApplication.addAcceptMethodPromise(lp);
 		return lp;
 	}
 
-	public ServerConfig getServerConfig() {
-		return serverConfig;
+	public RemoteConfig getRemoteConfig() {
+		return remoteConfig;
 	}
 
 	public void reset() {

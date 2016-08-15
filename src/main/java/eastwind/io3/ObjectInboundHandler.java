@@ -12,16 +12,16 @@ import java.util.concurrent.ThreadPoolExecutor;
 @Sharable
 public class ObjectInboundHandler extends SimpleChannelInboundHandler<Object> {
 
-	private ApplicationManager applicationManager;
+	private RemoteAppManager applicationManager;
 	private ObjectHandlerRegistry objectHandlerRegistry;
-	private TransportSustainer transportSustainer;
+	private PromiseSustainer promiseSustainer;
 	private ThreadPoolExecutor executor;
 
-	public ObjectInboundHandler(ApplicationManager applicationManager, ObjectHandlerRegistry objectHandlerRegistry,
-			TransportSustainer transportSustainer, ThreadPoolExecutor executor) {
+	public ObjectInboundHandler(RemoteAppManager applicationManager, ObjectHandlerRegistry objectHandlerRegistry,
+			PromiseSustainer promiseSustainer, ThreadPoolExecutor executor) {
 		this.applicationManager = applicationManager;
 		this.objectHandlerRegistry = objectHandlerRegistry;
-		this.transportSustainer = transportSustainer;
+		this.promiseSustainer = promiseSustainer;
 		this.executor = executor;
 	}
 
@@ -34,7 +34,7 @@ public class ObjectInboundHandler extends SimpleChannelInboundHandler<Object> {
 
 			final HandlingMessage hm = new HandlingMessage();
 			hm.setId(request.getId());
-			final RemoteApplication app = applicationManager.getTransport(ctx.channel()).getRemoteApplication();
+			final RemoteApp app = applicationManager.getTransport(ctx.channel()).getRemoteApplication();
 			app.addMessage(hm);
 			
 			executor.submit(new Runnable() {
@@ -54,17 +54,17 @@ public class ObjectInboundHandler extends SimpleChannelInboundHandler<Object> {
 			});
 		} else if (message instanceof Response) {
 			Response response = (Response) message;
-			ListenablePromise lp = transportSustainer.remove(response.getId());
+			ListenablePromise lp = promiseSustainer.remove(response.getId());
 			lp.succeeded(response.getResult());
 		}
 	}
 
 	static class CleanListener implements GenericFutureListener<ChannelFuture> {
 
-		RemoteApplication app;
+		RemoteApp app;
 		HandlingMessage message;
 		
-		public CleanListener(RemoteApplication app, HandlingMessage message) {
+		public CleanListener(RemoteApp app, HandlingMessage message) {
 			this.app = app;
 			this.message = message;
 		}

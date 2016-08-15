@@ -9,14 +9,14 @@ import io.netty.channel.SimpleChannelInboundHandler;
 public class FrameworkInboundHandler extends SimpleChannelInboundHandler<FrameworkObject> {
 
 	private boolean server;
-	private TransportSustainer transportSustainer;
-	private ApplicationManager applicationManager;
+	private PromiseSustainer promiseSustainer;
+	private RemoteAppManager applicationManager;
 	private ObjectHandlerRegistry objectHandlerRegistry;
 
-	public FrameworkInboundHandler(boolean server, TransportSustainer transportSustainer,
-			ApplicationManager applicationManager, ObjectHandlerRegistry objectHandlerRegistry) {
+	public FrameworkInboundHandler(boolean server, PromiseSustainer promiseSustainer,
+			RemoteAppManager applicationManager, ObjectHandlerRegistry objectHandlerRegistry) {
 		this.server = server;
-		this.transportSustainer = transportSustainer;
+		this.promiseSustainer = promiseSustainer;
 		this.applicationManager = applicationManager;
 		this.objectHandlerRegistry = objectHandlerRegistry;
 	}
@@ -37,7 +37,7 @@ public class FrameworkInboundHandler extends SimpleChannelInboundHandler<Framewo
 			if (uo.isCall()) {
 				handleCall(ctx, uo);
 			} else {
-				ListenablePromise lp = transportSustainer.remove(uo.getId());
+				ListenablePromise lp = promiseSustainer.remove(uo.getId());
 				if (lp != null) {
 					lp.succeeded(uo.getObj());
 				}
@@ -78,7 +78,7 @@ public class FrameworkInboundHandler extends SimpleChannelInboundHandler<Framewo
 		Channel channel = ctx.channel();
 		if (o instanceof Handling) {
 			Handling handling = (Handling) o;
-			RemoteApplication ra = applicationManager.getTransport(ctx.channel()).getRemoteApplication();
+			RemoteApp ra = applicationManager.getTransport(ctx.channel()).getRemoteApplication();
 			if (ra.getMessage(handling.getId()) != null) {
 				writeBack(ctx, uo, 1);
 			} else {

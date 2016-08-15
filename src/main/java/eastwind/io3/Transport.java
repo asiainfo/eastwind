@@ -6,7 +6,7 @@ import io.netty.util.concurrent.GenericFutureListener;
 
 import java.lang.ref.WeakReference;
 
-public class Transport extends Application {
+public class Transport extends App {
 
 	static final int NEW = 0;
 	static final int CONNECTING = 1;
@@ -20,12 +20,12 @@ public class Transport extends Application {
 
 	protected WeakReference<Channel> channelRef;
 	protected int state;
-	protected TransportSustainer transportSustainer;
-	protected RemoteApplication remoteApplication;
+	protected PromiseSustainer promiseSustainer;
+	protected RemoteApp remoteApplication;
 
-	public Transport(String group, TransportSustainer transportSustainer) {
+	public Transport(String group, PromiseSustainer promiseSustainer) {
 		super(group);
-		this.transportSustainer = transportSustainer;
+		this.promiseSustainer = promiseSustainer;
 	}
 
 	public boolean isReady() {
@@ -33,26 +33,26 @@ public class Transport extends Application {
 		return channel != null && channel.isActive() && state == READY;
 	}
 
-	public void publish(Object message) {
+	public void send(Object message) {
 		getChannel().writeAndFlush(message);
 	}
 
 	@SuppressWarnings("rawtypes")
-	public TransportPromise publish(Unique message, Object attach) {
-		final TransportPromise tp = new TransportPromise(this);
+	public TransmitPromise send(Unique message, Object attach) {
+		final TransmitPromise tp = new TransmitPromise(this);
 		if (message.getId() == 0) {
-			message.setId(transportSustainer.getSequence().get());
+			message.setId(promiseSustainer.getSequence().get());
 		}
 		tp.setId(message.getId());
 		tp.setMessage(message);
 		tp.setAttach(attach);
-		publish0(tp);
-		transportSustainer.add(tp);
+		send0(tp);
+		promiseSustainer.add(tp);
 		return tp;
 	}
 
 	@SuppressWarnings("rawtypes")
-	protected void publish0(final TransportPromise tp) {
+	protected void send0(final TransmitPromise tp) {
 		Channel channel = getChannel();
 		if (channel == null || !channel.isActive()) {
 			tp.failed(null);
@@ -61,7 +61,7 @@ public class Transport extends Application {
 				@Override
 				public void operationComplete(ChannelFuture future) throws Exception {
 					if (future.isSuccess()) {
-						transportSustainer.add(tp);
+						promiseSustainer.add(tp);
 					} else {
 						tp.failed(future.cause());
 					}
@@ -70,7 +70,7 @@ public class Transport extends Application {
 		}
 	}
 
-	public void handshake(Handshake hs, RemoteApplication remoteApplication) {
+	public void handshake(Handshake hs, RemoteApp remoteApplication) {
 		super.uuid = hs.getMyUuid();
 		super.group = hs.getGroup();
 		this.remoteApplication = remoteApplication;
@@ -90,11 +90,11 @@ public class Transport extends Application {
 		this.state = state;
 	}
 
-	public RemoteApplication getRemoteApplication() {
+	public RemoteApp getRemoteApplication() {
 		return remoteApplication;
 	}
 
-	public void setRemoteApplication(RemoteApplication remoteApplication) {
+	public void setRemoteApplication(RemoteApp remoteApplication) {
 		this.remoteApplication = remoteApplication;
 	}
 

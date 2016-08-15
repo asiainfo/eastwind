@@ -7,7 +7,7 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<netty.v>4.0.34.Final</netty.v>
+		<netty.v>4.1.1.Final</netty.v>
 		<jackson.v>2.5.1</jackson.v>
 		<spring.v>3.2.16.RELEASE</spring.v>
 		<netty-tcnative.classifier>windows-x86_64</netty-tcnative.classifier>

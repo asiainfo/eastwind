@@ -13,7 +13,7 @@ public class DelayedExecutor {
 	private volatile DelayQueue<DelayedTask> current;
 	private DelayQueue<DelayedTask>[] queues;
 	private int cardinal;
-	private Map<String, DelayedListener<?>> operations = Maps.newHashMap();
+	private Map<Class<?>, DelayedListener<?>> operations = Maps.newHashMap();
 
 	@SuppressWarnings("unchecked")
 	public DelayedExecutor() {
@@ -45,7 +45,7 @@ public class DelayedExecutor {
 							DelayedTask dt = current.poll(1, TimeUnit.SECONDS);
 							if (dt != null) {
 								@SuppressWarnings("rawtypes")
-								DelayedListener ol = operations.get(dt.type);
+								DelayedListener ol = operations.get(dt.cls);
 								ol.timeUp(dt.obj, DelayedExecutor.this);
 							}
 						}
@@ -61,11 +61,11 @@ public class DelayedExecutor {
 	}
 
 	public void register(DelayedListener<?> delayedListener) {
-		operations.put(delayedListener.type(), delayedListener);
+		operations.put(delayedListener.getClass(), delayedListener);
 	}
 
-	public DelayedTask submit(String type, Object obj, long millis) {
-		DelayedTask dt = new DelayedTask(sequence.get(), type, obj, millis);
+	public DelayedTask submit(Class<?> cls, Object obj, long millis) {
+		DelayedTask dt = new DelayedTask(sequence.get(), cls, obj, millis);
 		submit0(dt);
 		return dt;
 	}

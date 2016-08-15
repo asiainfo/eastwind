@@ -22,16 +22,13 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.util.concurrent.Atomics;
 
-import eastwind.io.common.NamedThreadFactory;
-import eastwind.io2.ObjectCodec;
-
-public class EastwindFramework extends Application implements Registrable {
+public class EastwindFramework extends App implements Registrable {
 
 	private static Logger logger = LoggerFactory.getLogger(EastwindFramework.class);
 
 	private Bootstrap bootstrap = new Bootstrap();
 	private ServerBootstrap serverBootstrap;
-	private TransportSustainer transportSustainer = new TransportSustainer(new MillisX10Sequence());
+	private PromiseSustainer promiseSustainer = new PromiseSustainer(new MillisX10Sequence());
 	private ObjectHandlerRegistry objectHandlerRegistry = new ObjectHandlerRegistry();
 	private int port = 12468;
 
@@ -39,7 +36,7 @@ public class EastwindFramework extends Application implements Registrable {
 	private ThreadPoolExecutor executor;
 	private AtomicBoolean started = new AtomicBoolean(false);
 	
-	private ApplicationManager applicationManager = new ApplicationManager(this, transportSustainer, bootstrap);
+	private RemoteAppManager remoteAppManager = new RemoteAppManager(this, promiseSustainer, bootstrap);
 
 	public EastwindFramework(String group) {
 		this(group, true);
@@ -58,10 +55,10 @@ public class EastwindFramework extends Application implements Registrable {
 				new NamedThreadFactory("message-executor"));
 
 		bootstrap.group(new NioEventLoopGroup(2)).channel(NioSocketChannel.class);
-		final FrameworkInboundHandler frameworkHandler = new FrameworkInboundHandler(false, transportSustainer,
-				applicationManager, objectHandlerRegistry);
-		final ObjectInboundHandler objectHandler = new ObjectInboundHandler(applicationManager, objectHandlerRegistry,
-				transportSustainer, executor);
+		final FrameworkInboundHandler frameworkHandler = new FrameworkInboundHandler(false, promiseSustainer,
+				remoteAppManager, objectHandlerRegistry);
+		final ObjectInboundHandler objectHandler = new ObjectInboundHandler(remoteAppManager, objectHandlerRegistry,
+				promiseSustainer, executor);
 		final HeadedObjectCodec headedObjectCodec = new HeadedObjectCodec();
 		bootstrap.handler(new ChannelInitializer<SocketChannel>() {
 			@Override
@@ -77,7 +74,7 @@ public class EastwindFramework extends Application implements Registrable {
 			serverBootstrap.group(new NioEventLoopGroup(2), new NioEventLoopGroup());
 			serverBootstrap.channel(NioServerSocketChannel.class);
 			final FrameworkInboundHandler serverFrameworkHandler = new FrameworkInboundHandler(true,
-					transportSustainer, applicationManager, objectHandlerRegistry);
+					promiseSustainer, remoteAppManager, objectHandlerRegistry);
 			serverBootstrap.childHandler(new ChannelInitializer<SocketChannel>() {
 				@Override
 				protected void initChannel(SocketChannel sc) throws Exception {
@@ -106,8 +103,8 @@ public class EastwindFramework extends Application implements Registrable {
 		this.threads = threads;
 	}
 
-	public ApplicationManager getApplicationManager() {
-		return applicationManager;
+	public RemoteAppManager getApplicationManager() {
+		return remoteAppManager;
 	}
 
 	public <T> T createInvoker(String group, Class<T> interf) {

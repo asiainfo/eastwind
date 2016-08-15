@@ -2,6 +2,6 @@ package eastwind.io.common;
 
 public class Ping {
 
-	public static Ping instance = new Ping();
+	public static Ping INSTANCE = new Ping();
 	
 }

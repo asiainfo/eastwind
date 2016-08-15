@@ -9,13 +9,10 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.apache.commons.lang3.ClassUtils;
 
-import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 import eastwind.io.common.CommonUtils;
-import eastwind.io.test.Hello;
-import eastwind.io.test.HelloImpl;
 
 public class ObjectHandlerRegistry implements Registrable {
 
@@ -205,11 +202,4 @@ public class ObjectHandlerRegistry implements Registrable {
 		List<RpcHandler> handlers = Lists.newArrayList();
 	}
 
-	public static void main(String[] args) throws ClassNotFoundException {
-		ObjectHandlerRegistry or = new ObjectHandlerRegistry();
-		or.registerHandler(new HelloImpl());
-		RpcHandler handler = or.getHandler(Hello.class.getCanonicalName(), "hello",
-				new String[] { String.class.getCanonicalName() });
-		System.out.println(JSON.toJSONString(handler));
-	}
 }
