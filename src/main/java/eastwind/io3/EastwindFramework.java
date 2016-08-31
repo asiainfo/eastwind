@@ -20,7 +20,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.util.concurrent.Atomics;
+import eastwind.io3.obj.Shake;
+import eastwind.io3.support.MillisX10Sequence;
+import eastwind.io3.support.NamedThreadFactory;
+import eastwind.io3.transport.ClientRepository;
+import eastwind.io3.transport.ServerRepository;
+import eastwind.io3.transport.TransportFactory;
 
 public class EastwindFramework extends App implements Registrable {
 
@@ -28,7 +33,15 @@ public class EastwindFramework extends App implements Registrable {
 
 	private Bootstrap bootstrap = new Bootstrap();
 	private ServerBootstrap serverBootstrap;
-	private PromiseSustainer promiseSustainer = new PromiseSustainer(new MillisX10Sequence());
+	
+	private Sequence sequence = new MillisX10Sequence();
+	private TransportFactory transportFactory;
+	private TransmitSustainer transmitSustainer = new TransmitSustainer();
+	private NetServerConfigurer netServerConfigurer = new NetServerConfigurer();
+	private ServerRepository serverRepository;
+	private ClientRepository clientRepository = new ClientRepository();
+	
+	private FrameworkObjectHandler frameworkObjectHandler;
 	private ObjectHandlerRegistry objectHandlerRegistry = new ObjectHandlerRegistry();
 	private int port = 12468;
 
@@ -36,18 +49,16 @@ public class EastwindFramework extends App implements Registrable {
 	private ThreadPoolExecutor executor;
 	private AtomicBoolean started = new AtomicBoolean(false);
 	
-	private RemoteAppManager remoteAppManager = new RemoteAppManager(this, promiseSustainer, bootstrap);
-
-	public EastwindFramework(String group) {
-		this(group, true);
-	}
-
 	public EastwindFramework(String group, boolean server) {
 		super(group);
 		super.uuid = UUID.randomUUID().toString();
+		Shake shake = new Shake(group, super.uuid);
+		transportFactory = new TransportFactory(bootstrap, shake, sequence, transmitSustainer);
 		if (server) {
 			serverBootstrap = new ServerBootstrap();
+			serverRepository = new ServerRepository(transportFactory);
 		}
+		frameworkObjectHandler = new FrameworkObjectHandler(shake, transportFactory, clientRepository, serverRepository);
 	}
 
 	public void start() {
@@ -55,33 +66,27 @@ public class EastwindFramework extends App implements Registrable {
 				new NamedThreadFactory("message-executor"));
 
 		bootstrap.group(new NioEventLoopGroup(2)).channel(NioSocketChannel.class);
-		final FrameworkInboundHandler frameworkHandler = new FrameworkInboundHandler(false, promiseSustainer,
-				remoteAppManager, objectHandlerRegistry);
-		final ObjectInboundHandler objectHandler = new ObjectInboundHandler(remoteAppManager, objectHandlerRegistry,
-				promiseSustainer, executor);
 		final HeadedObjectCodec headedObjectCodec = new HeadedObjectCodec();
+		final DispatcherHandler cDispatcherHandler = new DispatcherHandler(false, frameworkObjectHandler);
 		bootstrap.handler(new ChannelInitializer<SocketChannel>() {
 			@Override
 			protected void initChannel(SocketChannel sc) throws Exception {
 				sc.pipeline().addLast("codec", new ObjectCodec());
 				sc.pipeline().addLast("headedObjectCodec", headedObjectCodec);
-				sc.pipeline().addLast("frameworkHandler", frameworkHandler);
-				sc.pipeline().addLast("objectHandler", objectHandler);
+				sc.pipeline().addLast("dispatcherHandler", cDispatcherHandler);
 			}
 		});
 
 		if (serverBootstrap != null) {
+			final DispatcherHandler sDispatcherHandler = new DispatcherHandler(true, frameworkObjectHandler);
 			serverBootstrap.group(new NioEventLoopGroup(2), new NioEventLoopGroup());
 			serverBootstrap.channel(NioServerSocketChannel.class);
-			final FrameworkInboundHandler serverFrameworkHandler = new FrameworkInboundHandler(true,
-					promiseSustainer, remoteAppManager, objectHandlerRegistry);
 			serverBootstrap.childHandler(new ChannelInitializer<SocketChannel>() {
 				@Override
 				protected void initChannel(SocketChannel sc) throws Exception {
 					sc.pipeline().addLast("codec", new ObjectCodec());
 					sc.pipeline().addLast("headedObjectCodec", headedObjectCodec);
-					sc.pipeline().addLast("frameworkHandler", serverFrameworkHandler);
-					sc.pipeline().addLast("objectHandler", objectHandler);
+					sc.pipeline().addLast("dispatcherHandler", sDispatcherHandler);
 				}
 			});
 
@@ -103,10 +108,6 @@ public class EastwindFramework extends App implements Registrable {
 		this.threads = threads;
 	}
 
-	public RemoteAppManager getApplicationManager() {
-		return remoteAppManager;
-	}
-
 	public <T> T createInvoker(String group, Class<T> interf) {
 		checkStart();
 		return null;
@@ -114,19 +115,22 @@ public class EastwindFramework extends App implements Registrable {
 
 	@Override
 	public <T> void registerListener(MessageListener<T> messageListener) {
-		checkStart();
 		objectHandlerRegistry.registerListener(messageListener);
 	}
 
 	@Override
 	public void registerHandler(Object instance) {
-		checkStart();
 		objectHandlerRegistry.registerHandler(instance);
 	}
 
 	private void checkStart() {
-		if (started.get() == false && started.compareAndSet(false, true)) {
+		if (!started.get() && started.compareAndSet(false, true)) {
 			start();
 		}
 	}
+
+	public TransportFactory getTransportFactory() {
+		return transportFactory;
+	}
+	
 }

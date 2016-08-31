@@ -1,47 +1,35 @@
 package eastwind.io3;
 
-public class TransmitPromise<V> extends ListenablePromise<V> {
+import eastwind.io3.obj.Unique;
+import eastwind.io3.support.SettableFuture;
 
-	protected boolean retry;
-	protected int nrcy;
-	protected int losts;
-	protected DelayedTask checkTask;
-	protected Transport transport;
+public class TransmitPromise<V> extends SettableFuture<V> implements Unique {
+
+	private int status;
+	private Unique message;
 	
-	public TransmitPromise(Transport transport) {
-		this.transport = transport;
+	public TransmitPromise(Unique message) {
+		this.message = message;
 	}
 
-	public boolean isRetry() {
-		return retry;
+	@Override
+	public long getId() {
+		return message.getId();
 	}
 
-	public void setRetry(boolean retry) {
-		this.retry = retry;
+	@Override
+	public void setId(long id) {
 	}
 
-	public void lost() {
-		this.losts++;
+	public int getStatus() {
+		return status;
 	}
 
-	public int getLosts() {
-		return losts;
+	public void setStatus(int status) {
+		this.status = status;
 	}
 
-	public void clearLosts() {
-		this.losts = 0;
+	public Unique getMessage() {
+		return message;
 	}
-
-	public DelayedTask getCheckTask() {
-		return checkTask;
-	}
-
-	public void setCheckTask(DelayedTask checkTask) {
-		this.checkTask = checkTask;
-	}
-
-	public Transport getTransport() {
-		return transport;
-	}
-
 }

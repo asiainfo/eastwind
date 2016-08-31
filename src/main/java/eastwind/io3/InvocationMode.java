@@ -1,6 +1,6 @@
 package eastwind.io3;
 
-import eastwind.io.common.Host;
+import eastwind.io3.obj.Host;
 
 public class InvocationMode {
 

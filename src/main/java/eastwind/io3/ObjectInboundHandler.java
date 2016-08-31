@@ -9,19 +9,21 @@ import io.netty.util.concurrent.GenericFutureListener;
 import java.io.IOException;
 import java.util.concurrent.ThreadPoolExecutor;
 
+import eastwind.io3.obj.HandlingMessage;
+import eastwind.io3.obj.Request;
+import eastwind.io3.obj.Response;
+
 @Sharable
 public class ObjectInboundHandler extends SimpleChannelInboundHandler<Object> {
 
-	private RemoteAppManager applicationManager;
 	private ObjectHandlerRegistry objectHandlerRegistry;
-	private PromiseSustainer promiseSustainer;
+	private TransmitSustainer transmitSustainer;
 	private ThreadPoolExecutor executor;
 
-	public ObjectInboundHandler(RemoteAppManager applicationManager, ObjectHandlerRegistry objectHandlerRegistry,
-			PromiseSustainer promiseSustainer, ThreadPoolExecutor executor) {
-		this.applicationManager = applicationManager;
+	public ObjectInboundHandler(ObjectHandlerRegistry objectHandlerRegistry, TransmitSustainer transmitSustainer,
+			ThreadPoolExecutor executor) {
 		this.objectHandlerRegistry = objectHandlerRegistry;
-		this.promiseSustainer = promiseSustainer;
+		this.transmitSustainer = transmitSustainer;
 		this.executor = executor;
 	}
 
@@ -30,13 +32,11 @@ public class ObjectInboundHandler extends SimpleChannelInboundHandler<Object> {
 	protected void channelRead0(final ChannelHandlerContext ctx, Object message) throws Exception {
 		if (message instanceof Request) {
 			final Request request = (Request) message;
-			final RpcHandler handler = objectHandlerRegistry.getHandler(request.getNamespace());
+			final MethodHandler handler = objectHandlerRegistry.getHandler(request.getName());
 
 			final HandlingMessage hm = new HandlingMessage();
 			hm.setId(request.getId());
-			final RemoteApp app = applicationManager.getTransport(ctx.channel()).getRemoteApplication();
-			app.addMessage(hm);
-			
+
 			executor.submit(new Runnable() {
 				@Override
 				public void run() {
@@ -45,7 +45,6 @@ public class ObjectInboundHandler extends SimpleChannelInboundHandler<Object> {
 						Response response = new Response();
 						response.setId(request.getId());
 						response.setResult(hm.getResponse());
-						ctx.writeAndFlush(response).addListener(new CleanListener(app, hm));
 					} catch (Exception e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
@@ -54,28 +53,23 @@ public class ObjectInboundHandler extends SimpleChannelInboundHandler<Object> {
 			});
 		} else if (message instanceof Response) {
 			Response response = (Response) message;
-			ListenablePromise lp = promiseSustainer.remove(response.getId());
-			lp.succeeded(response.getResult());
 		}
 	}
 
 	static class CleanListener implements GenericFutureListener<ChannelFuture> {
 
-		RemoteApp app;
 		HandlingMessage message;
-		
-		public CleanListener(RemoteApp app, HandlingMessage message) {
-			this.app = app;
+
+		public CleanListener(HandlingMessage message) {
 			this.message = message;
 		}
-		
+
 		@Override
 		public void operationComplete(ChannelFuture future) throws Exception {
-			app.removeMessage(message.getId());
 		}
-		
+
 	}
-	
+
 	@Override
 	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
 		if (cause.getClass().equals(IOException.class)) {

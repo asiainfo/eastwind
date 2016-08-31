@@ -16,10 +16,15 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 
-import eastwind.io.common.Ping;
 import eastwind.io2.KryoSerializer;
 import eastwind.io2.KryoUtil;
 import eastwind.io2.SelfDescribedSerializer;
+import eastwind.io3.obj.FrameworkObject;
+import eastwind.io3.obj.FrameworkObjects;
+import eastwind.io3.obj.HeadedObject;
+import eastwind.io3.obj.Header;
+import eastwind.io3.obj.Ping;
+import eastwind.io3.obj.UniqueHolder;
 
 public class ObjectCodec extends ByteToMessageCodec<Object> {
 
@@ -30,12 +35,6 @@ public class ObjectCodec extends ByteToMessageCodec<Object> {
 	private static final byte HEADED_OBJECT = 0x79;
 
 	private SelfDescribedSerializer contentSerializer = new KryoSerializer();
-
-	@Override
-	public void channelActive(ChannelHandlerContext ctx) throws Exception {
-		logger.info("active:" + ctx);
-		super.channelActive(ctx);
-	}
 
 	@Override
 	protected void encode(ChannelHandlerContext ctx, Object message, ByteBuf out) throws Exception {
@@ -121,7 +120,7 @@ public class ObjectCodec extends ByteToMessageCodec<Object> {
 		if (in.readableBytes() > 0) {
 			if (in.getByte(0) == PING) {
 				in.readByte();
-				out.add(Ping.INSTANCE);
+				out.add(FrameworkObjects.PING);
 			} else {
 				in.markReaderIndex();
 				int model = in.readByte();
@@ -189,8 +188,8 @@ public class ObjectCodec extends ByteToMessageCodec<Object> {
 			case Header.RESPONSE:
 				return "Response";
 			}
-		} else if (obj instanceof UniqueObject) {
-			UniqueObject uo = (UniqueObject) obj;
+		} else if (obj instanceof UniqueHolder) {
+			UniqueHolder uo = (UniqueHolder) obj;
 			return uo.getObj().getClass().getSimpleName();
 		}
 		return obj.getClass().getSimpleName();

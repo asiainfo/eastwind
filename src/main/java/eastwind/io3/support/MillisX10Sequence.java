@@ -1,0 +1,22 @@
+package eastwind.io3.support;
+
+import eastwind.io3.Sequence;
+
+public class MillisX10Sequence implements Sequence {
+
+	private long last;
+
+	public MillisX10Sequence() {
+		this.last = System.currentTimeMillis() * 10;
+	}
+
+	public synchronized long get() {
+		long now = System.currentTimeMillis() * 10;
+		if (now <= last) {
+			now = ++last;
+		} else {
+			last = now;
+		}
+		return now;
+	}
+}

@@ -12,7 +12,7 @@ import org.apache.commons.lang3.ClassUtils;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
-import eastwind.io.common.CommonUtils;
+import eastwind.io3.support.CommonUtils;
 
 public class ObjectHandlerRegistry implements Registrable {
 
@@ -37,12 +37,12 @@ public class ObjectHandlerRegistry implements Registrable {
 
 	private Map<Class<?>, CopyOnWriteArrayList<MessageListener<Object>>> messageListeners = Maps.newHashMap();
 
-	private Map<String, List<RpcHandler>> rpcHandlers = Maps.newHashMap();
+	private Map<String, List<MethodHandler>> methodHandlers = Maps.newHashMap();
 
 	private List<HanlderObj> hanlderObjs = Lists.newArrayList();
 
-	public RpcHandler getHandler(String namespace) {
-		return rpcHandlers.get(namespace).get(0);
+	public MethodHandler getHandler(String namespace) {
+		return methodHandlers.get(namespace).get(0);
 	}
 
 	public void registerHandler(Object obj) {
@@ -58,12 +58,12 @@ public class ObjectHandlerRegistry implements Registrable {
 
 		for (Method method : obj.getClass().getMethods()) {
 			if (!Object.class.equals(method.getDeclaringClass())) {
-				RpcHandler rpcHandler = new RpcHandler(obj, method, ho.alias);
+				MethodHandler rpcHandler = new MethodHandler(obj, method, ho.alias);
 				String key = ho.alias + "." + method.getName();
-				List<RpcHandler> handlers = rpcHandlers.get(key);
+				List<MethodHandler> handlers = methodHandlers.get(key);
 				if (handlers == null) {
 					handlers = Lists.newArrayList();
-					rpcHandlers.put(key, handlers);
+					methodHandlers.put(key, handlers);
 				}
 				handlers.add(rpcHandler);
 				ho.handlers.add(rpcHandler);
@@ -77,7 +77,7 @@ public class ObjectHandlerRegistry implements Registrable {
 		return messageListeners.get(cls);
 	}
 
-	public RpcHandler getHandler(String interf, String method, String[] parameterTypes)
+	public MethodHandler getHandler(String interf, String method, String[] parameterTypes)
 			throws ClassNotFoundException {
 		Class<?> cls = Class.forName(interf);
 		Class<?>[] pts = new Class<?>[parameterTypes.length];
@@ -85,11 +85,11 @@ public class ObjectHandlerRegistry implements Registrable {
 			pts[i] = Class.forName(parameterTypes[i]);
 		}
 
-		RpcHandler handler = null;
+		MethodHandler handler = null;
 		for (HanlderObj ho : hanlderObjs) {
 			if (ho.interfs.contains(cls)) {
 				int distance = 0;
-				for (RpcHandler h : ho.handlers) {
+				for (MethodHandler h : ho.handlers) {
 					int d = distance(h.getTargetMethod(), pts);
 					if (d == 0) {
 						handler = h;
@@ -199,7 +199,7 @@ public class ObjectHandlerRegistry implements Registrable {
 	private static class HanlderObj {
 		String alias;
 		List<Class<?>> interfs;
-		List<RpcHandler> handlers = Lists.newArrayList();
+		List<MethodHandler> handlers = Lists.newArrayList();
 	}
 
 }

@@ -6,6 +6,12 @@ import io.netty.handler.codec.MessageToMessageCodec;
 
 import java.util.List;
 
+import eastwind.io3.obj.Headed;
+import eastwind.io3.obj.HeadedObject;
+import eastwind.io3.obj.Header;
+import eastwind.io3.obj.Request;
+import eastwind.io3.obj.Response;
+
 @Sharable
 public class HeadedObjectCodec extends MessageToMessageCodec<HeadedObject, Headed> {
 
@@ -18,7 +24,7 @@ public class HeadedObjectCodec extends MessageToMessageCodec<HeadedObject, Heade
 			Request request = (Request) msg;
 			header.setModel(Header.REQUEST);
 			header.setId(request.getId());
-			header.setNamespace(request.getNamespace());
+			header.setNamespace(request.getName());
 			ho.setObjs(request.getArgs());
 		} else if (msg instanceof Response) {
 			Response response = (Response) msg;
@@ -40,7 +46,7 @@ public class HeadedObjectCodec extends MessageToMessageCodec<HeadedObject, Heade
 		if (model == Header.REQUEST) {
 			Request request = new Request();
 			request.setId(header.getId());
-			request.setNamespace(header.getNamespace());
+			request.setName(header.getNamespace());
 			request.setArgs((Object[]) msg.getObj());
 			out.add(request);
 		} else if (model == Header.RESPONSE) {
@@ -52,8 +58,6 @@ public class HeadedObjectCodec extends MessageToMessageCodec<HeadedObject, Heade
 				response.setResult(msg.getObj());
 			}
 			out.add(response);
-		} else if (model == Header.MESSAGE) {
-
 		}
 	}
 

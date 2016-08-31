@@ -5,11 +5,11 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import com.google.common.util.concurrent.SettableFuture;
+import eastwind.io3.support.SettableFuture;
 
-public class InvocationPromise implements Future {
+public class InvocationPromise<V> implements Future<V> {
 
-	private SettableFuture future = SettableFuture.create();
+	private SettableFuture<V> future = new SettableFuture<V>();
 
 	@Override
 	public boolean cancel(boolean mayInterruptIfRunning) {
@@ -27,16 +27,16 @@ public class InvocationPromise implements Future {
 	}
 
 	@Override
-	public Object get() throws InterruptedException, ExecutionException {
+	public V get() throws InterruptedException, ExecutionException {
 		return future.get();
 	}
 
 	@Override
-	public Object get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+	public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
 		return future.get(timeout, unit);
 	}
 
-	public boolean set(Object value) {
+	public boolean set(V value) {
 		return future.set(value);
 	}
 
@@ -44,7 +44,4 @@ public class InvocationPromise implements Future {
 		return future.setException(throwable);
 	}
 
-	public InvocationPromise addListener(InvocationListener listener) {
-		return this;
-	}
 }
