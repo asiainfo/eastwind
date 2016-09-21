@@ -19,6 +19,7 @@ public class TransmitPromise<V> extends SettableFuture<V> implements Unique {
 
 	@Override
 	public void setId(long id) {
+		message.setId(id);
 	}
 
 	public int getStatus() {

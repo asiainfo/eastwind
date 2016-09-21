@@ -1,10 +1,11 @@
 package eastwind.io3.obj;
 
 
-public class Request implements Unique, Headed {
+public class Request implements Unique, BusinessObject {
 
 	private long id;
 	private String name;
+	private boolean binary;
 	private Object[] args;
 
 	public long getId() {
@@ -13,6 +14,14 @@ public class Request implements Unique, Headed {
 
 	public void setId(long id) {
 		this.id = id;
+	}
+
+	public boolean isBinary() {
+		return binary;
+	}
+
+	public void setBinary(boolean binary) {
+		this.binary = binary;
 	}
 
 	public String getName() {

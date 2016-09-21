@@ -2,17 +2,14 @@ package eastwind.io3;
 
 import java.util.EventListener;
 
-public class InvocationListener implements EventListener {
 
-	public void onComplete(InvocationPromise invocationPromise) {
-		
-	}
+public interface InvocationListener<T> extends EventListener {
+
+	public void onResult(InvocationFuture<T> future);
 	
-	public void onSucceed(InvocationPromise invocationPromise) {
-		
-	}
+	public void onInvokeException(InvocationFuture<T> future);
 	
-	public void onFail(InvocationPromise invocationPromise) {
-		
-	}
+	public void onExecutionException(InvocationFuture<T> future);
+	
+	public void onCanceled(InvocationFuture<T> future);
 }

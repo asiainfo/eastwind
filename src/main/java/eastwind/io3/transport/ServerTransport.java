@@ -6,7 +6,6 @@ import io.netty.util.concurrent.GenericFutureListener;
 
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
-import java.util.concurrent.ConcurrentMap;
 
 import eastwind.io3.Sequence;
 import eastwind.io3.TransmitPromise;
@@ -14,10 +13,14 @@ import eastwind.io3.TransmitSustainer;
 import eastwind.io3.obj.HandlerEnquire;
 import eastwind.io3.obj.HandlerMetaData;
 import eastwind.io3.obj.Host;
+import eastwind.io3.obj.JsonEnquire;
+import eastwind.io3.obj.MethodEnquire;
 import eastwind.io3.obj.Unique;
 import eastwind.io3.obj.UniqueHolder;
+import eastwind.io3.support.GlobalExecutor;
 import eastwind.io3.support.OperationListener;
 import eastwind.io3.support.SettableFuture;
+import eastwind.io3.transport.ServerRepository.ServerHandlerMetaData;
 
 public class ServerTransport {
 
@@ -28,10 +31,10 @@ public class ServerTransport {
 	private String actualGroup;
 	private String uuid;
 	private WeakReference<Channel> channelRef;
-	private SettableFuture<Integer> shakeFuture;
+	private SettableFuture<ServerTransport> shakeFuture;
 	private TransmitSustainer transmitSustainer;
 	private Sequence sequence;
-	private ConcurrentMap<Method, SettableFuture<HandlerMetaData>> handlerMetaDatas;
+	private ServerHandlerMetaData serverHandlerMetaData;
 
 	public ServerTransport(String group, Host host, Channel channel) {
 		this.group = group;
@@ -70,7 +73,7 @@ public class ServerTransport {
 			channel.writeAndFlush(message);
 		}
 	}
-	
+
 	@SuppressWarnings("rawtypes")
 	public TransmitPromise sendAndWaitingForReply(Unique message) {
 		if (message.getId() == 0) {
@@ -94,56 +97,44 @@ public class ServerTransport {
 		return tp;
 	}
 
-	private final class EnquireListener implements OperationListener<TransmitPromise<HandlerMetaData>> {
-		private final Method method;
-		private final SettableFuture<HandlerMetaData> metaFuture;
-	
-		private EnquireListener(Method method, SettableFuture<HandlerMetaData> metaFuture) {
-			this.method = method;
-			this.metaFuture = metaFuture;
-		}
-	
-		@Override
-		public void complete(TransmitPromise<HandlerMetaData> t) {
-			HandlerMetaData meta = t.getNow();
-			meta.setMethod(method);
-			metaFuture.set(meta);
-		}
+	public SettableFuture<HandlerMetaData> getHandlerMetaData(Method method) {
+		MethodEnquireAdapter methodEnquireAdapter = new MethodEnquireAdapter(method);
+		return getHandlerMetaData0(methodEnquireAdapter);
 	}
-
-	public SettableFuture<HandlerMetaData> getHandlerMetaData(final Method method) {
-		SettableFuture<HandlerMetaData> metaFuture = handlerMetaDatas.get(method);
-		if (metaFuture != null) {
-			return metaFuture;
+	
+	public SettableFuture<HandlerMetaData> getHandlerMetaData(String name) {
+		JsonEnquireAdapter jsonEnquireAdapter = new JsonEnquireAdapter(name);
+		return getHandlerMetaData0(jsonEnquireAdapter);
+	}
+	
+	private SettableFuture<HandlerMetaData> getHandlerMetaData0(HandlerEnquireAdapter handlerEnquireAdapter) {
+		if (serverHandlerMetaData != null) {
+			SettableFuture<HandlerMetaData> future = handlerEnquireAdapter.getAbsent();
+			if (future != null) {
+				return future;
+			}
 		}
 
-		metaFuture = new SettableFuture<HandlerMetaData>();
-		SettableFuture<HandlerMetaData> absent = handlerMetaDatas.putIfAbsent(method, metaFuture);
+		SettableFuture<HandlerMetaData> future = handlerEnquireAdapter.createHandlerMetaData();
 
-		if (absent == null) {
-			HandlerEnquire enquire = createHandlerEnquire(method);
+		if (future != null) {
+			HandlerEnquire enquire = handlerEnquireAdapter.createEnquire();
 			UniqueHolder holder = UniqueHolder.hold(enquire);
 
-			@SuppressWarnings("unchecked")
-			TransmitPromise<HandlerMetaData> tp = sendAndWaitingForReply(holder);
-			tp.addListener(new EnquireListener(method, metaFuture));
-			return metaFuture;
+			OperationListener<TransmitPromise<HandlerMetaData>> enquireListener = handlerEnquireAdapter
+					.createEnquireListener();
+			if (status == 1) {
+				@SuppressWarnings("unchecked")
+				TransmitPromise<HandlerMetaData> tp = sendAndWaitingForReply(holder);
+				tp.addListener(enquireListener, tp, GlobalExecutor.SERIAL_EXECUTOR);
+			} else {
+				getShakeFuture().addListener(new ShakeEnquireListener(handlerEnquireAdapter, holder, enquireListener),
+						this, GlobalExecutor.SERIAL_EXECUTOR);
+			}
+			return future;
 		} else {
-			return absent;
+			return handlerEnquireAdapter.getAbsent();
 		}
-	}
-
-	private HandlerEnquire createHandlerEnquire(final Method method) {
-		HandlerEnquire hd = new HandlerEnquire();
-		hd.setInterf(method.getDeclaringClass().getName());
-		hd.setMethod(method.getName());
-		Class<?>[] cls = method.getParameterTypes();
-		String[] pts = new String[cls.length];
-		for (int i = 0; i < cls.length; i++) {
-			pts[i] = cls[i].getCanonicalName();
-		}
-		hd.setParameterTypes(pts);
-		return hd;
 	}
 
 	public void addShakeListener(final OperationListener<ServerTransport> listener) {
@@ -152,7 +143,7 @@ public class ServerTransport {
 			public void run() {
 				listener.complete(ServerTransport.this);
 			}
-		});
+		}, GlobalExecutor.SERIAL_EXECUTOR);
 	}
 
 	public void addCloseListener() {
@@ -169,11 +160,11 @@ public class ServerTransport {
 
 	public void setStatus(int status) {
 		this.status = status;
-		shakeFuture.set(1);
+		shakeFuture.set(this);
 	}
 
-	public void setHandlerMetaDatas(ConcurrentMap<Method, SettableFuture<HandlerMetaData>> handlerMetaDatas) {
-		this.handlerMetaDatas = handlerMetaDatas;
+	public void setServerHandlerMetaData(ServerHandlerMetaData serverHandlerMetaData) {
+		this.serverHandlerMetaData = serverHandlerMetaData;
 	}
 
 	public void setTransmitSustainer(TransmitSustainer transmitSustainer) {
@@ -184,13 +175,173 @@ public class ServerTransport {
 		this.sequence = sequence;
 	}
 
+	private class ShakeEnquireListener implements OperationListener<ServerTransport> {
+	
+		private HandlerEnquireAdapter handlerEnquireAdapter;
+		private UniqueHolder holder;
+		private OperationListener<TransmitPromise<HandlerMetaData>> enquireListener;
+	
+		public ShakeEnquireListener(HandlerEnquireAdapter handlerEnquireAdapter, UniqueHolder holder,
+				OperationListener<TransmitPromise<HandlerMetaData>> enquireListener) {
+			this.handlerEnquireAdapter = handlerEnquireAdapter;
+			this.holder = holder;
+			this.enquireListener = enquireListener;
+		}
+	
+		@Override
+		public void complete(ServerTransport st) {
+			handlerEnquireAdapter.putIfNeeded();
+			@SuppressWarnings("unchecked")
+			TransmitPromise<HandlerMetaData> promise = sendAndWaitingForReply(holder);
+			promise.addListener(enquireListener, promise, GlobalExecutor.SERIAL_EXECUTOR);
+		}
+	
+	}
+
+	abstract class HandlerEnquireAdapter {
+		protected SettableFuture<HandlerMetaData> future;
+	
+		protected abstract SettableFuture<HandlerMetaData> get();
+	
+		protected abstract SettableFuture<HandlerMetaData> putIfAbsent();
+	
+		public abstract HandlerEnquire createEnquire();
+	
+		public abstract OperationListener<TransmitPromise<HandlerMetaData>> createEnquireListener();
+	
+		public SettableFuture<HandlerMetaData> getAbsent() {
+			return serverHandlerMetaData == null ? null : get();
+		}
+	
+		public SettableFuture<HandlerMetaData> createHandlerMetaData() {
+			future = new SettableFuture<HandlerMetaData>();
+			SettableFuture<HandlerMetaData> absent = null;
+			if (serverHandlerMetaData != null) {
+				absent = putIfAbsent();
+			}
+			if (absent == null) {
+				return future;
+			} else {
+				future = null;
+				return null;
+			}
+		}
+	
+		public void putIfNeeded() {
+			if (future != null) {
+				putIfAbsent();
+			}
+		}
+	}
+
+	class MethodEnquireAdapter extends HandlerEnquireAdapter {
+	
+		private Method method;
+	
+		public MethodEnquireAdapter(Method method) {
+			this.method = method;
+		}
+	
+		@Override
+		public HandlerEnquire createEnquire() {
+			MethodEnquire enquire = new MethodEnquire();
+			enquire.setInterf(method.getDeclaringClass().getName());
+			enquire.setMethod(method.getName());
+			Class<?>[] cls = method.getParameterTypes();
+			String[] pts = new String[cls.length];
+			for (int i = 0; i < cls.length; i++) {
+				pts[i] = cls[i].getCanonicalName();
+			}
+			enquire.setParameterTypes(pts);
+			return enquire;
+		}
+	
+		@Override
+		public OperationListener<TransmitPromise<HandlerMetaData>> createEnquireListener() {
+			return new MethodEnquireListener(method, future);
+		}
+	
+		@Override
+		protected SettableFuture<HandlerMetaData> get() {
+			return serverHandlerMetaData.get(method);
+		}
+	
+		@Override
+		protected SettableFuture<HandlerMetaData> putIfAbsent() {
+			return serverHandlerMetaData.putIfAbsent(method, future);
+		}
+	}
+
+	private final class MethodEnquireListener implements OperationListener<TransmitPromise<HandlerMetaData>> {
+		private final Method method;
+		private final SettableFuture<HandlerMetaData> future;
+	
+		private MethodEnquireListener(Method method, SettableFuture<HandlerMetaData> future) {
+			this.method = method;
+			this.future = future;
+		}
+	
+		@Override
+		public void complete(TransmitPromise<HandlerMetaData> t) {
+			HandlerMetaData meta = t.getNow();
+			meta.setMethod(method);
+			future.set(meta);
+		}
+	}
+
+	class JsonEnquireAdapter extends HandlerEnquireAdapter {
+	
+		private String name;
+	
+		public JsonEnquireAdapter(String name) {
+			this.name = name;
+		}
+	
+		@Override
+		public HandlerEnquire createEnquire() {
+			JsonEnquire enquire = new JsonEnquire();
+			enquire.setName(name);
+			return enquire;
+		}
+	
+		@Override
+		public OperationListener<TransmitPromise<HandlerMetaData>> createEnquireListener() {
+			return new JsonEnquireListener(future);
+		}
+	
+		@Override
+		protected SettableFuture<HandlerMetaData> get() {
+			return serverHandlerMetaData.get(name);
+		}
+	
+		@Override
+		protected SettableFuture<HandlerMetaData> putIfAbsent() {
+			return serverHandlerMetaData.putIfAbsent(name, future);
+		}
+	
+	}
+
+	private final class JsonEnquireListener implements OperationListener<TransmitPromise<HandlerMetaData>> {
+		private final SettableFuture<HandlerMetaData> future;
+	
+		private JsonEnquireListener(SettableFuture<HandlerMetaData> future) {
+			this.future = future;
+		}
+	
+		@Override
+		public void complete(TransmitPromise<HandlerMetaData> t) {
+			HandlerMetaData meta = t.getNow();
+			future.set(meta);
+		}
+	}
+
 	private Channel getChannel() {
 		return channelRef == null ? null : channelRef.get();
 	}
 
-	private synchronized SettableFuture<Integer> getShakeFuture() {
+	private synchronized SettableFuture<ServerTransport> getShakeFuture() {
 		if (shakeFuture == null) {
-			shakeFuture = new SettableFuture<Integer>();
+			shakeFuture = new SettableFuture<ServerTransport>();
 		}
 		return shakeFuture;
 	}

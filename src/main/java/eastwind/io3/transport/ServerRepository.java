@@ -28,19 +28,52 @@ public class ServerRepository {
 	public ServerTransport getTransport(String id) {
 		return transports.get(id);
 	}
-	
-	public void addTransport(ServerTransport transport) {
-		getGroup(transport.getGroup()).getServer(transport.getHost()).transports.add(transport);
-		transports.put(transport.getId(), transport);
+
+	public ServerTransport getTransport(String group, Host host) {
+		return findOrCreate(group, host);
 	}
-	
+
 	public ServerTransportVisitor getTransportVisitor(String group, boolean oneOff) {
-		return new DefaultTransportVisitor(getGroup(group), oneOff);
+		return new DefaultTransportVisitor(group, oneOff);
 	}
 
 	private ServerGroup getGroup(String group) {
 		ServerGroup sg = serverGroups.get(group);
 		return sg == null ? CommonUtils.putIfAbsent(serverGroups, group, new ServerGroup(group)) : sg;
+	}
+
+	private ServerTransport findOrCreate(String group, Host host) {
+		final Server server = getGroup(group).getServer(host);
+		ServerTransport st = find(server, host);
+		if (st == null) {
+			st = transportFactory.serverTransport(group, host);
+			server.transports.add(st);
+			transports.put(st.getId(), st);
+
+			st.addShakeListener(new OperationListener<ServerTransport>() {
+				@Override
+				public void complete(ServerTransport st) {
+					if (st.getStatus() == 1) {
+						ServerHandler sh = server.serverHandlers.get(st.getUuid());
+						if (sh == null) {
+							sh = CommonUtils.putIfAbsent(server.serverHandlers, st.getUuid(),
+									new ServerHandler(st.getUuid()));
+						}
+						st.setServerHandlerMetaData(sh.serverHandlerMetaData);
+					}
+				}
+			});
+		}
+		return st;
+	}
+
+	private ServerTransport find(Server server, Host host) {
+		for (ServerTransport st : server.transports) {
+			if (st.getHost() == host) {
+				return st;
+			}
+		}
+		return null;
 	}
 
 	static class ServerGroup {
@@ -50,7 +83,7 @@ public class ServerRepository {
 		public ServerGroup(String group) {
 			this.group = group;
 		}
-		
+
 		public Server getServer(Host host) {
 			Server server = servers.get(host);
 			return server == null ? CommonUtils.putIfAbsent(servers, host, new Server(host)) : server;
@@ -69,10 +102,31 @@ public class ServerRepository {
 
 	static class ServerHandler {
 		String uuid;
-		ConcurrentMap<Method, SettableFuture<HandlerMetaData>> handlerMetaDatas = Maps.newConcurrentMap();
+		ServerHandlerMetaData serverHandlerMetaData = new ServerHandlerMetaData();
 
 		public ServerHandler(String uuid) {
 			this.uuid = uuid;
+		}
+	}
+
+	static class ServerHandlerMetaData {
+		ConcurrentMap<Method, SettableFuture<HandlerMetaData>> methodMetaDatas = Maps.newConcurrentMap();
+		ConcurrentMap<String, SettableFuture<HandlerMetaData>> namedMetaDatas = Maps.newConcurrentMap();
+
+		public SettableFuture<HandlerMetaData> get(Method method) {
+			return methodMetaDatas.get(method);
+		}
+
+		public SettableFuture<HandlerMetaData> putIfAbsent(Method method, SettableFuture<HandlerMetaData> future) {
+			return methodMetaDatas.putIfAbsent(method, future);
+		}
+		
+		public SettableFuture<HandlerMetaData> get(String name) {
+			return namedMetaDatas.get(name);
+		}
+
+		public SettableFuture<HandlerMetaData> putIfAbsent(String name, SettableFuture<HandlerMetaData> future) {
+			return namedMetaDatas.putIfAbsent(name, future);
 		}
 	}
 
@@ -80,10 +134,10 @@ public class ServerRepository {
 
 		private boolean oneOff;
 		private Set<ServerTransport> used;
-		private ServerGroup serverGroup;
+		private String group;
 
-		public DefaultTransportVisitor(ServerGroup serverGroup, boolean oneOff) {
-			this.serverGroup = serverGroup;
+		public DefaultTransportVisitor(String group, boolean oneOff) {
+			this.group = group;
 			this.oneOff = oneOff;
 		}
 
@@ -101,35 +155,7 @@ public class ServerRepository {
 
 		@Override
 		public ServerTransport next(Host host) {
-			final Server server = serverGroup.servers.get(host);
-			ServerTransport st = findTransport(server, host);
-			if (st == null) {
-				st = transportFactory.serverTransport(serverGroup.group, host);
-				st.addShakeListener(new OperationListener<ServerTransport>() {
-					@Override
-					public void complete(ServerTransport st) {
-						if (st.getStatus() == 1) {
-							ServerHandler sh = server.serverHandlers.get(st.getUuid());
-							if (sh == null) {
-								sh = CommonUtils.putIfAbsent(server.serverHandlers, st.getUuid(),
-										new ServerHandler(st.getUuid()));
-							}
-							st.setHandlerMetaDatas(sh.handlerMetaDatas);
-						}
-					}
-				});
-				server.transports.add(st);
-			}
-			return st;
-		}
-
-		private ServerTransport findTransport(Server server, Host host) {
-			for (ServerTransport st : server.transports) {
-				if (st.getHost() == host) {
-					return st;
-				}
-			}
-			return null;
+			return findOrCreate(group, host);
 		}
 	}
 }

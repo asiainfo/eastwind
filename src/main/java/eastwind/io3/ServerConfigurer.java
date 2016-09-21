@@ -10,9 +10,9 @@ import com.google.common.collect.Maps;
 
 import eastwind.io3.obj.Host;
 import eastwind.io3.support.CommonUtils;
-import eastwind.io3.transport.HostVisitor;
+import eastwind.io3.transport.HostIterator;
 
-public class NetServerConfigurer {
+public class ServerConfigurer {
 
 	private ConcurrentMap<String, GroupConfig> servers = Maps.newConcurrentMap();
 	
@@ -26,8 +26,8 @@ public class NetServerConfigurer {
 		gc.hosts.addAll(host);
 	}
 	
-	public HostVisitor getHostVisitor(String group) {
-		return new DefaultHostVisitor(getGroupConfig(group));
+	public HostIterator getHostIterator(String group) {
+		return new DefaultHostIterator(getGroupConfig(group));
 	}
 	
 	private GroupConfig getGroupConfig(String group) {
@@ -38,16 +38,16 @@ public class NetServerConfigurer {
 		return gc;
 	}
 	
-	class DefaultHostVisitor implements HostVisitor {
+	class DefaultHostIterator implements HostIterator {
 		private int i;
 		private boolean started;
 		private GroupConfig gc;
 		private ListIterator<Host> it;
 		private int startIndex;
 
-		public DefaultHostVisitor(GroupConfig gc) {
+		public DefaultHostIterator(GroupConfig gc) {
 			this.gc = gc;
-			this.i = gc.globalIndex.getAndIncrement();
+			this.i = gc.globalIterateIndex.getAndIncrement();
 			int n = gc.hosts.size();
 			if (n == 0) {
 				startIndex = -1;
@@ -61,8 +61,8 @@ public class NetServerConfigurer {
 						startIndex = -1;
 						return;
 					}
-					int j = gc.globalIndex.intValue();
-					if (j < n || gc.globalIndex.compareAndSet(j, j % n)) {
+					int j = gc.globalIterateIndex.intValue();
+					if (j < n || gc.globalIterateIndex.compareAndSet(j, j % n)) {
 						break;
 					}
 				}
@@ -134,7 +134,7 @@ public class NetServerConfigurer {
 	}
 	
 	static class GroupConfig {
-		AtomicInteger globalIndex = new AtomicInteger();
+		AtomicInteger globalIterateIndex = new AtomicInteger();
 		String group;
 		CopyOnWriteArrayList<Host> hosts = new CopyOnWriteArrayList<Host>();
 

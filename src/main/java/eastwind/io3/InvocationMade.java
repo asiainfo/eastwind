@@ -2,9 +2,9 @@ package eastwind.io3;
 
 import eastwind.io3.obj.Host;
 
-public class InvocationMode {
+public class InvocationMade {
 
-	public static InvocationMode DEFAULT = new InvocationMode();
+	public static final InvocationMade DEFAULT = new InvocationMade();
 
 	static {
 		DEFAULT.timeout = 10000;
@@ -12,7 +12,7 @@ public class InvocationMode {
 		DEFAULT.sync = true;
 	}
 
-	public static ThreadLocal<InvocationMode> TL = new ThreadLocal<InvocationMode>();
+	public static ThreadLocal<InvocationMade> TL = new ThreadLocal<InvocationMade>();
 
 	private boolean sync;
 	private int timeout;

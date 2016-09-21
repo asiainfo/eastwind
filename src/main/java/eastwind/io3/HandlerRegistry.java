@@ -5,16 +5,13 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.apache.commons.lang3.ClassUtils;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
-import eastwind.io3.support.CommonUtils;
-
-public class ObjectHandlerRegistry {
+public class HandlerRegistry {
 
 	private static List<Class<?>> primitiveWrappers = Lists.newArrayList();
 	private static List<Class<?>> primitives = Lists.newArrayList();
@@ -35,14 +32,42 @@ public class ObjectHandlerRegistry {
 		primitives.add(double.class);
 	}
 
-	private Map<Class<?>, CopyOnWriteArrayList<MessageListener<Object>>> messageListeners = Maps.newHashMap();
-
 	private Map<String, List<MethodHandler>> methodHandlers = Maps.newHashMap();
 
 	private List<HanlderObj> hanlderObjs = Lists.newArrayList();
 
-	public MethodHandler getHandler(String name) {
+	public MethodHandler findHandler(String name) {
 		return methodHandlers.get(name).get(0);
+	}
+
+	public MethodHandler findHandler(String interf, String method, String[] parameterTypes)
+			throws ClassNotFoundException {
+		Class<?> cls = Class.forName(interf);
+		Class<?>[] pts = new Class<?>[parameterTypes.length];
+		for (int i = 0; i < pts.length; i++) {
+			pts[i] = Class.forName(parameterTypes[i]);
+		}
+	
+		MethodHandler handler = null;
+		for (HanlderObj ho : hanlderObjs) {
+			if (ho.interfs.contains(cls)) {
+				int distance = 0;
+				for (MethodHandler h : ho.handlers) {
+					int d = distance(h.getTargetMethod(), pts);
+					if (d == 0) {
+						handler = h;
+						break;
+					}
+					if (d != -1 && d < distance) {
+						handler = h;
+						distance = d;
+					}
+				}
+				break;
+			}
+		}
+	
+		return handler;
 	}
 
 	public void registerHandler(Object obj) {
@@ -72,52 +97,7 @@ public class ObjectHandlerRegistry {
 		
 		hanlderObjs.add(ho);
 	}
-
-	public List<MessageListener<Object>> getListeners(Class<?> cls) {
-		return messageListeners.get(cls);
-	}
-
-	public MethodHandler getHandler(String interf, String method, String[] parameterTypes)
-			throws ClassNotFoundException {
-		Class<?> cls = Class.forName(interf);
-		Class<?>[] pts = new Class<?>[parameterTypes.length];
-		for (int i = 0; i < pts.length; i++) {
-			pts[i] = Class.forName(parameterTypes[i]);
-		}
-
-		MethodHandler handler = null;
-		for (HanlderObj ho : hanlderObjs) {
-			if (ho.interfs.contains(cls)) {
-				int distance = 0;
-				for (MethodHandler h : ho.handlers) {
-					int d = distance(h.getTargetMethod(), pts);
-					if (d == 0) {
-						handler = h;
-						break;
-					}
-					if (d != -1 && d < distance) {
-						handler = h;
-						distance = d;
-					}
-				}
-				break;
-			}
-		}
-
-		return handler;
-	}
-
-	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public void registerListener(MessageListener messageListener) {
-		Class<?> cls = CommonUtils.getGenericType(messageListener.getClass(), MessageListener.class);
-		CopyOnWriteArrayList<MessageListener<Object>> listeners = messageListeners.get(cls);
-		if (listeners == null) {
-			listeners = new CopyOnWriteArrayList<MessageListener<Object>>();
-			messageListeners.put(cls, listeners);
-		}
-		listeners.add(messageListener);
-	}
-
+	
 	private void addGenericInterfaces(List<Class<?>> interfs, Class<?> c) {
 		for (Type t : c.getGenericInterfaces()) {
 			if (Class.class.isInstance(t)) {
@@ -133,7 +113,11 @@ public class ObjectHandlerRegistry {
 
 	private String newAlias(Object obj) {
 		String name = obj.getClass().getSimpleName();
-		name = name.substring(0, 1).toLowerCase() + name.substring(1);
+		if (name.length() == 1) {
+			name = name.substring(0, 1).toLowerCase();
+		} else {
+			name = name.substring(0, 1).toLowerCase() + name.substring(1);
+		}
 		if (!duplicateOfAlias(name)) {
 			return name;
 		}
@@ -202,4 +186,5 @@ public class ObjectHandlerRegistry {
 		List<MethodHandler> handlers = Lists.newArrayList();
 	}
 
+	
 }

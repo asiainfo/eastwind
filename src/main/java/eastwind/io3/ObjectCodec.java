@@ -6,6 +6,7 @@ import io.netty.buffer.ByteBufOutputStream;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageCodec;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -19,7 +20,6 @@ import com.esotericsoftware.kryo.io.Output;
 import eastwind.io2.KryoSerializer;
 import eastwind.io2.KryoUtil;
 import eastwind.io2.SelfDescribedSerializer;
-import eastwind.io3.obj.FrameworkObject;
 import eastwind.io3.obj.FrameworkObjects;
 import eastwind.io3.obj.HeadedObject;
 import eastwind.io3.obj.Header;
@@ -193,5 +193,12 @@ public class ObjectCodec extends ByteToMessageCodec<Object> {
 			return uo.getObj().getClass().getSimpleName();
 		}
 		return obj.getClass().getSimpleName();
+	}
+
+	@Override
+	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+		if (cause.getClass() != IOException.class) {
+			super.exceptionCaught(ctx, cause);
+		}
 	}
 }

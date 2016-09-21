@@ -10,8 +10,8 @@ public class TransmitSustainer {
 	private Map<Long, TransmitPromise> transmits = Maps.newConcurrentMap();
 	
 	@SuppressWarnings("rawtypes")
-	public void add(TransmitPromise lp) {
-		this.transmits.put(lp.getId(), lp);
+	public void add(TransmitPromise promise) {
+		this.transmits.put(promise.getId(), promise);
 	}
 
 	@SuppressWarnings("rawtypes")

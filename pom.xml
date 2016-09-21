@@ -10,6 +10,7 @@
 		<netty.v>4.1.1.Final</netty.v>
 		<jackson.v>2.5.1</jackson.v>
 		<spring.v>3.2.16.RELEASE</spring.v>
+		<jackson.v>2.7.5</jackson.v>
 		<netty-tcnative.classifier>windows-x86_64</netty-tcnative.classifier>
 	</properties>
 
@@ -93,6 +94,18 @@
 			<groupId>com.alibaba</groupId>
 			<artifactId>fastjson</artifactId>
 			<version>1.1.41</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-core</artifactId>
+			<version>${jackson.v}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+			<version>${jackson.v}</version>
 		</dependency>
 
 		<!-- spring -->

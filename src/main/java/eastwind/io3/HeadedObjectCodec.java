@@ -6,17 +6,17 @@ import io.netty.handler.codec.MessageToMessageCodec;
 
 import java.util.List;
 
-import eastwind.io3.obj.Headed;
+import eastwind.io3.obj.BusinessObject;
 import eastwind.io3.obj.HeadedObject;
 import eastwind.io3.obj.Header;
 import eastwind.io3.obj.Request;
 import eastwind.io3.obj.Response;
 
 @Sharable
-public class HeadedObjectCodec extends MessageToMessageCodec<HeadedObject, Headed> {
+public class HeadedObjectCodec extends MessageToMessageCodec<HeadedObject, BusinessObject> {
 
 	@Override
-	protected void encode(ChannelHandlerContext ctx, Headed msg, List<Object> out) throws Exception {
+	protected void encode(ChannelHandlerContext ctx, BusinessObject msg, List<Object> out) throws Exception {
 		HeadedObject ho = new HeadedObject();
 		Header header = new Header();
 		ho.setHeader(header);

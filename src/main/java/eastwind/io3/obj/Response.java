@@ -1,7 +1,7 @@
 package eastwind.io3.obj;
 
 
-public class Response implements Unique, Headed {
+public class Response implements Unique, BusinessObject {
 
 	private long id;
 	private Throwable th;

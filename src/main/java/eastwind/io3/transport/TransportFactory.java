@@ -4,12 +4,10 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.util.concurrent.GenericFutureListener;
-import eastwind.io3.ChannelStat;
 import eastwind.io3.Sequence;
 import eastwind.io3.TransmitSustainer;
 import eastwind.io3.obj.Host;
 import eastwind.io3.obj.Shake;
-import eastwind.io3.obj.UniqueHolder;
 
 public class TransportFactory {
 
@@ -46,9 +44,6 @@ public class TransportFactory {
 
 		@Override
 		public void operationComplete(ChannelFuture future) throws Exception {
-			ChannelStat cs = ChannelStat.get(future.channel());
-			cs.setServer(true);
-			
 			if (future.isSuccess()) {
 				st.setSequence(sequence);
 				st.setTransmitSustainer(transmitSustainer);

@@ -16,12 +16,11 @@
 
 package eastwind.io3.support;
 
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
 import com.google.common.util.concurrent.AbstractFuture;
 import com.google.common.util.concurrent.ListenableFuture;
-
-import eastwind.io3.GlobalExecutor;
 
 /**
  * A {@link ListenableFuture} whose result may be set by a {@link #set(Object)}
@@ -79,18 +78,16 @@ public class SettableFuture<V> extends AbstractFuture<V> {
 		}
 	}
 
-	public void addListener(Runnable listener) {
-		super.addListener(listener, GlobalExecutor.EVENT_EXECUTOR);
+	public void addListener(Runnable listener, Executor exec) {
+		super.addListener(listener, exec);
 	}
 
-	@SuppressWarnings("rawtypes")
-	public void addListener(final OperationListener listener) {
+	public <T> void addListener(final OperationListener<T> listener, final T t, Executor exec) {
 		super.addListener(new Runnable() {
-			@SuppressWarnings("unchecked")
 			@Override
 			public void run() {
-				listener.complete(SettableFuture.this);
+				listener.complete(t);
 			}
-		}, GlobalExecutor.EVENT_EXECUTOR);
+		}, exec);
 	}
 }
