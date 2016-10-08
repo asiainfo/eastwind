@@ -15,8 +15,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import eastwind.io3.obj.Host;
-import eastwind.io3.obj.Shake;
+import eastwind.io3.model.Host;
+import eastwind.io3.model.Shake;
+import eastwind.io3.serializer.SerializerFactory;
+import eastwind.io3.serializer.SerializerFactoryHolder;
 import eastwind.io3.support.MillisX10Sequence;
 import eastwind.io3.support.NamedThreadFactory;
 import eastwind.io3.transport.ServerRepository;
@@ -45,6 +47,8 @@ public class EastwindClient {
 	protected ThreadPoolExecutor executor;
 	private AtomicBoolean started = new AtomicBoolean(false);
 
+	protected SerializerFactoryHolder serializerFactoryHolder = new SerializerFactoryHolder();
+	
 	public EastwindClient(String group) {
 		this.group = group;
 		this.uuid = UUID.randomUUID().toString();
@@ -92,12 +96,12 @@ public class EastwindClient {
 	public <T> void createInvokerOnJson(String group, String name, Class<T> resultType) {
 	}
 
-	public void setBinarySerializerFactory() {
-
+	public void setBinarySerializerFactory(SerializerFactory serializerFactory) {
+		serializerFactoryHolder.setBinarySerializerFactory(serializerFactory);
 	}
 	
-	public void setJsonSerializerFactory() {
-
+	public void setJsonSerializerFactory(SerializerFactory serializerFactory) {
+		serializerFactoryHolder.setJsonSerializerFactory(serializerFactory);
 	}
 	
 	static class JsonInvoker {

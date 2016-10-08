@@ -9,8 +9,8 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
-import eastwind.io3.obj.HandlerMetaData;
-import eastwind.io3.obj.Host;
+import eastwind.io3.model.HandlerMetaData;
+import eastwind.io3.model.Host;
 import eastwind.io3.support.CommonUtils;
 import eastwind.io3.support.OperationListener;
 import eastwind.io3.support.SettableFuture;

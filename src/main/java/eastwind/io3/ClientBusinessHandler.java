@@ -6,8 +6,8 @@ import io.netty.channel.ChannelHandler.Sharable;
 
 import java.util.concurrent.ThreadPoolExecutor;
 
-import eastwind.io3.obj.BusinessObject;
-import eastwind.io3.obj.Response;
+import eastwind.io3.model.BusinessObject;
+import eastwind.io3.model.Response;
 
 @Sharable
 public class ClientBusinessHandler extends SimpleChannelInboundHandler<BusinessObject> {

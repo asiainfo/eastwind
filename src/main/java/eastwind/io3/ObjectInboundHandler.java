@@ -9,9 +9,9 @@ import io.netty.util.concurrent.GenericFutureListener;
 import java.io.IOException;
 import java.util.concurrent.ThreadPoolExecutor;
 
-import eastwind.io3.obj.HandlingMessage;
-import eastwind.io3.obj.Request;
-import eastwind.io3.obj.Response;
+import eastwind.io3.model.HandlingMessage;
+import eastwind.io3.model.Request;
+import eastwind.io3.model.Response;
 
 @Sharable
 public class ObjectInboundHandler extends SimpleChannelInboundHandler<Object> {

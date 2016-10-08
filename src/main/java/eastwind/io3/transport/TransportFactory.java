@@ -6,8 +6,8 @@ import io.netty.channel.ChannelFuture;
 import io.netty.util.concurrent.GenericFutureListener;
 import eastwind.io3.Sequence;
 import eastwind.io3.TransmitSustainer;
-import eastwind.io3.obj.Host;
-import eastwind.io3.obj.Shake;
+import eastwind.io3.model.Host;
+import eastwind.io3.model.Shake;
 
 public class TransportFactory {
 

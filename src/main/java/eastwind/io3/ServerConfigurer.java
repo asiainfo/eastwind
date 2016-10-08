@@ -8,7 +8,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import com.google.common.collect.Maps;
 
-import eastwind.io3.obj.Host;
+import eastwind.io3.model.Host;
 import eastwind.io3.support.CommonUtils;
 import eastwind.io3.transport.HostIterator;
 

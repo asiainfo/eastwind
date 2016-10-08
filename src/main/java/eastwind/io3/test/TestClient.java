@@ -3,7 +3,7 @@ package eastwind.io3.test;
 import java.io.IOException;
 
 import eastwind.io3.EastwindClient;
-import eastwind.io3.obj.Host;
+import eastwind.io3.model.Host;
 
 public class TestClient {
 

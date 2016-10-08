@@ -4,7 +4,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.concurrent.ConcurrentMap;
 
-import eastwind.io3.obj.Host;
+import eastwind.io3.model.Host;
 
 public class CommonUtils {
 

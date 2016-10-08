@@ -1,6 +1,6 @@
 package eastwind.io3.transport;
 
-import eastwind.io3.obj.Host;
+import eastwind.io3.model.Host;
 
 public class DefaultServerSelector implements ServerSelector {
 
@@ -16,7 +16,7 @@ public class DefaultServerSelector implements ServerSelector {
 	}
 	
 	@Override
-	public boolean canSkip() {
+	public boolean skippable() {
 		return true;
 	}
 

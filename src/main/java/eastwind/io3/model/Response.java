@@ -1,4 +1,4 @@
-package eastwind.io3.obj;
+package eastwind.io3.model;
 
 
 public class Response implements Unique, BusinessObject {

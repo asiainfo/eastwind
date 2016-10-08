@@ -3,7 +3,7 @@ package eastwind.io3.support;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.TimeUnit;
 
-import eastwind.io3.obj.Unique;
+import eastwind.io3.model.Unique;
 
 public class DelayedTask implements Delayed, Unique {
 	long id;

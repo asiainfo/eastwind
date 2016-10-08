@@ -1,8 +1,8 @@
 package eastwind.io3;
 
 import io.netty.channel.SimpleChannelInboundHandler;
-import eastwind.io3.obj.FrameworkObject;
-import eastwind.io3.obj.Shake;
+import eastwind.io3.model.FrameworkObject;
+import eastwind.io3.model.Shake;
 import eastwind.io3.transport.TransportFactory;
 
 public abstract class FrameworkHandler extends SimpleChannelInboundHandler<FrameworkObject> {

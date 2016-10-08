@@ -6,11 +6,11 @@ import io.netty.handler.codec.MessageToMessageCodec;
 
 import java.util.List;
 
-import eastwind.io3.obj.BusinessObject;
-import eastwind.io3.obj.HeadedObject;
-import eastwind.io3.obj.Header;
-import eastwind.io3.obj.Request;
-import eastwind.io3.obj.Response;
+import eastwind.io3.model.BusinessObject;
+import eastwind.io3.model.HeadedObject;
+import eastwind.io3.model.Header;
+import eastwind.io3.model.Request;
+import eastwind.io3.model.Response;
 
 @Sharable
 public class HeadedObjectCodec extends MessageToMessageCodec<HeadedObject, BusinessObject> {

@@ -1,6 +1,6 @@
 package eastwind.io3.transport;
 
-import eastwind.io3.obj.Host;
+import eastwind.io3.model.Host;
 
 public interface ServerTransportVisitor {
 

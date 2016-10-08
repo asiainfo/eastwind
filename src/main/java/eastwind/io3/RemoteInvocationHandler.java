@@ -3,9 +3,9 @@ package eastwind.io3;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 
-import eastwind.io3.obj.HandlerMetaData;
-import eastwind.io3.obj.Host;
-import eastwind.io3.obj.Request;
+import eastwind.io3.model.HandlerMetaData;
+import eastwind.io3.model.Host;
+import eastwind.io3.model.Request;
 import eastwind.io3.support.GlobalExecutor;
 import eastwind.io3.support.OperationListener;
 import eastwind.io3.support.SettableFuture;

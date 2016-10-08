@@ -20,11 +20,11 @@ import com.esotericsoftware.kryo.io.Output;
 import eastwind.io2.KryoSerializer;
 import eastwind.io2.KryoUtil;
 import eastwind.io2.SelfDescribedSerializer;
-import eastwind.io3.obj.FrameworkObjects;
-import eastwind.io3.obj.HeadedObject;
-import eastwind.io3.obj.Header;
-import eastwind.io3.obj.Ping;
-import eastwind.io3.obj.UniqueHolder;
+import eastwind.io3.model.FrameworkObjects;
+import eastwind.io3.model.HeadedObject;
+import eastwind.io3.model.Header;
+import eastwind.io3.model.Ping;
+import eastwind.io3.model.UniqueHolder;
 
 public class ObjectCodec extends ByteToMessageCodec<Object> {
 

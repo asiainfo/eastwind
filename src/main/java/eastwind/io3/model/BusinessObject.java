@@ -1,4 +1,4 @@
-package eastwind.io3.obj;
+package eastwind.io3.model;
 
 public interface BusinessObject {
 

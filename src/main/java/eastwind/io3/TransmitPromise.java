@@ -1,6 +1,6 @@
 package eastwind.io3;
 
-import eastwind.io3.obj.Unique;
+import eastwind.io3.model.Unique;
 import eastwind.io3.support.SettableFuture;
 
 public class TransmitPromise<V> extends SettableFuture<V> implements Unique {
