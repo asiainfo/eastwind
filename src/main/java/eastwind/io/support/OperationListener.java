@@ -4,6 +4,6 @@ import java.util.EventListener;
 
 public interface OperationListener<T> extends EventListener {
 
-	public void complete(T t);
+	void complete(T t);
 	
 }

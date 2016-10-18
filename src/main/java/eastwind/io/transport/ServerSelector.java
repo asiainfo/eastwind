@@ -4,9 +4,9 @@ import eastwind.io.model.Host;
 
 public interface ServerSelector {
 	
-	public void first();
+	void first();
 	
-	public boolean skippable();
+	boolean skippable();
 	
-	public Host next();
+	Host next();
 }

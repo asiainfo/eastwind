@@ -8,12 +8,16 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 
-public final class InternalSerializer implements Serializer {
+public final class KryoSerializer implements Serializer {
 
 	private Kryo kryo = new Kryo();
 	private Input input = new Input(4096);
 	private Output output = new Output(4096);
 	
+	public Kryo getKryo() {
+		return kryo;
+	}
+
 	@Override
 	public Object read(Type type, InputStream inputStream) {
 		input.setInputStream(inputStream);

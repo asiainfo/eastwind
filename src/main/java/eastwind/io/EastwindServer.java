@@ -11,7 +11,6 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import eastwind.io.invocation.HandlerRegistry;
 import eastwind.io.transport.ClientRepository;
 
 public class EastwindServer extends EastwindClient {
@@ -36,6 +35,7 @@ public class EastwindServer extends EastwindClient {
 	public void start() {
 		super.start();
 		if (!started.get() && started.compareAndSet(false, true)) {
+			initSerializer();
 			serverBootstrap.group(new NioEventLoopGroup(2), new NioEventLoopGroup());
 			serverBootstrap.channel(NioServerSocketChannel.class);
 			serverBootstrap.childHandler(new ChannelInitializer<SocketChannel>() {

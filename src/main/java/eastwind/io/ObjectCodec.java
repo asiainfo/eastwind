@@ -14,8 +14,6 @@ import org.slf4j.LoggerFactory;
 
 import com.alibaba.fastjson.JSON;
 
-import eastwind.io.invocation.HandlerRegistry;
-import eastwind.io.invocation.MethodHandler;
 import eastwind.io.model.FrameworkObjects;
 import eastwind.io.model.HeadedObject;
 import eastwind.io.model.Header;
@@ -46,8 +44,7 @@ public class ObjectCodec extends ByteToMessageCodec<Object> {
 
 	@Override
 	protected void encode(ChannelHandlerContext ctx, Object message, ByteBuf out) throws Exception {
-		Serializer internalSerializer = serializerFactoryHolder.getInternalSerializer();
-		Serializer contentSerializer = serializerFactoryHolder.getInternalSerializer();
+		Serializer frameworkSerializer = serializerFactoryHolder.getFrameworkSerializer();
 
 		if (message instanceof Ping) {
 			out.writeByte(0);
@@ -55,13 +52,15 @@ public class ObjectCodec extends ByteToMessageCodec<Object> {
 			logEncode(message);
 			HeadedObject headedObject = (HeadedObject) message;
 			Header header = headedObject.getHeader();
+			Serializer contentSerializer = header.isBinary() ? serializerFactoryHolder.getBinarySerializer()
+					: serializerFactoryHolder.getJsonSerializer();
 
 			ByteBuf headerBuf = ctx.alloc().buffer(64);
 			headerBuf.writeByte(HEADED_OBJECT);
 			headerBuf.writeMedium(0);
 			headerBuf.writeShort(0);
 
-			internalSerializer.write(header, new ByteBufOutputStream(headerBuf));
+			frameworkSerializer.write(header, new ByteBufOutputStream(headerBuf));
 
 			int i = headerBuf.writerIndex();
 			headerBuf.writerIndex(4);
@@ -70,7 +69,11 @@ public class ObjectCodec extends ByteToMessageCodec<Object> {
 				headerBuf.writerIndex(i);
 			} else {
 				if (header.getSize() == 1) {
-					contentSerializer.write(headedObject.getObj(), new ByteBufOutputStream(out));
+					Object data = headedObject.getObj();
+					if (header.getModel() == Header.REQUEST) {
+						data = ((Object[]) data)[0];
+					}
+					contentSerializer.write(data, new ByteBufOutputStream(out));
 				} else if (header.getSize() > 1) {
 					headerBuf.writerIndex(i);
 					headerBuf.writeShort(0);
@@ -83,7 +86,7 @@ public class ObjectCodec extends ByteToMessageCodec<Object> {
 						objLens[j] = out.writerIndex() - k;
 					}
 
-					internalSerializer.write(objLens, new ByteBufOutputStream(headerBuf));
+					frameworkSerializer.write(objLens, new ByteBufOutputStream(headerBuf));
 
 					int t = headerBuf.writerIndex();
 					headerBuf.writerIndex(i);
@@ -103,7 +106,7 @@ public class ObjectCodec extends ByteToMessageCodec<Object> {
 			out.writeMedium(0);
 
 			int from = out.writerIndex();
-			internalSerializer.write(message, new ByteBufOutputStream(out));
+			frameworkSerializer.write(message, new ByteBufOutputStream(out));
 			int now = out.writerIndex();
 			out.writerIndex(from - 3);
 			out.writeMedium(now - from);
@@ -113,8 +116,7 @@ public class ObjectCodec extends ByteToMessageCodec<Object> {
 
 	@Override
 	protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
-		Serializer internalSerializer = serializerFactoryHolder.getInternalSerializer();
-		Serializer contentSerializer = serializerFactoryHolder.getInternalSerializer();
+		Serializer frameworkSerializer = serializerFactoryHolder.getFrameworkSerializer();
 
 		if (in.readableBytes() > 0) {
 			if (in.getByte(0) == PING) {
@@ -128,16 +130,19 @@ public class ObjectCodec extends ByteToMessageCodec<Object> {
 					in.resetReaderIndex();
 				} else {
 					if (model == SIMPLE) {
-						Object obj = internalSerializer.read(null, new ByteBufInputStream(in, len));
+						Object obj = frameworkSerializer.read(null, new ByteBufInputStream(in, len));
 
 						logDecode(obj);
 						out.add(obj);
 					} else if (model == HEADED_OBJECT) {
 						int headerLen = in.readShort();
 						HeadedObject headedObject = new HeadedObject();
-						Header header = (Header) internalSerializer.read(Header.class, new ByteBufInputStream(in,
+						Header header = (Header) frameworkSerializer.read(Header.class, new ByteBufInputStream(in,
 								headerLen));
 						headedObject.setHeader(header);
+
+						Serializer contentSerializer = header.isBinary() ? serializerFactoryHolder
+								.getBinarySerializer() : serializerFactoryHolder.getJsonSerializer();
 
 						if (header.getSize() == 1) {
 							if (header.getModel() == Header.REQUEST) {
@@ -145,7 +150,7 @@ public class ObjectCodec extends ByteToMessageCodec<Object> {
 								Class<?> cls = methodHandler.getParameterTypes()[0];
 								Object obj = contentSerializer.read(cls,
 										new ByteBufInputStream(in, len - headerLen - 2));
-								headedObject.setObj(obj);
+								headedObject.setObj(new Object[] { obj });
 							} else if (header.getModel() == Header.RESPONSE) {
 								@SuppressWarnings("rawtypes")
 								TransmitPromise transmitPromise = transmitSustainer.get(header.getId());
@@ -156,7 +161,7 @@ public class ObjectCodec extends ByteToMessageCodec<Object> {
 							}
 						} else if (header.getSize() > 1) {
 							int sizeLen = in.readShort();
-							int[] sizes = (int[]) internalSerializer.read(int[].class, new ByteBufInputStream(in,
+							int[] sizes = (int[]) frameworkSerializer.read(int[].class, new ByteBufInputStream(in,
 									sizeLen));
 
 							Object[] objs = new Object[sizes.length];
@@ -204,7 +209,7 @@ public class ObjectCodec extends ByteToMessageCodec<Object> {
 	@Override
 	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
 		if (cause.getClass() != IOException.class) {
-			super.exceptionCaught(ctx, cause);
+			cause.printStackTrace();
 		}
 	}
 }

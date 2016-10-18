@@ -1,4 +1,4 @@
-package eastwind.io.invocation;
+package eastwind.io;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
@@ -7,12 +7,16 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang3.ClassUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 public class HandlerRegistry {
 
+	private static Logger logger = LoggerFactory.getLogger(HandlerRegistry.class);
+	
 	private static List<Class<?>> primitiveWrappers = Lists.newArrayList();
 	private static List<Class<?>> primitives = Lists.newArrayList();
 
@@ -92,6 +96,7 @@ public class HandlerRegistry {
 				}
 				handlers.add(rpcHandler);
 				ho.handlers.add(rpcHandler);
+				logger.info("register {}:{}", obj.getClass().getName(), ho.alias);
 			}
 		}
 		

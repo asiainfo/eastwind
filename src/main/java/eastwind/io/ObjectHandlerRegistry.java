@@ -12,7 +12,6 @@ import org.apache.commons.lang3.ClassUtils;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
-import eastwind.io.invocation.MethodHandler;
 import eastwind.io.support.CommonUtils;
 
 public class ObjectHandlerRegistry {

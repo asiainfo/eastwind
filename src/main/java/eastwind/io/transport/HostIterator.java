@@ -6,5 +6,5 @@ import eastwind.io.model.Host;
 
 public interface HostIterator extends Iterator<Host> {
 
-	public void first();
+	void first();
 }

@@ -1,7 +1,6 @@
 package eastwind.io.invocation;
 
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
+import java.lang.reflect.Type;
 
 import eastwind.io.ServerConfigurer;
 import eastwind.io.TransmitPromise;
@@ -16,21 +15,24 @@ import eastwind.io.transport.ServerRepository;
 import eastwind.io.transport.ServerTransport;
 import eastwind.io.transport.ServerTransportVisitor;
 
-public class RemoteInvocationHandler implements InvocationHandler {
-
-	private String group;
-	private ServerRepository serverRepository;
-	private ServerConfigurer serverConfigurer;
-
-	public RemoteInvocationHandler(String group, ServerConfigurer netServerConfigurer,
-			ServerRepository serverRepository) {
+public abstract class AbstractInvocationHandler<T> {
+	
+	protected String group;
+	protected ServerRepository serverRepository;
+	protected ServerConfigurer serverConfigurer;
+	
+	protected AbstractInvocationHandler(String group, ServerRepository serverRepository, ServerConfigurer serverConfigurer) {
 		this.group = group;
-		this.serverConfigurer = netServerConfigurer;
 		this.serverRepository = serverRepository;
+		this.serverConfigurer = serverConfigurer;
 	}
 
-	@Override
-	public Object invoke(Object proxy, final Method method, final Object[] args) throws Throwable {
+	protected abstract boolean isBinary(T context);
+	protected abstract Type getReturnType(T context);
+	protected abstract SettableFuture<HandlerMetaData> getHandlerMetaData(T context, ServerTransport st);
+	protected abstract Object returnNull(T context);
+	
+	public Object invoke(final T context, final Object[] args) throws Throwable {
 		final InvocationPromise ip = new InvocationPromise();
 		InvocationFuture.TL.set(ip);
 		
@@ -41,28 +43,29 @@ public class RemoteInvocationHandler implements InvocationHandler {
 		ServerTransport st = transportVisitor.next(host);
 		final Request request = new Request();
 		request.setArgs(args);
-		request.setReturnType(method.getReturnType());
+		request.setBinary(isBinary(context));
+		request.setReturnType(getReturnType(context));
 		
 		if (st.getStatus() == 0) {
 			st.addShakeListener(new OperationListener<ServerTransport>() {
 				@Override
 				public void complete(final ServerTransport st) {
 					if (st.getStatus() == 1) {
-						enquireAndInvoke(method, ip, request, st);
+						enquireAndInvoke(context, ip, request, st);
 					}
 				}
 
 			});
 		} else if (st.getStatus() == 1) {
-			enquireAndInvoke(method, ip, request, st);
+			enquireAndInvoke(context, ip, request, st);
 		}
 		return ip.get();
 //		return returnNull(method);
 	}
-
-	private void enquireAndInvoke(final Method method, final InvocationPromise promise, final Request request,
+	
+	private void enquireAndInvoke(final T context, final InvocationPromise promise, final Request request,
 			final ServerTransport st) {
-		SettableFuture<HandlerMetaData> metaFuture = st.getHandlerMetaData(method);
+		SettableFuture<HandlerMetaData> metaFuture = getHandlerMetaData(context, st);
 		if (metaFuture.isDone()) {
 			invoke(promise, request, st, metaFuture.getNow());
 		} else {
@@ -75,52 +78,15 @@ public class RemoteInvocationHandler implements InvocationHandler {
 		}
 	}
 	
-	private void invoke(final InvocationPromise promise, final Request request, ServerTransport t, HandlerMetaData meta) {
+	private void invoke(final InvocationPromise promise, final Request request, ServerTransport st, HandlerMetaData meta) {
 		request.setName(meta.getName());
 
-		TransmitPromise tp = t.sendAndWaitingForReply(request);
+		TransmitPromise tp = st.sendAndWaitingForReply(request);
 		tp.addListener(new OperationListener<TransmitPromise>() {
 			@Override
 			public void complete(TransmitPromise t) {
 				promise.set(t.getNow());
 			}
 		}, tp, GlobalExecutor.EVENT_EXECUTOR);
-	}
-
-	private Object returnNull(Method method) {
-		Class<?> type = method.getReturnType();
-		// boolean, char, byte, short, int, long, float, double
-		if (type.isPrimitive()) {
-			if (type == boolean.class) {
-				return false;
-			}
-
-			if (type == int.class) {
-				return Integer.MIN_VALUE;
-			}
-			if (type == long.class) {
-				return Long.MIN_VALUE;
-			}
-
-			if (type == byte.class) {
-				return Byte.MIN_VALUE;
-			}
-			if (type == short.class) {
-				return Short.MIN_VALUE;
-			}
-			if (type == float.class) {
-				return Float.MIN_VALUE;
-			}
-			if (type == double.class) {
-				return Double.MIN_VALUE;
-			}
-
-			if (type == char.class) {
-				return (char) 0xffff;
-			}
-		} else {
-			return null;
-		}
-		return null;
 	}
 }

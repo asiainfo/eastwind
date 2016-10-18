@@ -4,8 +4,8 @@ import eastwind.io.model.Host;
 
 public interface ServerTransportVisitor {
 
-	public boolean oneOff();
+	boolean oneOff();
 	
-	public ServerTransport next(Host host);
+	ServerTransport next(Host host);
 	
 }

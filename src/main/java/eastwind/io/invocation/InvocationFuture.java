@@ -7,7 +7,7 @@ public interface InvocationFuture<V> extends Future<V> {
 	@SuppressWarnings("rawtypes")
 	public static final ThreadLocal<InvocationFuture> TL = new ThreadLocal<InvocationFuture>();
 
-	public boolean isSuccess();
+	boolean isSuccess();
 	
-	public boolean isThrowable();
+	boolean isThrowable();
 }

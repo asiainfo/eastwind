@@ -1,4 +1,4 @@
-package eastwind.io.invocation;
+package eastwind.io;
 
 import java.lang.reflect.Method;
 

@@ -1,4 +1,4 @@
-package eastwind.io.invocation;
+package eastwind.io;
 
 import java.lang.reflect.Proxy;
 import java.util.Map;
@@ -6,7 +6,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import com.google.common.collect.Maps;
 
-import eastwind.io.ServerConfigurer;
+import eastwind.io.invocation.ProxyInvocationHandler;
 import eastwind.io.transport.ServerRepository;
 
 public class InvokerFactory {
@@ -28,7 +28,7 @@ public class InvokerFactory {
 			T t = (T) g.invokers.get(interf);
 			if (t == null) {
 				t = (T) Proxy.newProxyInstance(this.getClass().getClassLoader(), new Class<?>[] { interf },
-						new RemoteInvocationHandler(group, serverConfigurer, serverRepository));
+						new ProxyInvocationHandler(group, serverConfigurer, serverRepository));
 				g.invokers.put(interf, t);
 			}
 			return t;

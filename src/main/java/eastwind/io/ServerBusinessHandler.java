@@ -7,8 +7,6 @@ import io.netty.channel.ChannelHandler.Sharable;
 
 import java.util.concurrent.ThreadPoolExecutor;
 
-import eastwind.io.invocation.HandlerRegistry;
-import eastwind.io.invocation.MethodHandler;
 import eastwind.io.model.BusinessObject;
 import eastwind.io.model.Request;
 import eastwind.io.model.Response;
@@ -33,6 +31,7 @@ public class ServerBusinessHandler extends SimpleChannelInboundHandler<BusinessO
 			Object result = methodHandler.invoke(request.getArgs());
 			Response response = new Response();
 			response.setId(request.getId());
+			response.setBinary(request.isBinary());
 			response.setResult(result);
 			channel.writeAndFlush(response);
 		}

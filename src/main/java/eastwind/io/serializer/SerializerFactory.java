@@ -2,9 +2,9 @@ package eastwind.io.serializer;
 
 public interface SerializerFactory {
 	
-	public Serializer newInstance();
+	Serializer newInstance();
 	
-	public boolean isThreadSafe();
+	boolean isThreadSafe();
 	
-	public boolean isPrototype();
+	boolean isPrototype();
 }

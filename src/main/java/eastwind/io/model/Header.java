@@ -8,6 +8,7 @@ public class Header {
 	
 	private long id;
 	private byte model;
+	private boolean binary;
 	private String name;
 	private byte size;
 	private boolean th;
@@ -18,6 +19,14 @@ public class Header {
 
 	public void setId(long id) {
 		this.id = id;
+	}
+
+	public boolean isBinary() {
+		return binary;
+	}
+
+	public void setBinary(boolean binary) {
+		this.binary = binary;
 	}
 
 	public byte getModel() {

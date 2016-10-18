@@ -1,5 +1,7 @@
 package eastwind.io.model;
 
+import java.lang.reflect.Type;
+
 
 public class Request implements Unique, BusinessObject {
 
@@ -7,7 +9,7 @@ public class Request implements Unique, BusinessObject {
 	private String name;
 	private boolean binary;
 	private Object[] args;
-	private Class<?> returnType;
+	private Type returnType;
 	
 	public long getId() {
 		return id;
@@ -41,11 +43,11 @@ public class Request implements Unique, BusinessObject {
 		this.args = args;
 	}
 
-	public Class<?> getReturnType() {
+	public Type getReturnType() {
 		return returnType;
 	}
 
-	public void setReturnType(Class<?> returnType) {
+	public void setReturnType(Type returnType) {
 		this.returnType = returnType;
 	}
 

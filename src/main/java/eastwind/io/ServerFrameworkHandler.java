@@ -3,10 +3,10 @@ package eastwind.io;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
-import eastwind.io.invocation.HandlerRegistry;
-import eastwind.io.invocation.MethodHandler;
 import eastwind.io.model.FrameworkObject;
+import eastwind.io.model.HandlerEnquire;
 import eastwind.io.model.HandlerMetaData;
+import eastwind.io.model.JsonEnquire;
 import eastwind.io.model.MethodEnquire;
 import eastwind.io.model.Shake;
 import eastwind.io.model.UniqueHolder;
@@ -37,10 +37,16 @@ public class ServerFrameworkHandler extends FrameworkHandler {
 			UniqueHolder holder = (UniqueHolder) obj;
 			Object content = holder.getObj();
 			UniqueHolder reply = null;
-			if (content instanceof MethodEnquire) {
-				MethodEnquire enquire = (MethodEnquire) content;
-				MethodHandler handler = handlerRegistry.findHandler(enquire.getInterf(), enquire.getMethod(),
-						enquire.getParameterTypes());
+			if (content instanceof HandlerEnquire) {
+				MethodHandler handler = null;
+				if (content instanceof MethodEnquire) {
+					MethodEnquire enquire = (MethodEnquire) content;
+					handler = handlerRegistry.findHandler(enquire.getInterf(), enquire.getMethod(),
+							enquire.getParameterTypes());
+				} else if (content instanceof JsonEnquire) {
+					JsonEnquire enquire = (JsonEnquire) content;
+					handler = handlerRegistry.findHandler(enquire.getName());
+				}
 				HandlerMetaData meta = new HandlerMetaData();
 				meta.setName(handler.getAlias());
 				reply = UniqueHolder.reply(holder, meta);

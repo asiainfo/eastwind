@@ -2,7 +2,7 @@ package eastwind.io.serializer;
 
 public class SerializerFactoryHolder {
 
-	private SerializerHolder internalSerializerHolder = new SerializerHolder(new InternalSerializerFactory());
+	private SerializerHolder frameworkSerializerHolder = new SerializerHolder(new KryoSerializerFactory());
 	private SerializerHolder binarySerializerHolder;
 	private SerializerHolder jsonSerializerHolder;
 
@@ -14,15 +14,15 @@ public class SerializerFactoryHolder {
 		this.jsonSerializerHolder = new SerializerHolder(serializerFactory);
 	}
 
-	public Serializer getInternalSerializer() {
-		return internalSerializerHolder.getSerializer();
+	public Serializer getFrameworkSerializer() {
+		return frameworkSerializerHolder.getSerializer();
 	}
-	
+
 	public Serializer getBinarySerializer() {
-		return binarySerializerHolder.getSerializer();
+		return binarySerializerHolder == null ? null : binarySerializerHolder.getSerializer();
 	}
 
 	public Serializer getJsonSerializer() {
-		return jsonSerializerHolder.getSerializer();
+		return jsonSerializerHolder == null ? null : jsonSerializerHolder.getSerializer();
 	}
 }

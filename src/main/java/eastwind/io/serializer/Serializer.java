@@ -6,8 +6,8 @@ import java.lang.reflect.Type;
 
 public interface Serializer {
 
-	public Object read(Type type, InputStream inputStream);
+	Object read(Type type, InputStream inputStream);
 
-	public void write(Object obj, OutputStream outputStream);
+	void write(Object obj, OutputStream outputStream);
 
 }

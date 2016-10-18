@@ -1,10 +1,10 @@
 package eastwind.io.serializer;
 
-public final class InternalSerializerFactory implements SerializerFactory {
+public final class KryoSerializerFactory implements SerializerFactory {
 
 	@Override
 	public Serializer newInstance() {
-		return new InternalSerializer();
+		return new KryoSerializer();
 	}
 
 	@Override
