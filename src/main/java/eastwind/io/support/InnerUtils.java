@@ -6,14 +6,16 @@ import java.util.concurrent.ConcurrentMap;
 
 import eastwind.io.model.Host;
 
-public class CommonUtils {
+public class InnerUtils {
 
-	public static String UUID;
-	
-	static {
-		UUID = java.util.UUID.randomUUID().toString();
+	public static String getName(Class<?> cls) {
+		String simpleName = cls.getSimpleName();
+		if (simpleName.length() == 1) {
+			return simpleName.substring(0, 1).toLowerCase();
+		}
+		return simpleName.substring(0, 1).toLowerCase() + simpleName.substring(1);
 	}
-	
+
 	public static Class<?> getGenericType(Class<?> src, Class<?> interf) {
 		for (Type type : src.getGenericInterfaces()) {
 			if (type instanceof ParameterizedType) {
@@ -23,14 +25,14 @@ public class CommonUtils {
 					if (tp instanceof Class<?>) {
 						return (Class<?>) tp;
 					} else {
-						return (Class<?>) ((ParameterizedType)tp).getRawType();
+						return (Class<?>) ((ParameterizedType) tp).getRawType();
 					}
 				}
 			}
 		}
 		return null;
 	}
-	
+
 	public static long currentTimeSeconds() {
 		return System.currentTimeMillis() / 1000;
 	}
@@ -42,7 +44,7 @@ public class CommonUtils {
 		}
 		return present;
 	}
-	
+
 	public static Host toHost(String uri) {
 		if (uri.contains(":")) {
 			String[] arr = uri.split(":");
@@ -51,5 +53,4 @@ public class CommonUtils {
 		return new Host("127.0.0.1", Integer.parseInt(uri.trim()));
 	}
 
-	
 }

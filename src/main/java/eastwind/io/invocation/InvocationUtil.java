@@ -18,11 +18,11 @@ public class InvocationUtil {
 
 	@SuppressWarnings("unchecked")
 	public static <T> InvocationFuture<T> getLastInvocation(T returnStub) {
-		return InvocationFuture.TL.get();
+		return InvocationPromise.TL.get();
 	}
 	
 	@SuppressWarnings("unchecked")
 	public static InvocationFuture<Object> getLastInvocation() {
-		return InvocationFuture.TL.get();
+		return InvocationPromise.TL.get();
 	}
 }

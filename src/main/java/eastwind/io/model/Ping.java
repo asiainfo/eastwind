@@ -1,5 +1,5 @@
 package eastwind.io.model;
 
-public class Ping {
+public class Ping implements FrameworkObject {
 
 }

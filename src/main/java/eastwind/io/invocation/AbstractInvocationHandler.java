@@ -30,11 +30,10 @@ public abstract class AbstractInvocationHandler<T> {
 	protected abstract boolean isBinary(T context);
 	protected abstract Type getReturnType(T context);
 	protected abstract SettableFuture<HandlerMetaData> getHandlerMetaData(T context, ServerTransport st);
-	protected abstract Object returnNull(T context);
 	
-	public Object invoke(final T context, final Object[] args) throws Throwable {
+	protected InvocationPromise invoke(final T context, final Object[] args) throws Throwable {
 		final InvocationPromise ip = new InvocationPromise();
-		InvocationFuture.TL.set(ip);
+		InvocationPromise.TL.set(ip);
 		
 		DefaultServerSelector serverSelector = new DefaultServerSelector(serverConfigurer.getHostIterator(group));
 		ServerTransportVisitor transportVisitor = serverRepository.getTransportVisitor(group, true);
@@ -59,8 +58,7 @@ public abstract class AbstractInvocationHandler<T> {
 		} else if (st.getStatus() == 1) {
 			enquireAndInvoke(context, ip, request, st);
 		}
-		return ip.get();
-//		return returnNull(method);
+		return ip;
 	}
 	
 	private void enquireAndInvoke(final T context, final InvocationPromise promise, final Request request,

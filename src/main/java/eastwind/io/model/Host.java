@@ -4,7 +4,6 @@ public class Host {
 
 	private String ip;
 	private int port;
-	private String tag;
 	
 	public Host() {
 	}
@@ -28,14 +27,6 @@ public class Host {
 
 	public void setPort(int port) {
 		this.port = port;
-	}
-
-	public String getTag() {
-		return tag;
-	}
-
-	public void setTag(String tag) {
-		this.tag = tag;
 	}
 
 	@Override
@@ -64,7 +55,7 @@ public class Host {
 
 	@Override
 	public String toString() {
-		return ip + ":" + port + ":" + tag;
+		return ip + ":" + port;
 	}
 
 }

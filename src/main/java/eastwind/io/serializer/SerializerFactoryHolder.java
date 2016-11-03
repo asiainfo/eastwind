@@ -3,26 +3,26 @@ package eastwind.io.serializer;
 public class SerializerFactoryHolder {
 
 	private SerializerHolder frameworkSerializerHolder = new SerializerHolder(new KryoSerializerFactory());
-	private SerializerHolder binarySerializerHolder;
-	private SerializerHolder jsonSerializerHolder;
+	private SerializerHolder proxySerializerHolder;
+	private SerializerHolder smartSerializerHolder;
 
-	public void setBinarySerializerFactory(SerializerFactory serializerFactory) {
-		this.binarySerializerHolder = new SerializerHolder(serializerFactory);
+	public void setProxySerializerFactory(SerializerFactory serializerFactory) {
+		this.proxySerializerHolder = new SerializerHolder(serializerFactory);
 	}
 
-	public void setJsonSerializerFactory(SerializerFactory serializerFactory) {
-		this.jsonSerializerHolder = new SerializerHolder(serializerFactory);
+	public void setSmartSerializerFactory(SerializerFactory serializerFactory) {
+		this.smartSerializerHolder = new SerializerHolder(serializerFactory);
 	}
 
 	public Serializer getFrameworkSerializer() {
 		return frameworkSerializerHolder.getSerializer();
 	}
 
-	public Serializer getBinarySerializer() {
-		return binarySerializerHolder == null ? null : binarySerializerHolder.getSerializer();
+	public Serializer getProxySerializer() {
+		return proxySerializerHolder == null ? null : proxySerializerHolder.getSerializer();
 	}
 
-	public Serializer getJsonSerializer() {
-		return jsonSerializerHolder == null ? null : jsonSerializerHolder.getSerializer();
+	public Serializer getSmartSerializer() {
+		return smartSerializerHolder == null ? null : smartSerializerHolder.getSerializer();
 	}
 }

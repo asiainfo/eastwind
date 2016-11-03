@@ -12,7 +12,7 @@ import org.apache.commons.lang3.ClassUtils;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
-import eastwind.io.support.CommonUtils;
+import eastwind.io.support.InnerUtils;
 
 public class ObjectHandlerRegistry {
 
@@ -109,7 +109,7 @@ public class ObjectHandlerRegistry {
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public void registerListener(MessageListener messageListener) {
-		Class<?> cls = CommonUtils.getGenericType(messageListener.getClass(), MessageListener.class);
+		Class<?> cls = InnerUtils.getGenericType(messageListener.getClass(), MessageListener.class);
 		CopyOnWriteArrayList<MessageListener<Object>> listeners = messageListeners.get(cls);
 		if (listeners == null) {
 			listeners = new CopyOnWriteArrayList<MessageListener<Object>>();

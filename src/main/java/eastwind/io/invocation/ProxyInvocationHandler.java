@@ -19,7 +19,8 @@ public class ProxyInvocationHandler extends AbstractInvocationHandler<Method> im
 
 	@Override
 	public Object invoke(Object proxy, final Method method, final Object[] args) throws Throwable {
-		return super.invoke(method, args);
+		InvocationPromise ip = super.invoke(method, args);
+		return ip.get();
 	}
 
 	@Override
@@ -37,8 +38,7 @@ public class ProxyInvocationHandler extends AbstractInvocationHandler<Method> im
 		return st.getHandlerMetaData(context);
 	}
 
-	@Override
-	protected Object returnNull(Method context) {
+	private Object returnNull(Method context) {
 		Class<?> type = context.getReturnType();
 		// boolean, char, byte, short, int, long, float, double
 		if (type.isPrimitive()) {

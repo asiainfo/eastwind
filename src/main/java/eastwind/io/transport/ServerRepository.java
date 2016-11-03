@@ -11,16 +11,18 @@ import com.google.common.collect.Sets;
 
 import eastwind.io.model.HandlerMetaData;
 import eastwind.io.model.Host;
-import eastwind.io.support.CommonUtils;
+import eastwind.io.support.InnerUtils;
 import eastwind.io.support.OperationListener;
 import eastwind.io.support.SettableFuture;
 
 public class ServerRepository {
 
-	private ConcurrentMap<String, ServerGroup> serverGroups = Maps.newConcurrentMap();
-	private ConcurrentMap<String, ServerTransport> transports = Maps.newConcurrentMap();
 	private TransportFactory transportFactory;
+	private ConcurrentMap<String, ServerGroup> groups = Maps.newConcurrentMap();
+	private ConcurrentMap<String, ServerTransport> transports = Maps.newConcurrentMap();
 
+	private ServerLoader serverLoader;
+	
 	public ServerRepository(TransportFactory transportFactory) {
 		this.transportFactory = transportFactory;
 	}
@@ -33,13 +35,9 @@ public class ServerRepository {
 		return findOrCreate(group, host);
 	}
 
-	public ServerTransportVisitor getTransportVisitor(String group, boolean oneOff) {
-		return new DefaultTransportVisitor(group, oneOff);
-	}
-
 	private ServerGroup getGroup(String group) {
-		ServerGroup sg = serverGroups.get(group);
-		return sg == null ? CommonUtils.putIfAbsent(serverGroups, group, new ServerGroup(group)) : sg;
+		ServerGroup sg = groups.get(group);
+		return sg == null ? InnerUtils.putIfAbsent(groups, group, new ServerGroup(group)) : sg;
 	}
 
 	private ServerTransport findOrCreate(String group, Host host) {
@@ -56,7 +54,7 @@ public class ServerRepository {
 					if (st.getStatus() == 1) {
 						ServerHandler sh = server.serverHandlers.get(st.getUuid());
 						if (sh == null) {
-							sh = CommonUtils.putIfAbsent(server.serverHandlers, st.getUuid(),
+							sh = InnerUtils.putIfAbsent(server.serverHandlers, st.getUuid(),
 									new ServerHandler(st.getUuid()));
 						}
 						st.setServerHandlerMetaData(sh.serverHandlerMetaData);
@@ -76,6 +74,10 @@ public class ServerRepository {
 		return null;
 	}
 
+	public ServerTransportVisitor getTransportVisitor(String group, boolean oneOff) {
+		return new DefaultTransportVisitor(group, oneOff);
+	}
+
 	static class ServerGroup {
 		String group;
 		ConcurrentMap<Host, Server> servers = Maps.newConcurrentMap();
@@ -86,12 +88,19 @@ public class ServerRepository {
 
 		public Server getServer(Host host) {
 			Server server = servers.get(host);
-			return server == null ? CommonUtils.putIfAbsent(servers, host, new Server(host)) : server;
+			return server == null ? InnerUtils.putIfAbsent(servers, host, new Server(host)) : server;
 		}
 	}
 
 	static class Server {
 		Host host;
+		
+		Node node;
+		String preUuid;
+		
+		ServerTransport transport;
+		ServerHandlerMetaData serverHandlerMetaData = new ServerHandlerMetaData();
+		
 		List<ServerTransport> transports = Lists.newLinkedList();
 		ConcurrentMap<String, ServerHandler> serverHandlers = Maps.newConcurrentMap();
 

@@ -8,7 +8,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
-import eastwind.io.support.CommonUtils;
+import eastwind.io.support.InnerUtils;
 
 public class ClientRepository {
 
@@ -27,7 +27,7 @@ public class ClientRepository {
 
 	private ClientGroup getGroup(String group) {
 		ClientGroup cg = clientGroups.get(group);
-		return cg == null ? CommonUtils.putIfAbsent(clientGroups, group, new ClientGroup(group)) : cg;
+		return cg == null ? InnerUtils.putIfAbsent(clientGroups, group, new ClientGroup(group)) : cg;
 	}
 
 	class DefaultClientTransportVisitor implements ClientTransportVisitor {
@@ -85,7 +85,7 @@ public class ClientRepository {
 
 		public Client getClient(String uuid) {
 			Client client = clients.get(uuid);
-			return client == null ? CommonUtils.putIfAbsent(clients, uuid, new Client(group, uuid)) : client;
+			return client == null ? InnerUtils.putIfAbsent(clients, uuid, new Client(group, uuid)) : client;
 		}
 	}
 

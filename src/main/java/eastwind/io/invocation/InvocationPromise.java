@@ -4,16 +4,40 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import eastwind.io.support.GlobalExecutor;
 import eastwind.io.support.SettableFuture;
-
 
 public class InvocationPromise<V> implements InvocationFuture<V> {
 
-	private SettableFuture<V> future = new SettableFuture<V>();
+	@SuppressWarnings("rawtypes")
+	public static final ThreadLocal<InvocationPromise> TL = new ThreadLocal<InvocationPromise>();
 	
+	private SettableFuture<V> future = new SettableFuture<V>();
+	private byte state;
+
+	public boolean set(V value) {
+		boolean r = future.set(value);
+		if (r) {
+			this.state = 1;
+		}
+		return r;
+	}
+
+	public boolean setException(Throwable throwable) {
+		boolean r = future.setException(throwable);
+		if (r) {
+			this.state = 2;
+		}
+		return r;
+	}
+
 	@Override
 	public boolean cancel(boolean mayInterruptIfRunning) {
-		return future.cancel(mayInterruptIfRunning);
+		boolean r = future.cancel(mayInterruptIfRunning);
+		if (r) {
+			this.state = 3;
+		}
+		return r;
 	}
 
 	@Override
@@ -28,16 +52,14 @@ public class InvocationPromise<V> implements InvocationFuture<V> {
 
 	@Override
 	public boolean isSuccess() {
-		// TODO Auto-generated method stub
 		return false;
 	}
 
 	@Override
 	public boolean isThrowable() {
-		// TODO Auto-generated method stub
 		return false;
 	}
-	
+
 	@Override
 	public V get() throws InterruptedException, ExecutionException {
 		return future.get();
@@ -47,13 +69,20 @@ public class InvocationPromise<V> implements InvocationFuture<V> {
 	public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
 		return future.get(timeout, unit);
 	}
-	
-	public boolean set(V value) {
-		return future.set(value);
-	}
 
-	public boolean setException(Throwable throwable) {
-		return future.setException(throwable);
+	@Override
+	public void addListener(final InvocationListener<V> listener) {
+		future.addListener(new Runnable() {
+			@Override
+			public void run() {
+				if (state == 1) {
+					listener.onResult(InvocationPromise.this);
+				} else if (state == 2) {
+					listener.onExecutionException(InvocationPromise.this);
+				} else if (state == 0 || state == 3) {
+					listener.onCanceled(InvocationPromise.this);
+				}
+			}
+		}, GlobalExecutor.EVENT_EXECUTOR);
 	}
-
 }

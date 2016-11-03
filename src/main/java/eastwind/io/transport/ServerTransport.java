@@ -138,12 +138,7 @@ public class ServerTransport {
 	}
 
 	public void addShakeListener(final OperationListener<ServerTransport> listener) {
-		getShakeFuture().addListener(new Runnable() {
-			@Override
-			public void run() {
-				listener.complete(ServerTransport.this);
-			}
-		}, GlobalExecutor.SERIAL_EXECUTOR);
+		getShakeFuture().addListener(listener, this, GlobalExecutor.SERIAL_EXECUTOR);
 	}
 
 	public void addCloseListener() {

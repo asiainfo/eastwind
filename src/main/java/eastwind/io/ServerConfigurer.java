@@ -9,7 +9,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import com.google.common.collect.Maps;
 
 import eastwind.io.model.Host;
-import eastwind.io.support.CommonUtils;
+import eastwind.io.support.InnerUtils;
 import eastwind.io.transport.HostIterator;
 
 public class ServerConfigurer {
@@ -33,7 +33,7 @@ public class ServerConfigurer {
 	private GroupConfig getGroupConfig(String group) {
 		GroupConfig gc = servers.get(group);
 		if (gc == null) {
-			gc = CommonUtils.putIfAbsent(servers, group, new GroupConfig(group));
+			gc = InnerUtils.putIfAbsent(servers, group, new GroupConfig(group));
 		}
 		return gc;
 	}

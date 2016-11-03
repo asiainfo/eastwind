@@ -2,28 +2,29 @@ package eastwind.io.invocation;
 
 import java.lang.reflect.Type;
 
-public class JsonInvoker<T> {
+public class SmartInvoker<T> {
 
 	private String group;
 	private String name;
 	private Type returnType;
 	
-	private JsonInvocationHandler invocationHandler;
+	private SmartInvocationHandler invocationHandler;
 	
-	public JsonInvoker(String group, String name, Type returnType, JsonInvocationHandler invocationHandler) {
+	public SmartInvoker(String group, String name, Type returnType, SmartInvocationHandler invocationHandler) {
 		this.group = group;
 		this.name = name;
 		this.returnType = returnType;
 		this.invocationHandler = invocationHandler;
 	}
 
-	@SuppressWarnings("unchecked")
 	public T invoke(Object... args) throws Throwable {
-		return (T) invocationHandler.invoke(name, args);
+		InvocationPromise ip = invocationHandler.invoke(name, args);
+		return (T) ip.get();
 	}
 	
-	public void asyncInvoke(Object... args) {
-		
+	public InvocationFuture<T> asyncInvoke(Object... args) throws Throwable {
+		InvocationPromise ip = invocationHandler.invoke(name, args);
+		return ip;
 	}
 	
 	public String getGroup() {

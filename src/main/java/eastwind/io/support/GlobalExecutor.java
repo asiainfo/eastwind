@@ -8,6 +8,7 @@ public class GlobalExecutor {
 
 	public static ScheduledExecutorService SCHEDULED_EXECUTOR = Executors.newScheduledThreadPool(2,
 			new NamedThreadFactory("SCHEDULED_EXECUTOR"));
+	
 	public static ExecutorService EVENT_EXECUTOR = Executors.newFixedThreadPool(2, new NamedThreadFactory(
 			"EVENT_EXECUTOR"));
 

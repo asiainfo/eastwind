@@ -127,16 +127,16 @@ public class HandlerRegistry {
 			return name;
 		}
 
-		String fullName = obj.getClass().getCanonicalName();
-		name = fullName.substring(0, fullName.lastIndexOf(".")) + "." + name;
-		for (int i = name.length(); (i = name.lastIndexOf(".", i - 1)) != -1;) {
-			String alias = name.substring(i + 1);
-			if (duplicateOfAlias(alias)) {
-				continue;
-			}
-			return alias;
-		}
-		return null;
+//		String fullName = obj.getClass().getCanonicalName();
+//		name = fullName.substring(0, fullName.lastIndexOf(".")) + "." + name;
+//		for (int i = name.length(); (i = name.lastIndexOf(".", i - 1)) != -1;) {
+//			String alias = name.substring(i + 1);
+//			if (duplicateOfAlias(alias)) {
+//				continue;
+//			}
+//			return alias;
+//		}
+		return name;
 	}
 
 	private boolean duplicateOfAlias(String alias) {

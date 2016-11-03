@@ -27,9 +27,8 @@ public class ObjectCodec extends ByteToMessageCodec<Object> {
 
 	private static Logger logger = LoggerFactory.getLogger(ObjectCodec.class);
 
-	private static final byte PING = 0;
-	private static final byte SIMPLE = 0x55;
-	private static final byte HEADED_OBJECT = 0x79;
+	private static final byte SIMPLE = 0x00;
+	private static final byte HEADED_OBJECT = 0x01;
 
 	private SerializerFactoryHolder serializerFactoryHolder;
 	private HandlerRegistry handlerRegistry;
@@ -47,13 +46,13 @@ public class ObjectCodec extends ByteToMessageCodec<Object> {
 		Serializer frameworkSerializer = serializerFactoryHolder.getFrameworkSerializer();
 
 		if (message instanceof Ping) {
-			out.writeByte(0);
+			out.writeShort(0);
 		} else if (message instanceof HeadedObject) {
 			logEncode(message);
 			HeadedObject headedObject = (HeadedObject) message;
 			Header header = headedObject.getHeader();
-			Serializer contentSerializer = header.isBinary() ? serializerFactoryHolder.getBinarySerializer()
-					: serializerFactoryHolder.getJsonSerializer();
+			Serializer contentSerializer = header.isBinary() ? serializerFactoryHolder.getProxySerializer()
+					: serializerFactoryHolder.getSmartSerializer();
 
 			ByteBuf headerBuf = ctx.alloc().buffer(64);
 			headerBuf.writeByte(HEADED_OBJECT);
@@ -118,11 +117,11 @@ public class ObjectCodec extends ByteToMessageCodec<Object> {
 	protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
 		Serializer frameworkSerializer = serializerFactoryHolder.getFrameworkSerializer();
 
-		if (in.readableBytes() > 0) {
-			if (in.getByte(0) == PING) {
-				in.readByte();
+		if (in.readableBytes() >= 2) {
+			if (in.getShort(0) == 0) {
+				in.readShort();
 				out.add(FrameworkObjects.PING);
-			} else {
+			} else if (in.readableBytes() >= 4) {
 				in.markReaderIndex();
 				int model = in.readByte();
 				int len = in.readMedium();
@@ -142,7 +141,7 @@ public class ObjectCodec extends ByteToMessageCodec<Object> {
 						headedObject.setHeader(header);
 
 						Serializer contentSerializer = header.isBinary() ? serializerFactoryHolder
-								.getBinarySerializer() : serializerFactoryHolder.getJsonSerializer();
+								.getProxySerializer() : serializerFactoryHolder.getSmartSerializer();
 
 						if (header.getSize() == 1) {
 							if (header.getModel() == Header.REQUEST) {
