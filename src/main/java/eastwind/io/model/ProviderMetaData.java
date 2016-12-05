@@ -2,7 +2,7 @@ package eastwind.io.model;
 
 import java.lang.reflect.Method;
 
-public class HandlerMetaData {
+public class ProviderMetaData {
 
 	private Method method;
 	private String name;

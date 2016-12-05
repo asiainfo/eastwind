@@ -13,7 +13,12 @@ public class InvocationPromise<V> implements InvocationFuture<V> {
 	public static final ThreadLocal<InvocationPromise> TL = new ThreadLocal<InvocationPromise>();
 	
 	private SettableFuture<V> future = new SettableFuture<V>();
+	private InvocationInfo invocationInfo;
 	private byte state;
+
+	public InvocationPromise(InvocationInfo invocationInfo) {
+		this.invocationInfo = invocationInfo;
+	}
 
 	public boolean set(V value) {
 		boolean r = future.set(value);

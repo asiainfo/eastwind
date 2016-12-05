@@ -14,13 +14,13 @@ public abstract class ServerLoader {
 
 	public abstract int getMod(String group);
 
-	public synchronized final void ready() {
+	public synchronized final void refresh() {
 		ready = true;
 		GlobalExecutor.EVENT_EXECUTOR.execute(new Runnable() {
 			@Override
 			public void run() {
 				for (int i = 0; i < listeners.size(); i++) {
-					listeners.get(i).ready();
+					listeners.get(i).refresh();
 				}
 			}
 		});
@@ -32,7 +32,7 @@ public abstract class ServerLoader {
 			GlobalExecutor.EVENT_EXECUTOR.execute(new Runnable() {
 				@Override
 				public void run() {
-					listener.ready();
+					listener.refresh();
 				}
 			});
 		}

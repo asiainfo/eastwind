@@ -22,7 +22,13 @@ public class ChannelInitializeHandler extends ChannelInboundHandlerAdapter {
 			"HEAD ".getBytes(), "POST ".getBytes(), "TRACE ".getBytes(), "DELETE ".getBytes(), "OPTIONS ".getBytes(),
 			"CONNECT ".getBytes());
 
-	private HttpDispatcherHandler httpDispatcherHandler = new HttpDispatcherHandler();
+	private ServerContext serverContext;
+	private HttpDispatcherHandler httpDispatcherHandler;
+
+	public ChannelInitializeHandler(ServerContext serverContext) {
+		this.serverContext = serverContext;
+		this.httpDispatcherHandler = new HttpDispatcherHandler(serverContext);
+	}
 
 	@Override
 	public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {

@@ -1,0 +1,56 @@
+<html>
+	<script type="text/javascript" src="../src/js/jquery-3.1.1.min.js"></script>
+	<script type="text/javascript" src="../src/js/bootstrap.min.js"></script>
+
+	<link rel="stylesheet" href="../src/css/bootstrap.min.css" />
+	<link rel="stylesheet" href="../src/css/bootstrap-theme.min.css" />
+
+	<style type="text/css">
+		.route-property-input {
+			width: 80%;
+		}
+		
+		.route-property-group {
+			float: left;
+			width: 50%;
+		}
+	</style>
+
+	<head>
+		<meta charset="UTF-8">
+		<title>[[${eastwind.group}]]([[${eastwind.socketAddress}]])</title>
+	</head>
+
+	<body>
+		<div class="container">
+			<div th:include="fragment/header::navbar"></div>
+		
+			<div th:each="provider : ${providers}" class="panel panel-default">
+				<div class="panel-heading">
+					<h3 class="panel-title" th:text="${provider.alias}"></h3>
+					<h2 class="panel-title" th:text="${provider.obj.class.name}"></h2>
+				</div>
+				<table class="table">
+					<thead>
+						<th>接口</th>
+						<th>参数类型</th>
+						<th>返回类型</th>
+					</thead>
+					<tbody>
+						<tr th:each="handler : ${provider.handlers}">
+							<td th:text="${handler.alias}"></td>
+							<td th:text="${handler.stringOfParameterTypes()}"></td>
+							<td th:text="${handler.method.returnType.name}"></td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+
+		</div>
+		<!--container-->
+	</body>
+
+</html>
+<script>
+	$("#nav-ul li[name=provider]").addClass("active");
+</script>

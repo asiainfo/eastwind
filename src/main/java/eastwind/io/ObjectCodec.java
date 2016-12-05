@@ -31,10 +31,10 @@ public class ObjectCodec extends ByteToMessageCodec<Object> {
 	private static final byte HEADED_OBJECT = 0x01;
 
 	private SerializerFactoryHolder serializerFactoryHolder;
-	private HandlerRegistry handlerRegistry;
+	private ProviderRegistry handlerRegistry;
 	private TransmitSustainer transmitSustainer;
 
-	public ObjectCodec(SerializerFactoryHolder serializerFactoryHolder, HandlerRegistry handlerRegistry,
+	public ObjectCodec(SerializerFactoryHolder serializerFactoryHolder, ProviderRegistry handlerRegistry,
 			TransmitSustainer transmitSustainer) {
 		this.serializerFactoryHolder = serializerFactoryHolder;
 		this.handlerRegistry = handlerRegistry;

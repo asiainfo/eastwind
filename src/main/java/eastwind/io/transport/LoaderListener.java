@@ -2,7 +2,7 @@ package eastwind.io.transport;
 
 public interface LoaderListener {
 
-	void ready();
+	void refresh();
 	
 	void add(Node node, int mod, int preMod);
 	

@@ -11,34 +11,32 @@ import eastwind.io.Sequence;
 import eastwind.io.TransmitPromise;
 import eastwind.io.TransmitSustainer;
 import eastwind.io.model.HandlerEnquire;
-import eastwind.io.model.HandlerMetaData;
-import eastwind.io.model.Host;
 import eastwind.io.model.JsonEnquire;
 import eastwind.io.model.MethodEnquire;
+import eastwind.io.model.ProviderMetaData;
 import eastwind.io.model.Unique;
 import eastwind.io.model.UniqueHolder;
 import eastwind.io.support.GlobalExecutor;
 import eastwind.io.support.OperationListener;
 import eastwind.io.support.SettableFuture;
-import eastwind.io.transport.ServerRepository.ServerHandlerMetaData;
 
 public class ServerTransport {
 
 	private String id;
 	private int status;
-	private Host host;
+	private Node node;
 	private String group;
-	private String actualGroup;
 	private String uuid;
+	private String version;
 	private WeakReference<Channel> channelRef;
 	private SettableFuture<ServerTransport> shakeFuture;
 	private TransmitSustainer transmitSustainer;
 	private Sequence sequence;
-	private ServerHandlerMetaData serverHandlerMetaData;
+	private ProviderMetaDataVisitor providerMetaDataVisitor;
 
-	public ServerTransport(String group, Host host, Channel channel) {
+	public ServerTransport(String group, Node node, Channel channel) {
 		this.group = group;
-		this.host = host;
+		this.node = node;
 		this.channelRef = new WeakReference<Channel>(channel);
 		this.id = channel.id().asShortText();
 	}
@@ -51,20 +49,24 @@ public class ServerTransport {
 		return group;
 	}
 
-	public String getActualGroup() {
-		return actualGroup;
-	}
-
-	public void setActualGroup(String actualGroup) {
-		this.actualGroup = actualGroup;
-	}
-
 	public String getUuid() {
 		return uuid;
 	}
 
 	public void setUuid(String uuid) {
 		this.uuid = uuid;
+	}
+
+	public String getVersion() {
+		return version;
+	}
+
+	public void setVersion(String version) {
+		this.version = version;
+	}
+
+	public void setGroup(String group) {
+		this.group = group;
 	}
 
 	public void send(Object message) {
@@ -97,39 +99,38 @@ public class ServerTransport {
 		return tp;
 	}
 
-	public SettableFuture<HandlerMetaData> getHandlerMetaData(Method method) {
+	public SettableFuture<ProviderMetaData> getProviderMetaData(Method method) {
 		MethodEnquireAdapter methodEnquireAdapter = new MethodEnquireAdapter(method);
-		return getHandlerMetaData0(methodEnquireAdapter);
+		return getProviderMetaData0(methodEnquireAdapter);
 	}
 	
-	public SettableFuture<HandlerMetaData> getHandlerMetaData(String name) {
+	public SettableFuture<ProviderMetaData> getProviderMetaData(String name) {
 		JsonEnquireAdapter jsonEnquireAdapter = new JsonEnquireAdapter(name);
-		return getHandlerMetaData0(jsonEnquireAdapter);
+		return getProviderMetaData0(jsonEnquireAdapter);
 	}
 	
-	private SettableFuture<HandlerMetaData> getHandlerMetaData0(HandlerEnquireAdapter handlerEnquireAdapter) {
-		if (serverHandlerMetaData != null) {
-			SettableFuture<HandlerMetaData> future = handlerEnquireAdapter.getAbsent();
+	private SettableFuture<ProviderMetaData> getProviderMetaData0(ProviderMetaDataEnquireAdapter handlerEnquireAdapter) {
+		if (providerMetaDataVisitor != null) {
+			SettableFuture<ProviderMetaData> future = handlerEnquireAdapter.getAbsent();
 			if (future != null) {
 				return future;
 			}
 		}
 
-		SettableFuture<HandlerMetaData> future = handlerEnquireAdapter.createHandlerMetaData();
+		SettableFuture<ProviderMetaData> future = handlerEnquireAdapter.createHandlerMetaData();
 
 		if (future != null) {
 			HandlerEnquire enquire = handlerEnquireAdapter.createEnquire();
 			UniqueHolder holder = UniqueHolder.hold(enquire);
 
-			OperationListener<TransmitPromise<HandlerMetaData>> enquireListener = handlerEnquireAdapter
+			OperationListener<TransmitPromise<ProviderMetaData>> enquireListener = handlerEnquireAdapter
 					.createEnquireListener();
 			if (status == 1) {
 				@SuppressWarnings("unchecked")
-				TransmitPromise<HandlerMetaData> tp = sendAndWaitingForReply(holder);
+				TransmitPromise<ProviderMetaData> tp = sendAndWaitingForReply(holder);
 				tp.addListener(enquireListener, tp, GlobalExecutor.SERIAL_EXECUTOR);
 			} else {
-				getShakeFuture().addListener(new ShakeEnquireListener(handlerEnquireAdapter, holder, enquireListener),
-						this, GlobalExecutor.SERIAL_EXECUTOR);
+				addShakeListener(new Shake2EnquireListener(handlerEnquireAdapter, holder, enquireListener));
 			}
 			return future;
 		} else {
@@ -145,12 +146,12 @@ public class ServerTransport {
 
 	}
 
-	public int getStatus() {
-		return status;
+	public Node getNode() {
+		return node;
 	}
 
-	public Host getHost() {
-		return host;
+	public int getStatus() {
+		return status;
 	}
 
 	public void setStatus(int status) {
@@ -158,8 +159,8 @@ public class ServerTransport {
 		shakeFuture.set(this);
 	}
 
-	public void setServerHandlerMetaData(ServerHandlerMetaData serverHandlerMetaData) {
-		this.serverHandlerMetaData = serverHandlerMetaData;
+	public void setProviderMetaDataVisitor(ProviderMetaDataVisitor providerMetaDataVisitor) {
+		this.providerMetaDataVisitor = providerMetaDataVisitor;
 	}
 
 	public void setTransmitSustainer(TransmitSustainer transmitSustainer) {
@@ -170,14 +171,14 @@ public class ServerTransport {
 		this.sequence = sequence;
 	}
 
-	private class ShakeEnquireListener implements OperationListener<ServerTransport> {
+	private class Shake2EnquireListener implements OperationListener<ServerTransport> {
 	
-		private HandlerEnquireAdapter handlerEnquireAdapter;
+		private ProviderMetaDataEnquireAdapter handlerEnquireAdapter;
 		private UniqueHolder holder;
-		private OperationListener<TransmitPromise<HandlerMetaData>> enquireListener;
+		private OperationListener<TransmitPromise<ProviderMetaData>> enquireListener;
 	
-		public ShakeEnquireListener(HandlerEnquireAdapter handlerEnquireAdapter, UniqueHolder holder,
-				OperationListener<TransmitPromise<HandlerMetaData>> enquireListener) {
+		public Shake2EnquireListener(ProviderMetaDataEnquireAdapter handlerEnquireAdapter, UniqueHolder holder,
+				OperationListener<TransmitPromise<ProviderMetaData>> enquireListener) {
 			this.handlerEnquireAdapter = handlerEnquireAdapter;
 			this.holder = holder;
 			this.enquireListener = enquireListener;
@@ -187,31 +188,31 @@ public class ServerTransport {
 		public void complete(ServerTransport st) {
 			handlerEnquireAdapter.putIfNeeded();
 			@SuppressWarnings("unchecked")
-			TransmitPromise<HandlerMetaData> promise = sendAndWaitingForReply(holder);
+			TransmitPromise<ProviderMetaData> promise = sendAndWaitingForReply(holder);
 			promise.addListener(enquireListener, promise, GlobalExecutor.SERIAL_EXECUTOR);
 		}
 	
 	}
 
-	abstract class HandlerEnquireAdapter {
-		protected SettableFuture<HandlerMetaData> future;
+	abstract class ProviderMetaDataEnquireAdapter {
+		protected SettableFuture<ProviderMetaData> future;
 	
-		protected abstract SettableFuture<HandlerMetaData> get();
+		protected abstract SettableFuture<ProviderMetaData> get();
 	
-		protected abstract SettableFuture<HandlerMetaData> putIfAbsent();
+		protected abstract SettableFuture<ProviderMetaData> putIfAbsent();
 	
 		public abstract HandlerEnquire createEnquire();
 	
-		public abstract OperationListener<TransmitPromise<HandlerMetaData>> createEnquireListener();
+		public abstract OperationListener<TransmitPromise<ProviderMetaData>> createEnquireListener();
 	
-		public SettableFuture<HandlerMetaData> getAbsent() {
-			return serverHandlerMetaData == null ? null : get();
+		public SettableFuture<ProviderMetaData> getAbsent() {
+			return providerMetaDataVisitor == null ? null : get();
 		}
 	
-		public SettableFuture<HandlerMetaData> createHandlerMetaData() {
-			future = new SettableFuture<HandlerMetaData>();
-			SettableFuture<HandlerMetaData> absent = null;
-			if (serverHandlerMetaData != null) {
+		public SettableFuture<ProviderMetaData> createHandlerMetaData() {
+			future = new SettableFuture<ProviderMetaData>();
+			SettableFuture<ProviderMetaData> absent = null;
+			if (providerMetaDataVisitor != null) {
 				absent = putIfAbsent();
 			}
 			if (absent == null) {
@@ -229,7 +230,7 @@ public class ServerTransport {
 		}
 	}
 
-	class MethodEnquireAdapter extends HandlerEnquireAdapter {
+	class MethodEnquireAdapter extends ProviderMetaDataEnquireAdapter {
 	
 		private Method method;
 	
@@ -252,39 +253,39 @@ public class ServerTransport {
 		}
 	
 		@Override
-		public OperationListener<TransmitPromise<HandlerMetaData>> createEnquireListener() {
+		public OperationListener<TransmitPromise<ProviderMetaData>> createEnquireListener() {
 			return new MethodEnquireListener(method, future);
 		}
 	
 		@Override
-		protected SettableFuture<HandlerMetaData> get() {
-			return serverHandlerMetaData.get(method);
+		protected SettableFuture<ProviderMetaData> get() {
+			return providerMetaDataVisitor.get(method);
 		}
 	
 		@Override
-		protected SettableFuture<HandlerMetaData> putIfAbsent() {
-			return serverHandlerMetaData.putIfAbsent(method, future);
+		protected SettableFuture<ProviderMetaData> putIfAbsent() {
+			return providerMetaDataVisitor.putIfAbsent(method, future);
 		}
 	}
 
-	private final class MethodEnquireListener implements OperationListener<TransmitPromise<HandlerMetaData>> {
+	private final class MethodEnquireListener implements OperationListener<TransmitPromise<ProviderMetaData>> {
 		private final Method method;
-		private final SettableFuture<HandlerMetaData> future;
+		private final SettableFuture<ProviderMetaData> future;
 	
-		private MethodEnquireListener(Method method, SettableFuture<HandlerMetaData> future) {
+		private MethodEnquireListener(Method method, SettableFuture<ProviderMetaData> future) {
 			this.method = method;
 			this.future = future;
 		}
 	
 		@Override
-		public void complete(TransmitPromise<HandlerMetaData> t) {
-			HandlerMetaData meta = t.getNow();
+		public void complete(TransmitPromise<ProviderMetaData> t) {
+			ProviderMetaData meta = t.getNow();
 			meta.setMethod(method);
 			future.set(meta);
 		}
 	}
 
-	class JsonEnquireAdapter extends HandlerEnquireAdapter {
+	class JsonEnquireAdapter extends ProviderMetaDataEnquireAdapter {
 	
 		private String name;
 	
@@ -300,32 +301,32 @@ public class ServerTransport {
 		}
 	
 		@Override
-		public OperationListener<TransmitPromise<HandlerMetaData>> createEnquireListener() {
+		public OperationListener<TransmitPromise<ProviderMetaData>> createEnquireListener() {
 			return new JsonEnquireListener(future);
 		}
 	
 		@Override
-		protected SettableFuture<HandlerMetaData> get() {
-			return serverHandlerMetaData.get(name);
+		protected SettableFuture<ProviderMetaData> get() {
+			return providerMetaDataVisitor.get(name);
 		}
 	
 		@Override
-		protected SettableFuture<HandlerMetaData> putIfAbsent() {
-			return serverHandlerMetaData.putIfAbsent(name, future);
+		protected SettableFuture<ProviderMetaData> putIfAbsent() {
+			return providerMetaDataVisitor.putIfAbsent(name, future);
 		}
 	
 	}
 
-	private final class JsonEnquireListener implements OperationListener<TransmitPromise<HandlerMetaData>> {
-		private final SettableFuture<HandlerMetaData> future;
+	private final class JsonEnquireListener implements OperationListener<TransmitPromise<ProviderMetaData>> {
+		private final SettableFuture<ProviderMetaData> future;
 	
-		private JsonEnquireListener(SettableFuture<HandlerMetaData> future) {
+		private JsonEnquireListener(SettableFuture<ProviderMetaData> future) {
 			this.future = future;
 		}
 	
 		@Override
-		public void complete(TransmitPromise<HandlerMetaData> t) {
-			HandlerMetaData meta = t.getNow();
+		public void complete(TransmitPromise<ProviderMetaData> t) {
+			ProviderMetaData meta = t.getNow();
 			future.set(meta);
 		}
 	}

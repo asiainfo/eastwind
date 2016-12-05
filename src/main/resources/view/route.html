@@ -1,0 +1,209 @@
+<html>
+	<script type="text/javascript" src="../src/js/jquery-3.1.1.min.js"></script>
+	<script type="text/javascript" src="../src/js/bootstrap.min.js"></script>
+
+	<link rel="stylesheet" href="../src/css/bootstrap.min.css" />
+	<link rel="stylesheet" href="../src/css/bootstrap-theme.min.css" />
+
+	<style type="text/css">
+		.route-property-input {
+			width: 80%;
+		}
+		
+		.route-property-group {
+			float: left;
+			width: 50%;
+		}
+	</style>
+
+	<head>
+		<meta charset="UTF-8">
+		<title>[[${eastwind.group}]]([[${eastwind.socketAddress}]])</title>
+	</head>
+
+	<body>
+		<div class="container">
+			<div th:include="fragment/header::navbar"></div>
+		
+			<div class="panel panel-default">
+				<div class="panel-heading">
+					<h3 class="panel-title">定制路由</h3>
+				</div>
+
+				<div class="panel-body">
+					<form id="addroute" method="post" class="form-horizontal" action="/route/add?console">
+						<input name="console" hidden="hidden" />
+						<div class="form-group">
+							<label for="name" class="col-sm-1 control-label">接口</label>
+							<div class="col-sm-3">
+								<input type="text" class="form-control" id="name" name="name" />
+							</div>
+						</div>
+						<div class="form-group">
+							<label for="precedence" class="col-sm-1 control-label">优先级</label>
+							<div class="col-sm-3">
+								<input type="number" class="form-control" id="precedence" name="precedence" value="1000" />
+							</div>
+						</div>
+
+						<div>
+							<div class="route-property-group">
+								<table class="table">
+									<thead>
+										<th>消费者属性</th>
+										<th></th>
+									</thead>
+									<tbody>
+										<tr>
+											<td>群组:</td>
+											<td>
+												<input name="consumer" type="text" class="form-control route-property-input" />
+											</td>
+										</tr>
+										<tr>
+											<td>版本:</td>
+											<td>
+												<input name="fromVersion" type="text" class="form-control route-property-input" />
+											</td>
+										</tr>
+										<tr>
+											<td>表达式:</td>
+											<td>
+												<input name="expression" type="text" class="form-control route-property-input" />
+											</td>
+										</tr>
+										<tr>
+											<td>IP:</td>
+											<td>
+												<textarea name="fromIps" class="form-control route-property-input" rows="3"></textarea>
+											</td>
+										</tr>
+										<tr>
+											<td></td>
+											<td style="text-align: right;"><input type="submit" class="btn-lg btn-default" value="提交" /></td>
+										</tr>
+									</tbody>
+								</table>
+							</div>
+
+							<div class="route-property-group">
+								<table class="table">
+									<thead>
+										<th>提供者属性</th>
+										<th></th>
+									</thead>
+									<tbody>
+										<tr>
+											<td>群组:</td>
+											<td>
+												<input th:value="${eastwind.group}" name="provider" type="text" class="form-control route-property-input" readonly="readonly" />
+											</td>
+										</tr>
+										<tr>
+											<td>版本:</td>
+											<td>
+												<input name="toVersion" type="text" class="form-control route-property-input" />
+											</td>
+										</tr>
+										<tr>
+											<td>流量:</td>
+											<td>
+												<div class="input-group">
+													<input name="rate" type="number" class="form-control" style="width: 50%;" value="100" />
+													<span class="input-group-addon" style="float: left;width: 30pt;">%</span>
+												</div>
+											</td>
+										</tr>
+										<tr>
+											<td>地址:</td>
+											<td>
+												<textarea name="toHosts" class="form-control route-property-input" rows="3"></textarea>
+											</td>
+										</tr>
+										<tr>
+											<td></td>
+											<td style="text-align: left;"><input type="reset" class="btn-lg btn-default" value="取消" /></td>
+										</tr>
+									</tbody>
+								</table>
+							</div>
+						</div>
+					</form>
+				</div>
+			</div>
+			<!--addroute-->
+
+			<div class="panel panel-default">
+				<div class="panel-heading">
+					<h3 class="panel-title" th:text="路由列表"></h3>
+				</div>
+				<div class="panel-body">
+					<table class="table">
+						<thead>
+							<th>接口</th>
+							<th>优先级</th>
+							<th>消费者属性</th>
+							<th>提供者属性</th>
+							<th width="10%"></th>
+						</thead>
+						<tbody id="routelist">
+							<tr th:each="route : ${routes}" th:attr="routeid=${route.id}">
+								<td th:text="${#strings.isEmpty(route.name) ? '----' : route.name}"></td>
+								<td th:text="${route.precedence}"></td>
+								<td>
+									<div th:if="${!#strings.isEmpty(route.consumer)}" th:text="'群组:'+${route.consumer}">
+									</div>
+									<div th:if="${!#strings.isEmpty(route.fromVersion)}" th:text="'版本:'+${route.fromVersion}">
+									</div>
+									<div th:if="${!#strings.isEmpty(route.expression)}" th:text="'表达式:'+${route.expression}">
+									</div>
+									<div th:if="${!#lists.isEmpty(route.fromIps)}" th:text="'IP:'+${#strings.listJoin(route.fromIps,',')}">
+									</div>
+								</td>
+								<td>
+									<div th:if="${!#strings.isEmpty(route.provider)}" th:text="'群组:'+${route.provider}">
+									</div>
+									<div th:if="${!#strings.isEmpty(route.toVersion)}" th:text="'版本:'+${route.toVersion}">
+									</div>
+									<div th:if="${!#strings.isEmpty(route.rate)}" th:text="'流量:'+${route.rate}">
+									</div>
+									<div th:if="${!#lists.isEmpty(route.toHosts)}" th:text="'地址:'+${#strings.listJoin(route.toHosts,',')}">
+									</div>
+								</td>
+								<td>
+									<input type="button" class="removeroute btn-default btn-lg" value="删除" />
+								</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</div>
+		<!--container-->
+	</body>
+
+</html>
+<script>
+	$("#nav-ul li[name=route]").addClass("active");
+
+	$("#addroute").on('submit', function(e) {
+		var toVersion = $("#addroute [name=toVersion]").val();
+		var toHosts = $("#addroute [name=toHosts]").val();
+		if(toVersion == '' && toHosts == '') {
+			alert("提供者设定无效");
+			e.preventDefault();
+			return;
+		}
+	});
+
+	$("#routelist .removeroute").each(function() {
+		$(this).on('click', function(e) {
+			$.post('/route/remove?console', {
+					routeid: $(this).parents("tr").attr("routeid")
+				},
+				function() {
+					window.location.href = "/route?console";
+				});
+		});
+	});
+</script>

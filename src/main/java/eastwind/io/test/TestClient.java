@@ -8,7 +8,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 
 import java.nio.charset.Charset;
-import java.util.concurrent.TimeUnit;
+import java.util.AbstractList;
 
 public class TestClient {
 
@@ -37,6 +37,7 @@ public class TestClient {
 		});
 		bootstrap.connect("127.0.0.1", 12468);
 		System.in.read();
+		
 	}
 
 }

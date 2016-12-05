@@ -90,7 +90,7 @@ public class ObjectHandlerRegistry {
 			if (ho.interfs.contains(cls)) {
 				int distance = 0;
 				for (MethodHandler h : ho.handlers) {
-					int d = distance(h.getTargetMethod(), pts);
+					int d = distance(h.getMethod(), pts);
 					if (d == 0) {
 						handler = h;
 						break;

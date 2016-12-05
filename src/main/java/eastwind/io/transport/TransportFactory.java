@@ -27,18 +27,19 @@ public class TransportFactory {
 		return new ClientTransport(group, uuid, channel);
 	}
 
-	public ServerTransport serverTransport(String group, Host host) {
+	public ServerTransport serverTransport(String group, Node node) {
+		Host host = node.getHost();
 		ChannelFuture cf = bootstrap.connect(host.getIp(), host.getPort());
-		ServerTransport st = new ServerTransport(group, host, cf.channel());
-		cf.addListener(new ConnectListener(st));
+		ServerTransport st = new ServerTransport(group, node, cf.channel());
+		cf.addListener(new Connect2ShakeListener(st));
 		return st;
 	}
 
-	private class ConnectListener implements GenericFutureListener<ChannelFuture> {
+	private class Connect2ShakeListener implements GenericFutureListener<ChannelFuture> {
 
 		private ServerTransport st;
 
-		public ConnectListener(ServerTransport st) {
+		public Connect2ShakeListener(ServerTransport st) {
 			this.st = st;
 		}
 

@@ -43,4 +43,8 @@ public class JsonSerializer implements Serializer {
 		}
 	}
 
+	public ObjectMapper getObjectMapper() {
+		return objectMapper;
+	}
+
 }

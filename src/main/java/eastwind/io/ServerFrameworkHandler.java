@@ -5,7 +5,7 @@ import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import eastwind.io.model.FrameworkObject;
 import eastwind.io.model.HandlerEnquire;
-import eastwind.io.model.HandlerMetaData;
+import eastwind.io.model.ProviderMetaData;
 import eastwind.io.model.JsonEnquire;
 import eastwind.io.model.MethodEnquire;
 import eastwind.io.model.Shake;
@@ -17,18 +17,20 @@ import eastwind.io.transport.TransportFactory;
 @Sharable
 public class ServerFrameworkHandler extends FrameworkHandler {
 
-	private HandlerRegistry handlerRegistry;
+	private ServerContext providerContainer;
 	private ClientRepository clientRepository;
 
-	public ServerFrameworkHandler(Shake myShake, TransmitSustainer transmitSustainer, HandlerRegistry handlerRegistry,
-			TransportFactory transportFactory, ClientRepository clientRepository) {
+	public ServerFrameworkHandler(Shake myShake, TransmitSustainer transmitSustainer,
+			ServerContext providerContainer, TransportFactory transportFactory, ClientRepository clientRepository) {
 		super(myShake, transmitSustainer, transportFactory);
-		this.handlerRegistry = handlerRegistry;
+		this.providerContainer = providerContainer;
 		this.clientRepository = clientRepository;
 	}
 
 	@Override
 	protected void channelRead0(ChannelHandlerContext ctx, FrameworkObject obj) throws Exception {
+		ProviderRegistry handlerRegistry = providerContainer.getProviderRegistry();
+		
 		Channel channel = ctx.channel();
 		String id = channel.id().asShortText();
 		ChannelStat cs = ChannelStat.get(channel);
@@ -47,7 +49,7 @@ public class ServerFrameworkHandler extends FrameworkHandler {
 					JsonEnquire enquire = (JsonEnquire) content;
 					handler = handlerRegistry.findHandler(enquire.getName());
 				}
-				HandlerMetaData meta = new HandlerMetaData();
+				ProviderMetaData meta = new ProviderMetaData();
 				meta.setName(handler.getAlias());
 				reply = UniqueHolder.reply(holder, meta);
 			}

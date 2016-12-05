@@ -41,7 +41,7 @@ public class ClientFrameworkHandler extends FrameworkHandler {
 				Shake shake = (Shake) obj;
 				stat.setShaked(true);
 				transport.setUuid(shake.getUuid());
-				transport.setActualGroup(shake.getGroup());
+				transport.setGroup(shake.getGroup());
 				transport.setStatus(1);
 			}
 		}

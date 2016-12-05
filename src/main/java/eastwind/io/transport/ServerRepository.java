@@ -1,170 +1,86 @@
 package eastwind.io.transport;
 
-import java.lang.reflect.Method;
-import java.util.List;
-import java.util.Set;
+import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 
-import eastwind.io.model.HandlerMetaData;
-import eastwind.io.model.Host;
-import eastwind.io.support.InnerUtils;
 import eastwind.io.support.OperationListener;
-import eastwind.io.support.SettableFuture;
 
 public class ServerRepository {
 
+	private int connectionsPerHost;
 	private TransportFactory transportFactory;
-	private ConcurrentMap<String, ServerGroup> groups = Maps.newConcurrentMap();
+	private Map<String, ServerGroup> groups = Maps.newHashMap();
 	private ConcurrentMap<String, ServerTransport> transports = Maps.newConcurrentMap();
 
 	private ServerLoader serverLoader;
-	
-	public ServerRepository(TransportFactory transportFactory) {
+
+	public ServerRepository(TransportFactory transportFactory, int connectionsPerHost) {
 		this.transportFactory = transportFactory;
+		this.connectionsPerHost = connectionsPerHost;
 	}
 
 	public ServerTransport getTransport(String id) {
 		return transports.get(id);
 	}
 
-	public ServerTransport getTransport(String group, Host host) {
-		return findOrCreate(group, host);
-	}
-
-	private ServerGroup getGroup(String group) {
-		ServerGroup sg = groups.get(group);
-		return sg == null ? InnerUtils.putIfAbsent(groups, group, new ServerGroup(group)) : sg;
-	}
-
-	private ServerTransport findOrCreate(String group, Host host) {
-		final Server server = getGroup(group).getServer(host);
-		ServerTransport st = find(server, host);
-		if (st == null) {
-			st = transportFactory.serverTransport(group, host);
-			server.transports.add(st);
-			transports.put(st.getId(), st);
-
-			st.addShakeListener(new OperationListener<ServerTransport>() {
-				@Override
-				public void complete(ServerTransport st) {
-					if (st.getStatus() == 1) {
-						ServerHandler sh = server.serverHandlers.get(st.getUuid());
-						if (sh == null) {
-							sh = InnerUtils.putIfAbsent(server.serverHandlers, st.getUuid(),
-									new ServerHandler(st.getUuid()));
-						}
-						st.setServerHandlerMetaData(sh.serverHandlerMetaData);
-					}
-				}
-			});
+	public ServerTransport getTransport(String group, Node node) {
+		tryNewTransport(group, node);
+		Server server = getServerGroup(group).getServer(node);
+		ServerTransport st = server.getTransport();
+		if (st != null) {
+			return st;
 		}
-		return st;
-	}
-
-	private ServerTransport find(Server server, Host host) {
-		for (ServerTransport st : server.transports) {
-			if (st.getHost() == host) {
-				return st;
-			}
+		// TODO clean
+		if (tryNewTransport(group, node)) {
+			return server.getTransport();
 		}
 		return null;
 	}
 
-	public ServerTransportVisitor getTransportVisitor(String group, boolean oneOff) {
-		return new DefaultTransportVisitor(group, oneOff);
+	public void setServerLoader(ServerLoader serverLoader) {
+		this.serverLoader = serverLoader;
 	}
 
-	static class ServerGroup {
-		String group;
-		ConcurrentMap<Host, Server> servers = Maps.newConcurrentMap();
-
-		public ServerGroup(String group) {
-			this.group = group;
+	private boolean tryNewTransport(String group, Node node) {
+		final Server server = getServerGroup(group).getServer(node);
+		if (server.getSize() != server.getCurrentSize()) {
+			final ServerTransport st = transportFactory.serverTransport(group, node);
+			server.addTransport(st);
+			transports.put(st.getId(), st);
+			st.addShakeListener(new Shake2SetProviderMetaDataListener(server, st));
+			return true;
 		}
-
-		public Server getServer(Host host) {
-			Server server = servers.get(host);
-			return server == null ? InnerUtils.putIfAbsent(servers, host, new Server(host)) : server;
-		}
+		return false;
 	}
 
-	static class Server {
-		Host host;
-		
-		Node node;
-		String preUuid;
-		
-		ServerTransport transport;
-		ServerHandlerMetaData serverHandlerMetaData = new ServerHandlerMetaData();
-		
-		List<ServerTransport> transports = Lists.newLinkedList();
-		ConcurrentMap<String, ServerHandler> serverHandlers = Maps.newConcurrentMap();
-
-		public Server(Host host) {
-			this.host = host;
-		}
-	}
-
-	static class ServerHandler {
-		String uuid;
-		ServerHandlerMetaData serverHandlerMetaData = new ServerHandlerMetaData();
-
-		public ServerHandler(String uuid) {
-			this.uuid = uuid;
-		}
-	}
-
-	static class ServerHandlerMetaData {
-		ConcurrentMap<Method, SettableFuture<HandlerMetaData>> methodMetaDatas = Maps.newConcurrentMap();
-		ConcurrentMap<String, SettableFuture<HandlerMetaData>> namedMetaDatas = Maps.newConcurrentMap();
-
-		public SettableFuture<HandlerMetaData> get(Method method) {
-			return methodMetaDatas.get(method);
-		}
-
-		public SettableFuture<HandlerMetaData> putIfAbsent(Method method, SettableFuture<HandlerMetaData> future) {
-			return methodMetaDatas.putIfAbsent(method, future);
-		}
-		
-		public SettableFuture<HandlerMetaData> get(String name) {
-			return namedMetaDatas.get(name);
-		}
-
-		public SettableFuture<HandlerMetaData> putIfAbsent(String name, SettableFuture<HandlerMetaData> future) {
-			return namedMetaDatas.putIfAbsent(name, future);
-		}
-	}
-
-	class DefaultTransportVisitor implements ServerTransportVisitor {
-
-		private boolean oneOff;
-		private Set<ServerTransport> used;
-		private String group;
-
-		public DefaultTransportVisitor(String group, boolean oneOff) {
-			this.group = group;
-			this.oneOff = oneOff;
-		}
-
-		private Set<ServerTransport> getUsed() {
-			if (used == null) {
-				used = Sets.newHashSet();
+	public ServerGroup getServerGroup(String group) {
+		synchronized (groups) {
+			ServerGroup sg = groups.get(group);
+			if (sg == null) {
+				sg = new ServerGroup(group, connectionsPerHost);
+				sg.initNodes(serverLoader.getNodes(group));
+				groups.put(group, sg);
 			}
-			return used;
+			return sg;
+		}
+	}
+
+	private static final class Shake2SetProviderMetaDataListener implements OperationListener<ServerTransport> {
+		private final Server server;
+		private final ServerTransport st;
+
+		private Shake2SetProviderMetaDataListener(Server server, ServerTransport st) {
+			this.server = server;
+			this.st = st;
 		}
 
 		@Override
-		public boolean oneOff() {
-			return oneOff;
-		}
-
-		@Override
-		public ServerTransport next(Host host) {
-			return findOrCreate(group, host);
+		public void complete(ServerTransport t) {
+			if (t.getStatus() == TransportStatus.OK) {
+				st.setProviderMetaDataVisitor(server.getServerMetaData(st.getUuid()));
+			}
 		}
 	}
 }

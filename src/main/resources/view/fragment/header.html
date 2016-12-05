@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<title>header</title>
+	</head>
+
+	<body>
+		<div th:fragment="navbar">
+			<nav class="navbar navbar-default" role="navigation">
+				<div class="container-fluid">
+					<div class="navbar-header">
+						<p class="navbar-brand">[[${eastwind.group}]]</p>
+					</div>
+					<div>
+						<ul id="nav-ul" class="nav navbar-nav">
+							<li name="provider">
+								<a href="/provider?console">服务</a>
+							</li>
+							<li name="route">
+								<a href="/route?console">路由</a>
+							</li>
+						</ul>
+					</div>
+				</div>
+			</nav>
+		</div>
+	</body>
+
+</html>

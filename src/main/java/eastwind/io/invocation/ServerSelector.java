@@ -1,10 +1,16 @@
 package eastwind.io.invocation;
 
+import java.util.Set;
+
+import eastwind.io.transport.Node;
+
 public interface ServerSelector {
 
-	public boolean hasNext();
+	public HashCodeGenerator getHashCodeGenerator();
 	
-	public Server next();
+	public void prepare(NodeGroup nodeGroup);
+	
+	public Node next(int key, Set<Node> exculsions);
 	
 	public boolean exclusive();
 	

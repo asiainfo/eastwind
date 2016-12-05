@@ -4,17 +4,15 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 
-import eastwind.io.ServerConfigurer;
-import eastwind.io.model.HandlerMetaData;
+import eastwind.io.model.ProviderMetaData;
 import eastwind.io.support.SettableFuture;
 import eastwind.io.transport.ServerRepository;
 import eastwind.io.transport.ServerTransport;
 
 public class ProxyInvocationHandler extends AbstractInvocationHandler<Method> implements InvocationHandler {
 
-	public ProxyInvocationHandler(String group, ServerConfigurer netServerConfigurer,
-			ServerRepository serverRepository) {
-		super(group, serverRepository, netServerConfigurer);
+	public ProxyInvocationHandler(String group, ServerRepository serverRepository) {
+		super(group, serverRepository);
 	}
 
 	@Override
@@ -24,7 +22,7 @@ public class ProxyInvocationHandler extends AbstractInvocationHandler<Method> im
 	}
 
 	@Override
-	protected boolean isBinary(Method context) {
+	protected boolean isSmart(Method context) {
 		return true;
 	}
 
@@ -34,8 +32,8 @@ public class ProxyInvocationHandler extends AbstractInvocationHandler<Method> im
 	}
 
 	@Override
-	protected SettableFuture<HandlerMetaData> getHandlerMetaData(Method context, ServerTransport st) {
-		return st.getHandlerMetaData(context);
+	protected SettableFuture<ProviderMetaData> getProviderMetaData(Method context, ServerTransport st) {
+		return st.getProviderMetaData(context);
 	}
 
 	private Object returnNull(Method context) {
@@ -74,5 +72,5 @@ public class ProxyInvocationHandler extends AbstractInvocationHandler<Method> im
 		}
 		return null;
 	}
-	
+
 }

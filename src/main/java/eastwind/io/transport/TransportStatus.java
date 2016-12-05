@@ -2,6 +2,8 @@ package eastwind.io.transport;
 
 public class TransportStatus {
 
+	static final int NEW = 0;
+	
 	static final int OK = 1;
 	static final int SUSPEND = 2;
 

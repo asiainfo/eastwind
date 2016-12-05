@@ -16,14 +16,14 @@ public class MethodHandler {
 		this.method = method;
 		this.paramLen = method.getParameterTypes().length;
 		_void = method.getReturnType().equals(void.class) || method.getReturnType().equals(Void.class);
-		this.alias = parentAlias + "." + method.getName();
+		this.alias = parentAlias + "/" + method.getName();
 	}
 
-	public Object invoke(Object[] param) throws Exception {
+	public Object invoke(Object[] params) throws Exception {
 		if (paramLen == 0) {
 			return method.invoke(instance);
 		} else {
-			return method.invoke(instance, param);
+			return method.invoke(instance, params);
 		}
 	}
 
@@ -31,7 +31,7 @@ public class MethodHandler {
 		return alias;
 	}
 
-	public Method getTargetMethod() {
+	public Method getMethod() {
 		return method;
 	}
 
@@ -56,5 +56,14 @@ public class MethodHandler {
     		parameterTypes = method.getParameterTypes();
     	}
         return parameterTypes;
+    }
+
+    public String stringOfParameterTypes() {
+    	Class<?>[] pts = getParameterTypes();
+    	StringBuilder sb = new StringBuilder();
+    	for (Class<?> cls : pts) {
+    		sb.append(cls.getName()).append(",");
+    	}
+    	return sb.length() == 0 ? "" : sb.substring(0, sb.length() - 1);
     }
 }

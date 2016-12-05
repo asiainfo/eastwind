@@ -31,7 +31,7 @@ public class Host {
 
 	@Override
 	public int hashCode() {
-		return ip.hashCode() + port;
+		return ip.hashCode() + port * 31;
 	}
 
 	@Override

@@ -8,14 +8,6 @@ public class InvocationUtil {
 		InvocationMade.TL.set(made);
 	}
 	
-	public static void makeNextInvocation() {
-		InvocationMade made = new InvocationMade();
-		made.setSync(InvocationMade.DEFAULT.isSync());
-		made.setRetry(InvocationMade.DEFAULT.getRetry());
-		made.setTimeout(InvocationMade.DEFAULT.getTimeout());
-		InvocationMade.TL.set(made);
-	}
-
 	@SuppressWarnings("unchecked")
 	public static <T> InvocationFuture<T> getLastInvocation(T returnStub) {
 		return InvocationPromise.TL.get();

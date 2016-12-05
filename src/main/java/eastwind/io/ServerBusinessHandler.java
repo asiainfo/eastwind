@@ -1,9 +1,9 @@
 package eastwind.io;
 
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.channel.ChannelHandler.Sharable;
 
 import java.util.concurrent.ThreadPoolExecutor;
 
@@ -15,15 +15,16 @@ import eastwind.io.model.Response;
 public class ServerBusinessHandler extends SimpleChannelInboundHandler<BusinessObject> {
 
 	private ThreadPoolExecutor executor;
-	private HandlerRegistry handlerRegistry;
+	private ServerContext providerContainer;
 	
-	public ServerBusinessHandler(ThreadPoolExecutor executor, HandlerRegistry handlerRegistry) {
+	public ServerBusinessHandler(ThreadPoolExecutor executor, ServerContext providerContainer) {
 		this.executor = executor;
-		this.handlerRegistry = handlerRegistry;
+		this.providerContainer = providerContainer;
 	}
 
 	@Override
 	protected void channelRead0(ChannelHandlerContext ctx, BusinessObject msg) throws Exception {
+		ProviderRegistry handlerRegistry = providerContainer.getProviderRegistry();
 		Channel channel = ctx.channel();
 		if (msg instanceof Request) {
 			Request request = (Request) msg;

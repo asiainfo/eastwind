@@ -13,9 +13,9 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
-public class HandlerRegistry {
+public class ProviderRegistry {
 
-	private static Logger logger = LoggerFactory.getLogger(HandlerRegistry.class);
+	private static Logger logger = LoggerFactory.getLogger(ProviderRegistry.class);
 	
 	private static List<Class<?>> primitiveWrappers = Lists.newArrayList();
 	private static List<Class<?>> primitives = Lists.newArrayList();
@@ -38,7 +38,11 @@ public class HandlerRegistry {
 
 	private Map<String, List<MethodHandler>> methodHandlers = Maps.newHashMap();
 
-	private List<HanlderObj> hanlderObjs = Lists.newArrayList();
+	private List<ProviderInstance> providerInstances = Lists.newArrayList();
+
+	public List<ProviderInstance> getProviderInstances() {
+		return providerInstances;
+	}
 
 	public MethodHandler findHandler(String name) {
 		return methodHandlers.get(name).get(0);
@@ -53,11 +57,11 @@ public class HandlerRegistry {
 		}
 	
 		MethodHandler handler = null;
-		for (HanlderObj ho : hanlderObjs) {
-			if (ho.interfs.contains(cls)) {
+		for (ProviderInstance ho : providerInstances) {
+			if (ho.getInterfs().contains(cls)) {
 				int distance = 0;
-				for (MethodHandler h : ho.handlers) {
-					int d = distance(h.getTargetMethod(), pts);
+				for (MethodHandler h : ho.getHandlers()) {
+					int d = distance(h.getMethod(), pts);
 					if (d == 0) {
 						handler = h;
 						break;
@@ -81,26 +85,24 @@ public class HandlerRegistry {
 			addGenericInterfaces(interfs, interfs.get(i));
 		}
 
-		HanlderObj ho = new HanlderObj();
-		ho.interfs = interfs;
-		ho.alias = newAlias(obj);
+		ProviderInstance ho = new ProviderInstance(newAlias(obj), obj, interfs);
 
 		for (Method method : obj.getClass().getMethods()) {
 			if (!Object.class.equals(method.getDeclaringClass())) {
-				MethodHandler rpcHandler = new MethodHandler(obj, method, ho.alias);
-				String key = ho.alias + "." + method.getName();
+				MethodHandler rpcHandler = new MethodHandler(obj, method, ho.getAlias());
+				String key = ho.getAlias() + "/" + method.getName();
 				List<MethodHandler> handlers = methodHandlers.get(key);
 				if (handlers == null) {
 					handlers = Lists.newArrayList();
 					methodHandlers.put(key, handlers);
 				}
 				handlers.add(rpcHandler);
-				ho.handlers.add(rpcHandler);
-				logger.info("register {}:{}", obj.getClass().getName(), ho.alias);
+				ho.getHandlers().add(rpcHandler);
+				logger.info("register {}:{}", obj.getClass().getName(), ho.getAlias());
 			}
 		}
 		
-		hanlderObjs.add(ho);
+		providerInstances.add(ho);
 	}
 	
 	private void addGenericInterfaces(List<Class<?>> interfs, Class<?> c) {
@@ -140,8 +142,8 @@ public class HandlerRegistry {
 	}
 
 	private boolean duplicateOfAlias(String alias) {
-		for (HanlderObj ho : hanlderObjs) {
-			if (ho.alias.equals(alias)) {
+		for (ProviderInstance ho : providerInstances) {
+			if (ho.getAlias().equals(alias)) {
 				return true;
 			}
 		}
@@ -185,11 +187,4 @@ public class HandlerRegistry {
 		return distance;
 	}
 
-	private static class HanlderObj {
-		String alias;
-		List<Class<?>> interfs;
-		List<MethodHandler> handlers = Lists.newArrayList();
-	}
-
-	
 }

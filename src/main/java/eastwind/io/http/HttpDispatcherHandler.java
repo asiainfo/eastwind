@@ -17,6 +17,7 @@ import org.apache.commons.lang3.StringUtils;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 
+import eastwind.io.ServerContext;
 import eastwind.io.support.InnerUtils;
 
 @Sharable
@@ -27,8 +28,13 @@ public class HttpDispatcherHandler extends ChannelInboundHandlerAdapter {
 			InnerUtils.getName(HttpProviderHandler.class));
 
 	private HttpResourceHandler httpResourceHandler = new HttpResourceHandler();
-	private HttpConsoleHandler httpConsoleHandler = new HttpConsoleHandler();
-	private HttpProviderHandler httpProviderHandler = new HttpProviderHandler();
+	private HttpConsoleHandler httpConsoleHandler;
+	private HttpProviderHandler httpProviderHandler;
+
+	public HttpDispatcherHandler(ServerContext serverContext) {
+		httpConsoleHandler = new HttpConsoleHandler(serverContext);
+		httpProviderHandler = new HttpProviderHandler(serverContext.getProviderRegistry());
+	}
 
 	@Override
 	public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
@@ -39,7 +45,7 @@ public class HttpDispatcherHandler extends ChannelInboundHandlerAdapter {
 
 		ChannelHandler handler = null;
 
-		if (!StringUtils.isEmpty(extension) && !extension.equals("json") && fhrq.method() == HttpMethod.GET) {
+		if (!StringUtils.isBlank(extension) && !extension.equals("json") && fhrq.method() == HttpMethod.GET) {
 			handler = httpResourceHandler;
 		}
 
@@ -67,4 +73,9 @@ public class HttpDispatcherHandler extends ChannelInboundHandlerAdapter {
 			;
 		return ORDERS.get(i);
 	}
+
+	@Override
+	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+	}
+	
 }
