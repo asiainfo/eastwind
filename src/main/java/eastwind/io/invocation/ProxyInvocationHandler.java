@@ -16,14 +16,24 @@ public class ProxyInvocationHandler extends AbstractInvocationHandler<Method> im
 	}
 
 	@Override
+	@SuppressWarnings("rawtypes")
 	public Object invoke(Object proxy, final Method method, final Object[] args) throws Throwable {
 		InvocationPromise ip = super.invoke(method, args);
-		return ip.get();
+		InvocationMade made = InvocationMade.TL.get();
+		if (made == null) {
+			made = InvocationMade.DEFAULT;
+		} else {
+			InvocationMade.TL.set(null);
+		}
+		if (made.isSync()) {
+			return ip.get();
+		}
+		return returnNull(method);
 	}
 
 	@Override
 	protected boolean isSmart(Method context) {
-		return true;
+		return false;
 	}
 
 	@Override

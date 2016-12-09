@@ -43,7 +43,7 @@ public class RouteGroup {
 	
 	public Route next(Route previous, InvocationInfo info) {
 		if (previous == null) {
-			return routes.size() > 0 ? null : routes.get(0);
+			return routes.size() == 0 ? null : routes.get(0);
 		}
 		for (Route r : routes) {
 			if (r.getPrecedence() > previous.getPrecedence()

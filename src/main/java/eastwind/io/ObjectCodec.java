@@ -27,7 +27,7 @@ public class ObjectCodec extends ByteToMessageCodec<Object> {
 
 	private static Logger logger = LoggerFactory.getLogger(ObjectCodec.class);
 
-	private static final byte SIMPLE = 0x00;
+	private static final byte SIMPLE = 0x02;
 	private static final byte HEADED_OBJECT = 0x01;
 
 	private SerializerFactoryHolder serializerFactoryHolder;
@@ -46,7 +46,7 @@ public class ObjectCodec extends ByteToMessageCodec<Object> {
 		Serializer frameworkSerializer = serializerFactoryHolder.getFrameworkSerializer();
 
 		if (message instanceof Ping) {
-			out.writeShort(0);
+			out.writeByte(0);
 		} else if (message instanceof HeadedObject) {
 			logEncode(message);
 			HeadedObject headedObject = (HeadedObject) message;
@@ -117,9 +117,9 @@ public class ObjectCodec extends ByteToMessageCodec<Object> {
 	protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
 		Serializer frameworkSerializer = serializerFactoryHolder.getFrameworkSerializer();
 
-		if (in.readableBytes() >= 2) {
-			if (in.getShort(0) == 0) {
-				in.readShort();
+		if (in.readableBytes() >= 1) {
+			if (in.getByte(0) == 0) {
+				in.readByte();
 				out.add(FrameworkObjects.PING);
 			} else if (in.readableBytes() >= 4) {
 				in.markReaderIndex();

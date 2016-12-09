@@ -17,19 +17,19 @@ import eastwind.io.transport.TransportFactory;
 @Sharable
 public class ServerFrameworkHandler extends FrameworkHandler {
 
-	private ServerContext providerContainer;
+	private ServerContext serverContext;
 	private ClientRepository clientRepository;
 
 	public ServerFrameworkHandler(Shake myShake, TransmitSustainer transmitSustainer,
-			ServerContext providerContainer, TransportFactory transportFactory, ClientRepository clientRepository) {
+			ServerContext serverContext, TransportFactory transportFactory, ClientRepository clientRepository) {
 		super(myShake, transmitSustainer, transportFactory);
-		this.providerContainer = providerContainer;
+		this.serverContext = serverContext;
 		this.clientRepository = clientRepository;
 	}
 
 	@Override
 	protected void channelRead0(ChannelHandlerContext ctx, FrameworkObject obj) throws Exception {
-		ProviderRegistry handlerRegistry = providerContainer.getProviderRegistry();
+		ProviderRegistry handlerRegistry = serverContext.getProviderRegistry();
 		
 		Channel channel = ctx.channel();
 		String id = channel.id().asShortText();
@@ -50,7 +50,7 @@ public class ServerFrameworkHandler extends FrameworkHandler {
 					handler = handlerRegistry.findHandler(enquire.getName());
 				}
 				ProviderMetaData meta = new ProviderMetaData();
-				meta.setName(handler.getAlias());
+				meta.setName(handler.getName());
 				reply = UniqueHolder.reply(holder, meta);
 			}
 			if (reply != null) {

@@ -15,16 +15,16 @@ import eastwind.io.model.Response;
 public class ServerBusinessHandler extends SimpleChannelInboundHandler<BusinessObject> {
 
 	private ThreadPoolExecutor executor;
-	private ServerContext providerContainer;
+	private ServerContext serverContext;
 	
-	public ServerBusinessHandler(ThreadPoolExecutor executor, ServerContext providerContainer) {
+	public ServerBusinessHandler(ThreadPoolExecutor executor, ServerContext serverContext) {
 		this.executor = executor;
-		this.providerContainer = providerContainer;
+		this.serverContext = serverContext;
 	}
 
 	@Override
 	protected void channelRead0(ChannelHandlerContext ctx, BusinessObject msg) throws Exception {
-		ProviderRegistry handlerRegistry = providerContainer.getProviderRegistry();
+		ProviderRegistry handlerRegistry = serverContext.getProviderRegistry();
 		Channel channel = ctx.channel();
 		if (msg instanceof Request) {
 			Request request = (Request) msg;

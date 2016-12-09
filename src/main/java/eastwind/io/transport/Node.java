@@ -12,6 +12,13 @@ public class Node {
 	private int tmpWeight;
 	private boolean frozen;
 	
+	public Node() {
+	}
+
+	public Node(Host host) {
+		this.host = host;
+	}
+
 	public String getGroup() {
 		return group;
 	}

@@ -11,7 +11,7 @@ public class InvocationPromise<V> implements InvocationFuture<V> {
 
 	@SuppressWarnings("rawtypes")
 	public static final ThreadLocal<InvocationPromise> TL = new ThreadLocal<InvocationPromise>();
-	
+
 	private SettableFuture<V> future = new SettableFuture<V>();
 	private InvocationInfo invocationInfo;
 	private byte state;
@@ -81,7 +81,7 @@ public class InvocationPromise<V> implements InvocationFuture<V> {
 			@Override
 			public void run() {
 				if (state == 1) {
-					listener.onResult(InvocationPromise.this);
+					listener.onSuccess(InvocationPromise.this);
 				} else if (state == 2) {
 					listener.onExecutionException(InvocationPromise.this);
 				} else if (state == 0 || state == 3) {
@@ -89,5 +89,19 @@ public class InvocationPromise<V> implements InvocationFuture<V> {
 				}
 			}
 		}, GlobalExecutor.EVENT_EXECUTOR);
+	}
+
+	@Override
+	public V getResult() {
+		try {
+			return get(0, TimeUnit.NANOSECONDS);
+		} catch (Exception e) {
+		}
+		return null;
+	}
+
+	@Override
+	public InvocationInfo getInvocationInfo() {
+		return invocationInfo;
 	}
 }

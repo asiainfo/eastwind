@@ -22,7 +22,7 @@ public class SmartInvoker<T> {
 		return (T) ip.get();
 	}
 	
-	public InvocationFuture<T> asyncInvoke(Object... args) throws Throwable {
+	public InvocationFuture<T> invokeAsynchronously(Object... args) throws Throwable {
 		InvocationPromise ip = invocationHandler.invoke(name, args);
 		return ip;
 	}

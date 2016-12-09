@@ -148,7 +148,7 @@
 						</thead>
 						<tbody id="routelist">
 							<tr th:each="route : ${routes}" th:attr="routeid=${route.id}">
-								<td th:text="${#strings.isEmpty(route.name) ? '----' : route.name}"></td>
+								<td th:text="${#strings.isEmpty(route.name) ? '--' : route.name}"></td>
 								<td th:text="${route.precedence}"></td>
 								<td>
 									<div th:if="${!#strings.isEmpty(route.consumer)}" th:text="'群组:'+${route.consumer}">

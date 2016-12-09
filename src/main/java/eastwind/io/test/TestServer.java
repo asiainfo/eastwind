@@ -10,8 +10,7 @@ public class TestServer {
 
 	public static void main(String[] args) throws IOException {
 		EastWindServer eastwind = new EastWindServer(TEST_SERVER);
-		eastwind.setPort(8080);
-		eastwind.registerHandler(new HelloImpl());
+		eastwind.registerProvider(new FruitProviderImpl());
 		eastwind.start();
 		System.in.read();
 	}

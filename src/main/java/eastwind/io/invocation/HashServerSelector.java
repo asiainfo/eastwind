@@ -28,4 +28,9 @@ public class HashServerSelector implements ServerSelector {
 		return true;
 	}
 
+	@Override
+	public HashCodeGenerator getHashCodeGenerator() {
+		return RandomHashCodeGenerator.DEFAULT;
+	}
+
 }

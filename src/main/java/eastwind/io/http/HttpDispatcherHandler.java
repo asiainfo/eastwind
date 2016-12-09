@@ -23,9 +23,9 @@ import eastwind.io.support.InnerUtils;
 @Sharable
 public class HttpDispatcherHandler extends ChannelInboundHandlerAdapter {
 
-	private static List<String> ORDERS = Lists.newArrayList(InnerUtils.getName(HttpDispatcherHandler.class),
-			InnerUtils.getName(HttpResourceHandler.class), InnerUtils.getName(HttpConsoleHandler.class),
-			InnerUtils.getName(HttpProviderHandler.class));
+	private static List<String> ORDERS = Lists.newArrayList(InnerUtils.getInstanceName(HttpDispatcherHandler.class),
+			InnerUtils.getInstanceName(HttpResourceHandler.class), InnerUtils.getInstanceName(HttpConsoleHandler.class),
+			InnerUtils.getInstanceName(HttpProviderHandler.class));
 
 	private HttpResourceHandler httpResourceHandler = new HttpResourceHandler();
 	private HttpConsoleHandler httpConsoleHandler;
@@ -59,7 +59,7 @@ public class HttpDispatcherHandler extends ChannelInboundHandlerAdapter {
 			handler = httpProviderHandler;
 		}
 
-		String name = InnerUtils.getName(handler.getClass());
+		String name = InnerUtils.getInstanceName(handler.getClass());
 		String baseName = findHandlerBefore(pipeline, name);
 		if (pipeline.get(name) == null) {
 			pipeline.addAfter(baseName, name, handler);

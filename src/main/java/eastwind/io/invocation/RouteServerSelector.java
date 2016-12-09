@@ -44,4 +44,9 @@ public class RouteServerSelector implements ServerSelector {
 		return route;
 	}
 
+	@Override
+	public HashCodeGenerator getHashCodeGenerator() {
+		return RandomHashCodeGenerator.DEFAULT;
+	}
+
 }

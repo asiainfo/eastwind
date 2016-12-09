@@ -24,6 +24,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import eastwind.io.MethodHandler;
 import eastwind.io.ProviderRegistry;
 import eastwind.io.serializer.JsonSerializer;
+import eastwind.io.support.InnerUtils;
 
 public class HttpProviderHandler extends ChannelInboundHandlerAdapter {
 
@@ -44,14 +45,15 @@ public class HttpProviderHandler extends ChannelInboundHandlerAdapter {
 		sb.append(fhrq.content().toString(Charset.forName("utf-8")));
 		sb.append("]");
 		PathDecoder paths = new PathDecoder(uri.getPath());
-		String name = paths.getFirst() + "." + paths.getSecond();
+		String name = InnerUtils.getFullProviderName(paths.getFirst(), paths.getSecond());
 		MethodHandler methodHandler = providerRegistry.findHandler(name);
 		Class<?>[] pts = methodHandler.getParameterTypes();
 		Object[] params = new Object[pts.length];
 		if (pts.length == 1) {
 			String tmp = sb.substring(1, sb.length() - 1);
 			if (!NumberUtils.isNumber(tmp)) {
-				if (tmp.startsWith("\"") && tmp.endsWith("\"")) {
+				if ((tmp.startsWith("\"") && tmp.endsWith("\"")) || (tmp.startsWith("[") && tmp.endsWith("]"))
+						|| (tmp.startsWith("{") && tmp.endsWith("}"))) {
 				} else {
 					tmp = "\"" + tmp + "\"";
 				}

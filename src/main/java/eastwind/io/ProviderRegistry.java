@@ -13,6 +13,8 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
+import eastwind.io.support.InnerUtils;
+
 public class ProviderRegistry {
 
 	private static Logger logger = LoggerFactory.getLogger(ProviderRegistry.class);
@@ -78,31 +80,31 @@ public class ProviderRegistry {
 		return handler;
 	}
 
-	public void registerHandler(Object obj) {
+	public void registerProvider(Object provider) {
 		List<Class<?>> interfs = Lists.newArrayList();
-		addGenericInterfaces(interfs, obj.getClass());
+		addGenericInterfaces(interfs, provider.getClass());
 		for (int i = 0; i < interfs.size(); i++) {
 			addGenericInterfaces(interfs, interfs.get(i));
 		}
 
-		ProviderInstance ho = new ProviderInstance(newAlias(obj), obj, interfs);
+		ProviderInstance pi = new ProviderInstance(newNamespace(provider), provider, interfs);
 
-		for (Method method : obj.getClass().getMethods()) {
+		for (Method method : provider.getClass().getMethods()) {
 			if (!Object.class.equals(method.getDeclaringClass())) {
-				MethodHandler rpcHandler = new MethodHandler(obj, method, ho.getAlias());
-				String key = ho.getAlias() + "/" + method.getName();
+				MethodHandler mh = new MethodHandler(provider, method, pi.getNamespace());
+				String key = InnerUtils.getFullProviderName(pi.getNamespace(), method.getName());
 				List<MethodHandler> handlers = methodHandlers.get(key);
 				if (handlers == null) {
 					handlers = Lists.newArrayList();
 					methodHandlers.put(key, handlers);
 				}
-				handlers.add(rpcHandler);
-				ho.getHandlers().add(rpcHandler);
-				logger.info("register {}:{}", obj.getClass().getName(), ho.getAlias());
+				handlers.add(mh);
+				pi.getHandlers().add(mh);
+				logger.info("register {}:{}", provider.getClass().getName(), mh.getName());
 			}
 		}
 		
-		providerInstances.add(ho);
+		providerInstances.add(pi);
 	}
 	
 	private void addGenericInterfaces(List<Class<?>> interfs, Class<?> c) {
@@ -118,14 +120,9 @@ public class ProviderRegistry {
 		}
 	}
 
-	private String newAlias(Object obj) {
-		String name = obj.getClass().getSimpleName();
-		if (name.length() == 1) {
-			name = name.substring(0, 1).toLowerCase();
-		} else {
-			name = name.substring(0, 1).toLowerCase() + name.substring(1);
-		}
-		if (!duplicateOfAlias(name)) {
+	private String newNamespace(Object obj) {
+		String name = InnerUtils.getInstanceName(obj.getClass());
+		if (!duplicateOfNamespace(name)) {
 			return name;
 		}
 
@@ -141,9 +138,9 @@ public class ProviderRegistry {
 		return name;
 	}
 
-	private boolean duplicateOfAlias(String alias) {
-		for (ProviderInstance ho : providerInstances) {
-			if (ho.getAlias().equals(alias)) {
+	private boolean duplicateOfNamespace(String namespace) {
+		for (ProviderInstance hi : providerInstances) {
+			if (hi.getNamespace().equals(namespace)) {
 				return true;
 			}
 		}

@@ -5,7 +5,7 @@ import java.util.EventListener;
 
 public interface InvocationListener<T> extends EventListener {
 
-	void onResult(InvocationFuture<T> future);
+	void onSuccess(InvocationFuture<T> future);
 	
 	void onInvokeException(InvocationFuture<T> future);
 	

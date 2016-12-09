@@ -21,14 +21,16 @@ public class HeadedObject {
 		this.header.setSize((byte) 1);
 		this.obj = th;
 	}
-	
+
 	public void setObj(Object obj) {
 		this.header.setSize((byte) 1);
 		this.obj = obj;
 	}
 
 	public void setObjs(Object[] objs) {
-		this.header.setSize((byte) objs.length);
-		this.obj = objs;
+		if (objs != null) {
+			this.header.setSize((byte) objs.length);
+			this.obj = objs;
+		}
 	}
 }

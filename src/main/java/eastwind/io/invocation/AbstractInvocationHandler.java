@@ -36,7 +36,6 @@ public abstract class AbstractInvocationHandler<T> {
 		final InvocationPromise ip = new InvocationPromise(ii);
 		InvocationPromise.TL.set(ip);
 
-		ServerTransport st = null;
 		final Request request = new Request();
 		request.setArgs(args);
 		request.setBinary(isSmart(context));
@@ -44,6 +43,7 @@ public abstract class AbstractInvocationHandler<T> {
 
 		ServerGroup serverGroup = serverRepository.getServerGroup(group);
 		ServerSelector serverSelector = null;
+		Set<Node> exculsions = new HashSet<Node>();
 		for (boolean last = false; !last;) {
 			if (serverSelector == null) {
 				serverSelector = serverGroup.next(null, ii);
@@ -54,22 +54,24 @@ public abstract class AbstractInvocationHandler<T> {
 				serverSelector = serverGroup.getDefaultSelector();
 				last = true;
 			}
+			int key = serverSelector.getHashCodeGenerator().hashCode(ii);
 			
-			Set<Node> exculsions = new HashSet<Node>();
-		}
-
-		if (st.getStatus() == 0) {
-			st.addShakeListener(new OperationListener<ServerTransport>() {
-				@Override
-				public void complete(final ServerTransport st) {
-					if (st.getStatus() == 1) {
-						enquireAndInvoke(context, ip, request, st);
+			Node node = serverSelector.next(key, exculsions);
+			ServerTransport st = serverRepository.getTransport(group, node);
+			
+			if (st.getStatus() == 0) {
+				st.addShakeListener(new OperationListener<ServerTransport>() {
+					@Override
+					public void complete(final ServerTransport st) {
+						if (st.getStatus() == 1) {
+							enquireAndInvoke(context, ip, request, st);
+						}
 					}
-				}
 
-			});
-		} else if (st.getStatus() == 1) {
-			enquireAndInvoke(context, ip, request, st);
+				});
+			} else if (st.getStatus() == 1) {
+				enquireAndInvoke(context, ip, request, st);
+			}
 		}
 		return ip;
 	}

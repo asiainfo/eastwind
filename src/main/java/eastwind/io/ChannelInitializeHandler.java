@@ -13,6 +13,7 @@ import java.util.List;
 import com.google.common.collect.Lists;
 
 import eastwind.io.http.HttpDispatcherHandler;
+import eastwind.io.serializer.SerializerFactoryHolder;
 import eastwind.io.support.InnerUtils;
 
 @Sharable
@@ -23,11 +24,22 @@ public class ChannelInitializeHandler extends ChannelInboundHandlerAdapter {
 			"CONNECT ".getBytes());
 
 	private ServerContext serverContext;
-	private HttpDispatcherHandler httpDispatcherHandler;
+	private SerializerFactoryHolder serializerFactoryHolder;
+	private TransmitSustainer transmitSustainer;
 
-	public ChannelInitializeHandler(ServerContext serverContext) {
+	private HttpDispatcherHandler httpDispatcherHandler;
+	private ServerFrameworkHandler serverFrameworkHandler;
+	private ServerBusinessHandler serverBusinessHandler;
+
+	public ChannelInitializeHandler(ServerContext serverContext, ServerFrameworkHandler serverFrameworkHandler,ServerBusinessHandler serverBusinessHandler,
+			SerializerFactoryHolder serializerFactoryHolder, TransmitSustainer transmitSustainer) {
 		this.serverContext = serverContext;
 		this.httpDispatcherHandler = new HttpDispatcherHandler(serverContext);
+		this.serverFrameworkHandler = serverFrameworkHandler;
+		this.serverBusinessHandler = serverBusinessHandler;
+		
+		this.serializerFactoryHolder = serializerFactoryHolder;
+		this.transmitSustainer = transmitSustainer;
 	}
 
 	@Override
@@ -38,6 +50,14 @@ public class ChannelInitializeHandler extends ChannelInboundHandlerAdapter {
 			byte magic = in.getByte(0);
 			if (magic >= 0 && magic < 32) {
 				// rpc
+				pipeline.addLast(
+						"objectCodec",
+						new ObjectCodec(serializerFactoryHolder, serverContext.getProviderRegistry(), transmitSustainer));
+				pipeline.addLast("headedObjectCodec", new HeadedObjectCodec());
+				pipeline.addLast("serverFrameworkHandler", serverFrameworkHandler);
+				pipeline.addLast("serverBusinessHandler", serverBusinessHandler);
+				pipeline.remove(this);
+				ctx.fireChannelRead(in);
 			} else {
 				for (byte[] pattern : HTTP_BEGINNING) {
 					int i = 0;
@@ -51,7 +71,7 @@ public class ChannelInitializeHandler extends ChannelInboundHandlerAdapter {
 						// http
 						pipeline.addLast(new HttpServerCodec());
 						pipeline.addLast(new HttpObjectAggregator(1024));
-						pipeline.addLast(InnerUtils.getName(HttpDispatcherHandler.class), httpDispatcherHandler);
+						pipeline.addLast(InnerUtils.getInstanceName(HttpDispatcherHandler.class), httpDispatcherHandler);
 						pipeline.remove(this);
 						ctx.fireChannelRead(in);
 						break;

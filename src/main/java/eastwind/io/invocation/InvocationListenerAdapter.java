@@ -3,7 +3,7 @@ package eastwind.io.invocation;
 public class InvocationListenerAdapter<T> implements InvocationListener<T> {
 
 	@Override
-	public void onResult(InvocationFuture<T> future) {
+	public void onSuccess(InvocationFuture<T> future) {
 	}
 
 	@Override

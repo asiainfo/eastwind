@@ -4,11 +4,18 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.concurrent.ConcurrentMap;
 
+import org.apache.commons.lang3.StringUtils;
+
+import eastwind.io.Provider;
 import eastwind.io.model.Host;
 
 public class InnerUtils {
 
-	public static String getName(Class<?> cls) {
+	public static String getInstanceName(Class<?> cls) {
+		Provider provider = cls.getAnnotation(Provider.class);
+		if (provider != null && !StringUtils.isBlank(provider.name())) {
+			return provider.name();
+		}
 		String simpleName = cls.getSimpleName();
 		if (simpleName.length() == 1) {
 			return simpleName.substring(0, 1).toLowerCase();
@@ -16,6 +23,10 @@ public class InnerUtils {
 		return simpleName.substring(0, 1).toLowerCase() + simpleName.substring(1);
 	}
 
+	public static String getFullProviderName(String namespace, String name) {
+		return namespace + "/" + name;
+	}
+	
 	public static Class<?> getGenericType(Class<?> src, Class<?> interf) {
 		for (Type type : src.getGenericInterfaces()) {
 			if (type instanceof ParameterizedType) {

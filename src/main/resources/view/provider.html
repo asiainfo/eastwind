@@ -27,7 +27,7 @@
 		
 			<div th:each="provider : ${providers}" class="panel panel-default">
 				<div class="panel-heading">
-					<h3 class="panel-title" th:text="${provider.alias}"></h3>
+					<h3 class="panel-title" th:text="${provider.namespace}"></h3>
 					<h2 class="panel-title" th:text="${provider.obj.class.name}"></h2>
 				</div>
 				<table class="table">
@@ -38,9 +38,9 @@
 					</thead>
 					<tbody>
 						<tr th:each="handler : ${provider.handlers}">
-							<td th:text="${handler.alias}"></td>
+							<td th:text="${handler.name}"></td>
 							<td th:text="${handler.stringOfParameterTypes()}"></td>
-							<td th:text="${handler.method.returnType.name}"></td>
+							<td th:text="${handler.stringOfReturnType()}"></td>
 						</tr>
 					</tbody>
 				</table>

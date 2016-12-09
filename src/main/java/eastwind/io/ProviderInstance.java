@@ -6,19 +6,19 @@ import com.google.common.collect.Lists;
 
 public class ProviderInstance {
 
-	private String alias;
+	private String namespace;
 	private Object obj;
 	private List<Class<?>> interfs;
 	private List<MethodHandler> handlers = Lists.newArrayList();
 
-	public ProviderInstance(String alias, Object obj, List<Class<?>> interfs) {
-		this.alias = alias;
+	public ProviderInstance(String namespace, Object obj, List<Class<?>> interfs) {
+		this.namespace = namespace;
 		this.obj = obj;
 		this.interfs = interfs;
 	}
 
-	public String getAlias() {
-		return alias;
+	public String getNamespace() {
+		return namespace;
 	}
 
 	public Object getObj() {
