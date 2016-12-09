@@ -12,13 +12,13 @@ demo源码见eastwind.io.text。
 	eastwind.start();
 	System.in.read();
 		
-使用默认端口，启动组名为TEST_SERVER的服务端。
-控制台地址：http://127.0.0.1:12468/provider.html?console
-服务端只需开放一个端口即可支持多种协议。
+使用默认端口，启动组名为TEST_SERVER的服务端。<br/>
+控制台地址：http://127.0.0.1:12468/provider.html?console<br/>
+服务端只需开放一个端口即可支持多种协议。<br/>
 
 ### 1.2 client：
-1.2.1 二进制方式
-二进制方式用Proxy方式创建invoker，效率高，需要提供严格的Interface、Class。(硬依赖)
+1.2.1 二进制方式<br/>
+二进制方式用Proxy方式创建invoker，效率高，需要提供严格的Interface、Class。
 若服务端逻辑向后兼容，客户端不必随服务端同时升级。
 二进制同步，创建一个Fruit：
 
@@ -31,9 +31,9 @@ demo源码见eastwind.io.text。
 	InvocationFuture<List<Fruit>> future = InvocationUtil.makeNextAsync().get(fruitProvider.queryAll());
 	future.addListener(new QueryAllInvocationListener());
 		
-1.2.2 Smart方式
+1.2.2 Smart方式<br/>
 Smart方式，目前使用Json序列化，效率一般，后期将使用更加高效的序列化方式。
-Smart方式不需要Interface，需要不严格的Result Class。(软依赖)
+Smart方式不需要Interface，需要不严格的Result Class。
 同样的，若服务端逻辑向后兼容，客户端不必随服务端同时升级。
 Smart同步，创建一个Fruit:
 
@@ -46,7 +46,7 @@ Smart异步，查询Fruit列表:
 	InvocationFuture<List<Fruit>> future = fruitQueryer.invokeAsynchronously();
 	future.addListener(new QueryAllPrintInvocationListener());
 		
-1.2.3 HTTP方式
+1.2.3 HTTP方式<br/>
 HTTP方式一般用于调试、自测，不建议线上环境开放。
 uri的query部分为json形式的入参。
 	
