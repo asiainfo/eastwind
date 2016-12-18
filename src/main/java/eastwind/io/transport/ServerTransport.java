@@ -128,7 +128,7 @@ public class ServerTransport {
 			if (status == 1) {
 				@SuppressWarnings("unchecked")
 				TransmitPromise<ProviderMetaData> tp = sendAndWaitingForReply(holder);
-				tp.addListener(enquireListener, tp, GlobalExecutor.SERIAL_EXECUTOR);
+				tp.addListener(enquireListener, tp, GlobalExecutor.SINGLE_EXECUTOR);
 			} else {
 				addShakeListener(new Shake2EnquireListener(handlerEnquireAdapter, holder, enquireListener));
 			}
@@ -139,7 +139,7 @@ public class ServerTransport {
 	}
 
 	public void addShakeListener(final OperationListener<ServerTransport> listener) {
-		getShakeFuture().addListener(listener, this, GlobalExecutor.SERIAL_EXECUTOR);
+		getShakeFuture().addListener(listener, this, GlobalExecutor.SINGLE_EXECUTOR);
 	}
 
 	public void addCloseListener() {
@@ -189,7 +189,7 @@ public class ServerTransport {
 			handlerEnquireAdapter.putIfNeeded();
 			@SuppressWarnings("unchecked")
 			TransmitPromise<ProviderMetaData> promise = sendAndWaitingForReply(holder);
-			promise.addListener(enquireListener, promise, GlobalExecutor.SERIAL_EXECUTOR);
+			promise.addListener(enquireListener, promise, GlobalExecutor.SINGLE_EXECUTOR);
 		}
 	
 	}

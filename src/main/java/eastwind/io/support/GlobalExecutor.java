@@ -14,8 +14,8 @@ public class GlobalExecutor {
 
 	public static DelayedExecutor DELAYED_EXECUTOR = new DelayedExecutor();
 
-	public static ExecutorService SERIAL_EXECUTOR = Executors.newSingleThreadExecutor(new NamedThreadFactory(
-			"SERIAL_EXECUTOR"));
+	public static ExecutorService SINGLE_EXECUTOR = Executors.newSingleThreadExecutor(new NamedThreadFactory(
+			"SINGLE_EXECUTOR"));
 
 	static {
 		// DELAYED_EXECUTOR.register(new TransmitTicker());

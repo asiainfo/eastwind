@@ -19,10 +19,16 @@ public class SerializerFactoryHolder {
 	}
 
 	public Serializer getProxySerializer() {
-		return proxySerializerHolder == null ? null : proxySerializerHolder.getSerializer();
+		if (proxySerializerHolder == null) {
+			proxySerializerHolder = new SerializerHolder(new KryoSerializerFactory());
+		}
+		return proxySerializerHolder.getSerializer();
 	}
 
 	public Serializer getSmartSerializer() {
-		return smartSerializerHolder == null ? null : smartSerializerHolder.getSerializer();
+		if (smartSerializerHolder == null) {
+			smartSerializerHolder = new SerializerHolder(new JsonSerializerFactory());
+		}
+		return smartSerializerHolder.getSerializer();
 	}
 }
