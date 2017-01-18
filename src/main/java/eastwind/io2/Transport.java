@@ -12,11 +12,8 @@ public interface Transport {
 
 	EndPoint endPoint();
 
-	void push(NetworkTraffic networkTraffic);
-
 	void addActiveListener(Listener<Transport> listener);
 
 	void addCloseListener(Listener<Transport> listener);
 
-	void addNetworkTrafficListener(Listener<NetworkTraffic> listener);
 }

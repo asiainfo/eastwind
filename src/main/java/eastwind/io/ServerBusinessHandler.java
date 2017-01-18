@@ -28,7 +28,7 @@ public class ServerBusinessHandler extends SimpleChannelInboundHandler<BusinessO
 		Channel channel = ctx.channel();
 		if (msg instanceof Request) {
 			Request request = (Request) msg;
-			MethodHandler methodHandler = handlerRegistry.findHandler(request.getName());
+			ProviderHandler methodHandler = handlerRegistry.findHandler(request.getName());
 			Object result = methodHandler.invoke(request.getArgs());
 			Response response = new Response();
 			response.setId(request.getId());

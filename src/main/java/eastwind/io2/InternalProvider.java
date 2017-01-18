@@ -1,7 +1,10 @@
 package eastwind.io2;
 
-public interface InternalProvider<T extends EndPoint> {
+import eastwind.io.Provider;
 
-	
+@Provider("")
+public interface InternalProvider {
+
+	ProviderDescriptor desc(ProviderDescriptor desc);
 
 }

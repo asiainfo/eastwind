@@ -1,5 +1,6 @@
 package eastwind.io.support;
 
+import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.concurrent.ConcurrentMap;
@@ -13,8 +14,8 @@ public class InnerUtils {
 
 	public static String getInstanceName(Class<?> cls) {
 		Provider provider = cls.getAnnotation(Provider.class);
-		if (provider != null && !StringUtils.isBlank(provider.name())) {
-			return provider.name();
+		if (provider != null && provider.value() != Provider.DEFAULT_NAME) {
+			return provider.value().trim();
 		}
 		String simpleName = cls.getSimpleName();
 		if (simpleName.length() == 1) {
@@ -23,10 +24,30 @@ public class InnerUtils {
 		return simpleName.substring(0, 1).toLowerCase() + simpleName.substring(1);
 	}
 
+	public static String getMethodName(Method method) {
+		Provider provider = method.getAnnotation(Provider.class);
+		if (provider == null || provider.value().equals(Provider.DEFAULT_NAME) || StringUtils.isBlank(provider.value())) {
+			return method.getName();
+		}
+		return provider.value().trim();
+	}
+
 	public static String getFullProviderName(String namespace, String name) {
+		if (StringUtils.isBlank(namespace)) {
+			return name;
+		}
 		return namespace + "/" + name;
 	}
 	
+	public static String[] getParameterTypes(Method method) {
+		Class<?>[] cls = method.getParameterTypes();
+		String[] pts = new String[cls.length];
+		for (int i = 0; i < cls.length; i++) {
+			pts[i] = cls[i].getCanonicalName();
+		}
+		return pts;
+	}
+
 	public static Class<?> getGenericType(Class<?> src, Class<?> interf) {
 		for (Type type : src.getGenericInterfaces()) {
 			if (type instanceof ParameterizedType) {
@@ -44,10 +65,6 @@ public class InnerUtils {
 		return null;
 	}
 
-	public static long currentTimeSeconds() {
-		return System.currentTimeMillis() / 1000;
-	}
-
 	public static <K, V> V putIfAbsent(ConcurrentMap<K, V> map, K key, V value) {
 		V present = map.putIfAbsent(key, value);
 		if (present == null) {
@@ -56,6 +73,49 @@ public class InnerUtils {
 		return present;
 	}
 
+	public static <T> T getThreadLocal(ThreadLocal<T> threadLocal) {
+		T t = threadLocal.get();
+		threadLocal.set(null);
+		return t;
+	}
+	
+	public static Object returnNull(Method method) {
+		Class<?> type = method.getReturnType();
+		// boolean, char, byte, short, int, long, float, double
+		if (type.isPrimitive()) {
+			if (type == boolean.class) {
+				return false;
+			}
+
+			if (type == int.class) {
+				return Integer.MIN_VALUE;
+			}
+			if (type == long.class) {
+				return Long.MIN_VALUE;
+			}
+
+			if (type == byte.class) {
+				return Byte.MIN_VALUE;
+			}
+			if (type == short.class) {
+				return Short.MIN_VALUE;
+			}
+			if (type == float.class) {
+				return Float.MIN_VALUE;
+			}
+			if (type == double.class) {
+				return Double.MIN_VALUE;
+			}
+
+			if (type == char.class) {
+				return (char) 0xffff;
+			}
+		} else {
+			return null;
+		}
+		return null;
+	}
+	
 	public static Host toHost(String uri) {
 		if (uri.contains(":")) {
 			String[] arr = uri.split(":");

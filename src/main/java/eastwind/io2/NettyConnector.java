@@ -31,31 +31,28 @@ public abstract class NettyConnector extends AbstractConnector {
 			@Override
 			protected void initChannel(SocketChannel sc) throws Exception {
 				ChannelPipeline pipeline = sc.pipeline();
+				pipeline.addLast(new NetworkTrafficCodec(serializerFactoryHolder));
+				pipeline.addLast(new ConnectorInboundHandler());
 			}
 		});
 		
 		serverBootstrap.channel(NioServerSocketChannel.class).option(ChannelOption.SO_REUSEADDR, true);
 		serverBootstrap.group(masterGroup, workerGroup);
-		serverBootstrap.childHandler(new ChannelInitializer<SocketChannel>() {
-			@Override
-			protected void initChannel(SocketChannel sc) throws Exception {
-				initServerSocketChannel(sc);
-			}
-		});
+		serverBootstrap.childHandler(new ChannelInitializeHandler(serializerFactoryHolder));
 	}
 	
 	@Override
-	public Transport bind(InetSocketAddress localAddress) {
+	public AcceptorTransport accept(InetSocketAddress localAddress) {
 		ChannelFuture cf = serverBootstrap.bind(localAddress);
-		return new LocalTransport(cf);
+		return new AcceptorTransport(cf);
 	}
 
 	protected abstract void initServerSocketChannel(SocketChannel sc);
 	
 	@Override
-	public Transport connect(InetSocketAddress remoteAddress) {
+	public OutboundTransport connect(String group, InetSocketAddress remoteAddress) {
 		ChannelFuture cf = bootstrap.connect(remoteAddress);
-		return null;
+		return new OutboundTransport(group, cf);
 	}
 	
 }

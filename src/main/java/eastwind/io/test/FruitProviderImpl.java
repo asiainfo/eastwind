@@ -7,7 +7,7 @@ import com.google.common.collect.Lists;
 
 import eastwind.io.Provider;
 
-@Provider(name = "fruit")
+@Provider(value = "fruit")
 public class FruitProviderImpl implements FruitProvider {
 
 	private AtomicInteger sequence = new AtomicInteger();

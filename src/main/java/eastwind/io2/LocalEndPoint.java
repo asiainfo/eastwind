@@ -3,9 +3,11 @@ package eastwind.io2;
 import java.net.InetSocketAddress;
 
 
-public interface LocalEndPoint extends EventEndPoint {
+public interface LocalEndPoint extends EndPoint {
 
 	void registerProvider(Object provider);
+	
+	InetSocketAddress getLocalAddress();
 	
 	void setLocalAddress(InetSocketAddress localAddress);
 	

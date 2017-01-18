@@ -38,7 +38,7 @@ public class ProviderRegistry {
 		primitives.add(double.class);
 	}
 
-	private Map<String, List<MethodHandler>> methodHandlers = Maps.newHashMap();
+	private Map<String, List<ProviderHandler>> methodHandlers = Maps.newHashMap();
 
 	private List<ProviderInstance> providerInstances = Lists.newArrayList();
 
@@ -46,11 +46,11 @@ public class ProviderRegistry {
 		return providerInstances;
 	}
 
-	public MethodHandler findHandler(String name) {
+	public ProviderHandler findHandler(String name) {
 		return methodHandlers.get(name).get(0);
 	}
 
-	public MethodHandler findHandler(String interf, String method, String[] parameterTypes)
+	public ProviderHandler findHandler(String interf, String method, String[] parameterTypes)
 			throws ClassNotFoundException {
 		Class<?> cls = Class.forName(interf);
 		Class<?>[] pts = new Class<?>[parameterTypes.length];
@@ -58,11 +58,11 @@ public class ProviderRegistry {
 			pts[i] = Class.forName(parameterTypes[i]);
 		}
 	
-		MethodHandler handler = null;
+		ProviderHandler handler = null;
 		for (ProviderInstance ho : providerInstances) {
 			if (ho.getInterfs().contains(cls)) {
 				int distance = 0;
-				for (MethodHandler h : ho.getHandlers()) {
+				for (ProviderHandler h : ho.getHandlers()) {
 					int d = distance(h.getMethod(), pts);
 					if (d == 0) {
 						handler = h;
@@ -91,9 +91,9 @@ public class ProviderRegistry {
 
 		for (Method method : provider.getClass().getMethods()) {
 			if (!Object.class.equals(method.getDeclaringClass())) {
-				MethodHandler mh = new MethodHandler(provider, method, pi.getNamespace());
+				ProviderHandler mh = new ProviderHandler(provider, method, pi.getNamespace());
 				String key = InnerUtils.getFullProviderName(pi.getNamespace(), method.getName());
-				List<MethodHandler> handlers = methodHandlers.get(key);
+				List<ProviderHandler> handlers = methodHandlers.get(key);
 				if (handlers == null) {
 					handlers = Lists.newArrayList();
 					methodHandlers.put(key, handlers);

@@ -21,7 +21,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import eastwind.io.MethodHandler;
+import eastwind.io.ProviderHandler;
 import eastwind.io.ProviderRegistry;
 import eastwind.io.serializer.JsonSerializer;
 import eastwind.io.support.InnerUtils;
@@ -46,7 +46,7 @@ public class HttpProviderHandler extends ChannelInboundHandlerAdapter {
 		sb.append("]");
 		PathDecoder paths = new PathDecoder(uri.getPath());
 		String name = InnerUtils.getFullProviderName(paths.getFirst(), paths.getSecond());
-		MethodHandler methodHandler = providerRegistry.findHandler(name);
+		ProviderHandler methodHandler = providerRegistry.findHandler(name);
 		Class<?>[] pts = methodHandler.getParameterTypes();
 		Object[] params = new Object[pts.length];
 		if (pts.length == 1) {

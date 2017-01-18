@@ -8,27 +8,23 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Maps;
 
-import eastwind.io.model.ProviderMetaData;
-
 public abstract class AbstractEndPoint implements EndPoint {
 
 	protected static Logger logger = LoggerFactory.getLogger(EndPoint.class);
+	
+	public static final int DEFAULT_WEIGHT = 10;
 	
 	protected String uuid;
 	protected String group;
 	protected String tag;
 	protected String version;
-	protected int weight;
+	protected int weight = DEFAULT_WEIGHT;
 
-	protected Map<Method, ProviderMetaData> methodMetaDatas = Maps.newHashMap();
-	protected Map<String, ProviderMetaData> namedMetaDatas = Maps.newHashMap();
-
-	protected AbstractEndPoint(String uuid, String group, String tag, String version, int weight) {
+	protected AbstractEndPoint(String uuid, String group, String tag, String version) {
 		this.uuid = uuid;
 		this.group = group;
 		this.tag = tag;
 		this.version = version;
-		this.weight = weight;
 	}
 
 	@Override
@@ -55,21 +51,15 @@ public abstract class AbstractEndPoint implements EndPoint {
 	public String getVersion() {
 		return version;
 	}
-	
-	@Override
-	public void addProvider(ProviderMetaData meta) {
-		methodMetaDatas.put(meta.getMethod(), meta);
-		namedMetaDatas.put(meta.getName(), meta);
+
+	protected void setWeight(int weight) {
+		this.weight = weight;
 	}
 
-	@Override
-	public ProviderMetaData getProvider(Method method) {
-		return methodMetaDatas.get(method);
+	protected Shake createShake() {
+		Shake shake = new Shake();
+		shake.setMyGroup(group);
+		shake.setMyUuid(uuid);
+		return shake;
 	}
-
-	@Override
-	public ProviderMetaData getProvider(String name) {
-		return namedMetaDatas.get(name);
-	}
-
 }

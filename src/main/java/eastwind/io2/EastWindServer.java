@@ -1,29 +1,23 @@
 package eastwind.io2;
 
 import java.io.IOException;
+import java.util.UUID;
 
-
-public class EastWindServer extends AbstractLocalEndPoint {
+public class EastWindServer extends AbstractAcceptorEndPoint {
 
 	public EastWindServer(String group) {
-		this(group, null, null, DEFAULT_WEIGHT);
+		super(UUID.randomUUID().toString(), group, null, null);
 	}
-	
-	public EastWindServer(String group, String tag, String version, int weight) {
-		super(group, tag, version, weight);
-	}
-	
+
 	@Override
 	protected NettyConnectorFactory getConnectorFactory() {
 		return NettyConnectorFactorys.serverConnectorFactory();
 	}
 
 	public void start() {
-		super.start();
+		super.init();
 	}
-	
-	
-	
+
 	public static final String TEST_SERVER = "TEST_SERVER";
 
 	public static void main(String[] args) throws IOException {

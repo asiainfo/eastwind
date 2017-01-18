@@ -37,11 +37,11 @@ public class ObjectHandlerRegistry {
 
 	private Map<Class<?>, CopyOnWriteArrayList<MessageListener<Object>>> messageListeners = Maps.newHashMap();
 
-	private Map<String, List<MethodHandler>> methodHandlers = Maps.newHashMap();
+	private Map<String, List<ProviderHandler>> methodHandlers = Maps.newHashMap();
 
 	private List<HanlderObj> hanlderObjs = Lists.newArrayList();
 
-	public MethodHandler getHandler(String name) {
+	public ProviderHandler getHandler(String name) {
 		return methodHandlers.get(name).get(0);
 	}
 
@@ -58,9 +58,9 @@ public class ObjectHandlerRegistry {
 
 		for (Method method : obj.getClass().getMethods()) {
 			if (!Object.class.equals(method.getDeclaringClass())) {
-				MethodHandler rpcHandler = new MethodHandler(obj, method, ho.alias);
+				ProviderHandler rpcHandler = new ProviderHandler(obj, method, ho.alias);
 				String key = ho.alias + "." + method.getName();
-				List<MethodHandler> handlers = methodHandlers.get(key);
+				List<ProviderHandler> handlers = methodHandlers.get(key);
 				if (handlers == null) {
 					handlers = Lists.newArrayList();
 					methodHandlers.put(key, handlers);
@@ -77,7 +77,7 @@ public class ObjectHandlerRegistry {
 		return messageListeners.get(cls);
 	}
 
-	public MethodHandler getHandler(String interf, String method, String[] parameterTypes)
+	public ProviderHandler getHandler(String interf, String method, String[] parameterTypes)
 			throws ClassNotFoundException {
 		Class<?> cls = Class.forName(interf);
 		Class<?>[] pts = new Class<?>[parameterTypes.length];
@@ -85,11 +85,11 @@ public class ObjectHandlerRegistry {
 			pts[i] = Class.forName(parameterTypes[i]);
 		}
 
-		MethodHandler handler = null;
+		ProviderHandler handler = null;
 		for (HanlderObj ho : hanlderObjs) {
 			if (ho.interfs.contains(cls)) {
 				int distance = 0;
-				for (MethodHandler h : ho.handlers) {
+				for (ProviderHandler h : ho.handlers) {
 					int d = distance(h.getMethod(), pts);
 					if (d == 0) {
 						handler = h;
@@ -199,7 +199,7 @@ public class ObjectHandlerRegistry {
 	private static class HanlderObj {
 		String alias;
 		List<Class<?>> interfs;
-		List<MethodHandler> handlers = Lists.newArrayList();
+		List<ProviderHandler> handlers = Lists.newArrayList();
 	}
 
 }

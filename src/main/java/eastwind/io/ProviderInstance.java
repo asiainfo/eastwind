@@ -9,7 +9,7 @@ public class ProviderInstance {
 	private String namespace;
 	private Object obj;
 	private List<Class<?>> interfs;
-	private List<MethodHandler> handlers = Lists.newArrayList();
+	private List<ProviderHandler> handlers = Lists.newArrayList();
 
 	public ProviderInstance(String namespace, Object obj, List<Class<?>> interfs) {
 		this.namespace = namespace;
@@ -29,7 +29,7 @@ public class ProviderInstance {
 		return interfs;
 	}
 
-	public List<MethodHandler> getHandlers() {
+	public List<ProviderHandler> getHandlers() {
 		return handlers;
 	}
 

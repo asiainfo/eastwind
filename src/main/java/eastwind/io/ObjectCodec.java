@@ -145,7 +145,7 @@ public class ObjectCodec extends ByteToMessageCodec<Object> {
 
 						if (header.getSize() == 1) {
 							if (header.getModel() == Header.REQUEST) {
-								MethodHandler methodHandler = handlerRegistry.findHandler(header.getName());
+								ProviderHandler methodHandler = handlerRegistry.findHandler(header.getName());
 								Class<?> cls = methodHandler.getParameterTypes()[0];
 								Object obj = contentSerializer.read(cls,
 										new ByteBufInputStream(in, len - headerLen - 2));
@@ -165,7 +165,7 @@ public class ObjectCodec extends ByteToMessageCodec<Object> {
 
 							Object[] objs = new Object[sizes.length];
 							for (int i = 0; i < sizes.length; i++) {
-								MethodHandler methodHandler = handlerRegistry.findHandler(header.getName());
+								ProviderHandler methodHandler = handlerRegistry.findHandler(header.getName());
 								Class<?> cls = methodHandler.getParameterTypes()[i];
 								objs[i] = contentSerializer.read(cls, new ByteBufInputStream(in, sizes[i]));
 							}

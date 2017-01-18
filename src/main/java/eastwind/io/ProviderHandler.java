@@ -3,8 +3,9 @@ package eastwind.io;
 import java.lang.reflect.Method;
 
 import eastwind.io.support.InnerUtils;
+import eastwind.io2.ProviderDescriptor;
 
-public class MethodHandler {
+public class ProviderHandler {
 
 	private String name;
 	private Object instance;
@@ -13,12 +14,21 @@ public class MethodHandler {
 	private int paramLen;
 	private Class<?>[] parameterTypes;
 	
-	public MethodHandler(Object instance, Method method, String namespace) {
+	private ProviderDescriptor descriptor;
+	
+	public ProviderHandler(Object instance, Method method, String namespace) {
 		this.instance = instance;
 		this.method = method;
 		this.paramLen = method.getParameterTypes().length;
 		_void = method.getReturnType().equals(void.class) || method.getReturnType().equals(Void.class);
 		this.name = InnerUtils.getFullProviderName(namespace, method.getName());
+		
+		this.descriptor = new ProviderDescriptor();
+		descriptor.setMethod(method);
+		descriptor.setInterfName(method.getDeclaringClass().getSimpleName());
+		descriptor.setMethodName(method.getName());
+		descriptor.setName(name);
+		descriptor.setParameterTypes(InnerUtils.getParameterTypes(method));
 	}
 
 	public Object invoke(Object[] params) throws Exception {
@@ -56,7 +66,11 @@ public class MethodHandler {
         return parameterTypes;
     }
 
-    public String stringOfParameterTypes() {
+	public ProviderDescriptor getDescriptor() {
+		return descriptor;
+	}
+
+	public String stringOfParameterTypes() {
     	Class<?>[] pts = getParameterTypes();
     	if (pts.length == 0) {
     		return "--";

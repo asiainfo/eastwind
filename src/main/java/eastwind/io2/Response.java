@@ -4,17 +4,17 @@ import com.esotericsoftware.kryo.serializers.FieldSerializer.Optional;
 
 import eastwind.io.model.Unique;
 
-public class Response extends NetworkTraffic implements Unique {
+public class Response extends NetworkTraffic implements Unique, Headed {
 
 	private long id;
 	private boolean failed;
 	
+	@Optional("serializer")
+	private String serializer;
 	@Optional("th")
 	private Throwable th;
 	@Optional("result")
 	private Object result;
-	@Optional("serializer")
-	private String serializer;
 
 	public long getId() {
 		return id;
@@ -54,5 +54,24 @@ public class Response extends NetworkTraffic implements Unique {
 
 	public void setResult(Object result) {
 		this.result = result;
+	}
+
+	@Override
+	public Object getData() {
+		return failed ? th : result;
+	}
+
+	@Override
+	public int getDataLength() {
+		return 1;
+	}
+
+	@Override
+	public void setData(Object data) {
+		if (failed) {
+			this.th = (Throwable) data;
+		} else {
+			this.result = data;
+		}
 	}
 }

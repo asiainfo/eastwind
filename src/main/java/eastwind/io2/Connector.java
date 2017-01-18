@@ -4,7 +4,7 @@ import java.net.InetSocketAddress;
 
 public interface Connector {
 
-	Transport bind(InetSocketAddress localAddress);
+	AcceptorTransport accept(InetSocketAddress localAddress);
 	
-	Transport connect(InetSocketAddress remoteAddress);
+	OutboundTransport connect(String group, InetSocketAddress remoteAddress);
 }

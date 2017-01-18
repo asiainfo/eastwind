@@ -10,7 +10,6 @@ public class NettyServerConnector extends NettyConnector {
 
 	@Override
 	protected void initServerSocketChannel(SocketChannel sc) {
-		
 	}
 
 }

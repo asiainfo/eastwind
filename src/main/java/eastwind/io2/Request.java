@@ -4,16 +4,16 @@ import com.esotericsoftware.kryo.serializers.FieldSerializer.Optional;
 
 import eastwind.io.model.Unique;
 
-public class Request extends NetworkTraffic implements Unique {
+public class Request extends NetworkTraffic implements Unique, Headed {
 
 	private long id;
 	private String name;
 	private boolean internal;
 	private String serializer;
-	private int argsLength;
+	private int dataLength;
 	
-	@Optional("args")
-	private Object[] args;
+	@Optional("data")
+	private Object data;
 
 	@Override
 	public long getId() {
@@ -49,19 +49,22 @@ public class Request extends NetworkTraffic implements Unique {
 		this.serializer = serializer;
 	}
 
-	public Object[] getArgs() {
-		return args;
+	@Override
+	public Object getData() {
+		return data;
 	}
 
-	public void setArgs(Object[] args) {
-		this.args = args;
+	public void setData(Object data) {
+		this.data = data;
 	}
 
-	public int getArgsLength() {
-		return argsLength;
+	@Override
+	public int getDataLength() {
+		return dataLength;
 	}
 
-	public void setArgsLength(int argsLength) {
-		this.argsLength = argsLength;
+	public void setDataLength(int dataLength) {
+		this.dataLength = dataLength;
 	}
+
 }

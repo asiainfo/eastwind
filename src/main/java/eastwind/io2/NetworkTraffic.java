@@ -2,13 +2,17 @@ package eastwind.io2;
 
 public abstract class NetworkTraffic {
 
-	protected Transport transport;
+	protected NetworkTrafficTransport transport;
 
-	public Transport getTransport() {
+	public NetworkTrafficTransport getTransport() {
 		return transport;
 	}
 
-	public void setTransport(Transport transport) {
+	public void setTransport(NetworkTrafficTransport transport) {
 		this.transport = transport;
+	}
+	
+	public void light() {
+		this.transport = null;
 	}
 }

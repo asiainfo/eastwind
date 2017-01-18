@@ -40,7 +40,7 @@ public class ServerFrameworkHandler extends FrameworkHandler {
 			Object content = holder.getObj();
 			UniqueHolder reply = null;
 			if (content instanceof HandlerEnquire) {
-				MethodHandler handler = null;
+				ProviderHandler handler = null;
 				if (content instanceof MethodEnquire) {
 					MethodEnquire enquire = (MethodEnquire) content;
 					handler = handlerRegistry.findHandler(enquire.getInterf(), enquire.getMethod(),

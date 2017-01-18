@@ -1,15 +1,15 @@
 package eastwind.io2;
 
+import java.net.InetSocketAddress;
+import java.util.concurrent.CopyOnWriteArrayList;
+
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
 
-public class AbstractNetworkTrafficTransport extends AbstractTransport implements NetworkTrafficTransport {
+public abstract class AbstractNetworkTrafficTransport extends AbstractTransport implements NetworkTrafficTransport {
 
-	protected SettableFuture<Transport> shakeFuture = new SettableFuture<Transport>();
-	
-	public AbstractNetworkTrafficTransport(ChannelFuture future) {
-		super(future);
-	}
+	protected Shake shake;
+	protected SettableFuture<Shake> shakeFuture = new SettableFuture<Shake>();
+	protected CopyOnWriteArrayList<Listener<NetworkTraffic>> networkTrafficListeners = new CopyOnWriteArrayList<Listener<NetworkTraffic>>();
 
 	@Override
 	public boolean isShaked() {
@@ -17,8 +17,18 @@ public class AbstractNetworkTrafficTransport extends AbstractTransport implement
 	}
 
 	@Override
-	public void addShakeListener(Listener<Transport> listener) {
-		addListener(shakeFuture, listener);
+	public Shake getShake() {
+		return shake;
+	}
+
+	@Override
+	public void addShakeListener(final Listener<Shake> listener) {
+		shakeFuture.addListener(new Runnable() {
+			@Override
+			public void run() {
+				listener.listen(shake);
+			}
+		}, getExecutor());
 	}
 
 	@Override
@@ -29,5 +39,29 @@ public class AbstractNetworkTrafficTransport extends AbstractTransport implement
 		}
 		channel.writeAndFlush(networkTraffic);
 		return true;
+	}
+
+	@Override
+	public void push(NetworkTraffic networkTraffic) {
+		networkTraffic.setTransport(this);
+		if (networkTraffic instanceof Shake) {
+			this.shake = (Shake) networkTraffic;
+			shakeFuture.set(shake);
+		} else {
+			for (Listener<NetworkTraffic> listener : networkTrafficListeners) {
+				listener.listen(networkTraffic);
+			}
+		}
+	}
+
+	@Override
+	public void addNetworkTrafficListener(Listener<NetworkTraffic> listener) {
+		this.networkTrafficListeners.add(listener);
+	}
+
+	@Override
+	public InetSocketAddress getRemoteAddress() {
+		Channel channel = getChannel();
+		return channel == null ? null : (InetSocketAddress) channel.remoteAddress();
 	}
 }
