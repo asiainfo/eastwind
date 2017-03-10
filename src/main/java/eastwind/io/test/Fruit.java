@@ -1,9 +1,17 @@
 package eastwind.io.test;
 
-public class Fruit {
 
+public class Fruit {
 	private int id;
 	private String name;
+	
+	public Fruit() {
+	}
+
+	public Fruit(int id, String name) {
+		this.id = id;
+		this.name = name;
+	}
 
 	public int getId() {
 		return id;
@@ -20,5 +28,5 @@ public class Fruit {
 	public void setName(String name) {
 		this.name = name;
 	}
-
+	
 }

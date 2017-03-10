@@ -6,6 +6,6 @@ public interface ListenerFactory {
 
 	Listener<Shake> getShakeListener();
 
-	Listener<NetworkTraffic> getNetworkTrafficListener();
+	Listener<NetworkTraffic> getPushListener();
 
 }

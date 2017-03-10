@@ -35,8 +35,11 @@ public class ChannelInitializeHandler extends ChannelInboundHandlerAdapter {
 			byte magic = in.getByte(0);
 			if (magic >= 0 && magic < 32) {
 				// rpc
+				AcceptedTransport transport = new AcceptedTransport(ctx.channel());
+				TransportInboundHandler.setTransport(ctx.channel(), transport);
+				
 				pipeline.addLast(new NetworkTrafficCodec(serializerFactoryHolder));
-				pipeline.addLast(new AcceptorInboundHandler());
+				pipeline.addLast(new TransportInboundHandler());
 				pipeline.remove(this);
 				ctx.fireChannelRead(in);
 			} else {

@@ -1,6 +1,5 @@
 package eastwind.io2;
 
-import java.lang.reflect.Type;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -12,7 +11,6 @@ public class Exchange implements Future<Object> {
 
 	private Request request;
 	private Response response;
-	private Type returnType;
 	private SettableFuture<Object> future = new SettableFuture<Object>();
 
 	public Request getRequest() {
@@ -27,21 +25,17 @@ public class Exchange implements Future<Object> {
 		return response;
 	}
 
-	public void setResponse(Response response) {
-		this.response = response;
+	public boolean setResponse(Response response) {
+		boolean seted = false;
 		if (response.getTh() != null) {
-			this.future.setException(response.getTh());
+			seted = this.future.setException(response.getTh());
 		} else {
-			this.future.set(response.getResult());
+			seted = this.future.set(response.getResult());
 		}
-	}
-
-	public Type getReturnType() {
-		return returnType;
-	}
-
-	public void setReturnType(Type returnType) {
-		this.returnType = returnType;
+		if (seted) {
+			this.response = response;
+		}
+		return seted;
 	}
 
 	public void addListener(final ResponseListener listener) {

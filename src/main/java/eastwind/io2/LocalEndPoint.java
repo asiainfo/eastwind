@@ -3,7 +3,7 @@ package eastwind.io2;
 import java.net.InetSocketAddress;
 
 
-public interface LocalEndPoint extends EndPoint {
+public interface LocalEndPoint extends Peer {
 
 	void registerProvider(Object provider);
 	

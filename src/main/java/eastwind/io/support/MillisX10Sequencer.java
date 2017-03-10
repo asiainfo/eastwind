@@ -1,12 +1,12 @@
 package eastwind.io.support;
 
-import eastwind.io.Sequence;
+import eastwind.io.Sequencer;
 
-public class MillisX10Sequence implements Sequence {
+public class MillisX10Sequencer implements Sequencer {
 
 	private long last;
 
-	public MillisX10Sequence() {
+	public MillisX10Sequencer() {
 		this.last = System.currentTimeMillis() * 10;
 	}
 

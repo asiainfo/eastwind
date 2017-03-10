@@ -3,7 +3,7 @@ package eastwind.io;
 import java.lang.reflect.Method;
 
 import eastwind.io.support.InnerUtils;
-import eastwind.io2.ProviderDescriptor;
+import eastwind.io2.ProviderSign;
 
 public class ProviderHandler {
 
@@ -14,7 +14,7 @@ public class ProviderHandler {
 	private int paramLen;
 	private Class<?>[] parameterTypes;
 	
-	private ProviderDescriptor descriptor;
+	private ProviderSign sign;
 	
 	public ProviderHandler(Object instance, Method method, String namespace) {
 		this.instance = instance;
@@ -23,12 +23,12 @@ public class ProviderHandler {
 		_void = method.getReturnType().equals(void.class) || method.getReturnType().equals(Void.class);
 		this.name = InnerUtils.getFullProviderName(namespace, method.getName());
 		
-		this.descriptor = new ProviderDescriptor();
-		descriptor.setMethod(method);
-		descriptor.setInterfName(method.getDeclaringClass().getSimpleName());
-		descriptor.setMethodName(method.getName());
-		descriptor.setName(name);
-		descriptor.setParameterTypes(InnerUtils.getParameterTypes(method));
+		this.sign = new ProviderSign();
+		sign.setMethod(method);
+		sign.setInterfName(method.getDeclaringClass().getSimpleName());
+		sign.setMethodName(method.getName());
+		sign.setName(name);
+		sign.setParameterTypes(InnerUtils.getParameterTypes(method));
 	}
 
 	public Object invoke(Object[] params) throws Exception {
@@ -66,8 +66,8 @@ public class ProviderHandler {
         return parameterTypes;
     }
 
-	public ProviderDescriptor getDescriptor() {
-		return descriptor;
+	public ProviderSign getSign() {
+		return sign;
 	}
 
 	public String stringOfParameterTypes() {

@@ -24,7 +24,7 @@ import eastwind.io.serializer.JsonSerializerFactory;
 import eastwind.io.serializer.KryoSerializerFactory;
 import eastwind.io.serializer.SerializerFactory;
 import eastwind.io.serializer.SerializerFactoryHolder;
-import eastwind.io.support.MillisX10Sequence;
+import eastwind.io.support.MillisX10Sequencer;
 import eastwind.io.support.NamedThreadFactory;
 import eastwind.io.transport.ServerLoader;
 import eastwind.io.transport.ServerRepository;
@@ -41,7 +41,7 @@ public class EastWindClient {
 
 	private Bootstrap bootstrap = new Bootstrap();
 
-	protected Sequence sequence = new MillisX10Sequence();
+	protected Sequencer sequence = new MillisX10Sequencer();
 	protected TransmitSustainer transmitSustainer = new TransmitSustainer();
 	protected TransportFactory transportFactory;
 	protected ServerRepository serverRepository;

@@ -1,8 +1,7 @@
 package eastwind.io2;
 
-import java.lang.reflect.Method;
 
-public interface EndPoint {
+public interface Peer {
 
 	String getUuid();
 	

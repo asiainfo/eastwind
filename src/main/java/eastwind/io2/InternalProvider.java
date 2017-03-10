@@ -5,6 +5,6 @@ import eastwind.io.Provider;
 @Provider("")
 public interface InternalProvider {
 
-	ProviderDescriptor desc(ProviderDescriptor desc);
+	ProviderSign sign(ProviderSign desc);
 
 }

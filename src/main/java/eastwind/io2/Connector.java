@@ -1,10 +1,11 @@
 package eastwind.io2;
 
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 
 public interface Connector {
 
-	AcceptorTransport accept(InetSocketAddress localAddress);
+	AcceptableTransport accept(InetSocketAddress localAddress);
 	
-	OutboundTransport connect(String group, InetSocketAddress remoteAddress);
+	ConnectedTransport connect(String group, SocketAddress remoteAddress);
 }

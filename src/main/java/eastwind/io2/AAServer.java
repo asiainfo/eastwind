@@ -1,12 +1,14 @@
 package eastwind.io2;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.util.UUID;
 
-public class EastWindServer extends AbstractAcceptorEndPoint {
+public class AAServer extends AbstractConfigurablePeer {
 
-	public EastWindServer(String group) {
-		super(UUID.randomUUID().toString(), group, null, null);
+	public AAServer(String group) {
+		super.uuid = UUID.randomUUID().toString();
+		super.group = group;
 	}
 
 	@Override
@@ -15,13 +17,13 @@ public class EastWindServer extends AbstractAcceptorEndPoint {
 	}
 
 	public void start() {
-		super.init();
+		super.start(new InetSocketAddress(12469));
 	}
 
 	public static final String TEST_SERVER = "TEST_SERVER";
 
 	public static void main(String[] args) throws IOException {
-		EastWindServer server = new EastWindServer(TEST_SERVER);
+		AAServer server = new AAServer(TEST_SERVER);
 		server.start();
 		System.in.read();
 	}

@@ -12,6 +12,7 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 
 public abstract class NettyConnector extends AbstractConnector {
 
@@ -32,7 +33,7 @@ public abstract class NettyConnector extends AbstractConnector {
 			protected void initChannel(SocketChannel sc) throws Exception {
 				ChannelPipeline pipeline = sc.pipeline();
 				pipeline.addLast(new NetworkTrafficCodec(serializerFactoryHolder));
-				pipeline.addLast(new ConnectorInboundHandler());
+				pipeline.addLast(new TransportInboundHandler());
 			}
 		});
 		
@@ -42,17 +43,17 @@ public abstract class NettyConnector extends AbstractConnector {
 	}
 	
 	@Override
-	public AcceptorTransport accept(InetSocketAddress localAddress) {
+	public AcceptableTransport accept(InetSocketAddress localAddress) {
 		ChannelFuture cf = serverBootstrap.bind(localAddress);
-		return new AcceptorTransport(cf);
+		return new AcceptableTransport(cf);
 	}
 
 	protected abstract void initServerSocketChannel(SocketChannel sc);
 	
 	@Override
-	public OutboundTransport connect(String group, InetSocketAddress remoteAddress) {
+	public ConnectedTransport connect(String group, SocketAddress remoteAddress) {
 		ChannelFuture cf = bootstrap.connect(remoteAddress);
-		return new OutboundTransport(group, cf);
+		return new ConnectedTransport(group, cf);
 	}
 	
 }

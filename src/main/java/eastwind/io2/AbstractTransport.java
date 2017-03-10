@@ -2,7 +2,6 @@ package eastwind.io2;
 
 import io.netty.channel.Channel;
 
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executor;
 
 import eastwind.io.support.GlobalExecutor;
@@ -10,7 +9,7 @@ import eastwind.io.support.GlobalExecutor;
 public abstract class AbstractTransport implements Transport {
 
 	protected Throwable th;
-	protected EndPoint endPoint;
+	protected Peer peer;
 	
 	protected SettableFuture<Transport> activeFuture = new SettableFuture<Transport>();
 	protected SettableFuture<Transport> closeFuture = new SettableFuture<Transport>();
@@ -31,13 +30,13 @@ public abstract class AbstractTransport implements Transport {
 	}
 
 	@Override
-	public void attach(EndPoint endPoint) {
-		this.endPoint = endPoint;
+	public void attach(Peer endPoint) {
+		this.peer = endPoint;
 	}
 
 	@Override
-	public EndPoint endPoint() {
-		return endPoint;
+	public Peer peer() {
+		return peer;
 	}
 
 	@Override

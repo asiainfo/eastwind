@@ -4,12 +4,12 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.util.concurrent.GenericFutureListener;
 
-public class OutboundTransport extends AbstractNetworkTrafficTransport {
+public class ConnectedTransport extends AbstractNetworkTrafficTransport {
 
 	private String group;
 	private ChannelFuture future;
 
-	public OutboundTransport(String group, ChannelFuture future) {
+	public ConnectedTransport(String group, ChannelFuture future) {
 		this.group = group;
 		this.future = future;
 		TransportInboundHandler.setTransport(future.channel(), this);
@@ -17,7 +17,7 @@ public class OutboundTransport extends AbstractNetworkTrafficTransport {
 			@Override
 			public void operationComplete(ChannelFuture future) throws Exception {
 				if (future.isSuccess()) {
-					activeFuture.set(OutboundTransport.this);
+					activeFuture.set(ConnectedTransport.this);
 				} else if (future.isCancelled()) {
 					activeFuture.cancel(true);
 				} else if (future.cause() != null) {

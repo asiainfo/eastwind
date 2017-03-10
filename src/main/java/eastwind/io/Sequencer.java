@@ -1,6 +1,6 @@
 package eastwind.io;
 
-public interface Sequence {
+public interface Sequencer {
 
 	long get();
 	

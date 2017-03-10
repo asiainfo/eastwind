@@ -4,7 +4,7 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.util.concurrent.GenericFutureListener;
-import eastwind.io.Sequence;
+import eastwind.io.Sequencer;
 import eastwind.io.TransmitSustainer;
 import eastwind.io.model.Host;
 import eastwind.io.model.Shake;
@@ -13,10 +13,10 @@ public class TransportFactory {
 
 	private Bootstrap bootstrap;
 	private Shake shake;
-	private Sequence sequence;
+	private Sequencer sequence;
 	private TransmitSustainer transmitSustainer;
 
-	public TransportFactory(Bootstrap bootstrap, Shake shake, Sequence sequence, TransmitSustainer transmitSustainer) {
+	public TransportFactory(Bootstrap bootstrap, Shake shake, Sequencer sequence, TransmitSustainer transmitSustainer) {
 		this.bootstrap = bootstrap;
 		this.shake = shake;
 		this.sequence = sequence;

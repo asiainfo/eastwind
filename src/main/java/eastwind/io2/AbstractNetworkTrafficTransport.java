@@ -1,15 +1,15 @@
 package eastwind.io2;
 
+import io.netty.channel.Channel;
+
 import java.net.InetSocketAddress;
 import java.util.concurrent.CopyOnWriteArrayList;
-
-import io.netty.channel.Channel;
 
 public abstract class AbstractNetworkTrafficTransport extends AbstractTransport implements NetworkTrafficTransport {
 
 	protected Shake shake;
 	protected SettableFuture<Shake> shakeFuture = new SettableFuture<Shake>();
-	protected CopyOnWriteArrayList<Listener<NetworkTraffic>> networkTrafficListeners = new CopyOnWriteArrayList<Listener<NetworkTraffic>>();
+	protected CopyOnWriteArrayList<Listener<NetworkTraffic>> pushListeners = new CopyOnWriteArrayList<Listener<NetworkTraffic>>();
 
 	@Override
 	public boolean isShaked() {
@@ -32,15 +32,25 @@ public abstract class AbstractNetworkTrafficTransport extends AbstractTransport 
 	}
 
 	@Override
-	public boolean post(NetworkTraffic networkTraffic) {
+	public void post(NetworkTraffic networkTraffic) {
 		Channel channel = getChannel();
-		if (channel == null || !channel.isActive() || !channel.isWritable()) {
-			return false;
+		if (channel != null && channel.isActive() && channel.isWritable()) {
+			channel.writeAndFlush(networkTraffic);
 		}
-		channel.writeAndFlush(networkTraffic);
-		return true;
 	}
 
+	@Override
+	public Exchange exchange(Request request) {
+		Channel channel = getChannel();
+		if (channel != null && channel.isActive() && channel.isWritable()) {
+			EventPeer peer = (EventPeer) peer();
+			Exchange exchange = peer.exchange(request);
+			channel.writeAndFlush(request);
+			return exchange;
+		}
+		return null;
+	}
+	
 	@Override
 	public void push(NetworkTraffic networkTraffic) {
 		networkTraffic.setTransport(this);
@@ -48,15 +58,15 @@ public abstract class AbstractNetworkTrafficTransport extends AbstractTransport 
 			this.shake = (Shake) networkTraffic;
 			shakeFuture.set(shake);
 		} else {
-			for (Listener<NetworkTraffic> listener : networkTrafficListeners) {
+			for (Listener<NetworkTraffic> listener : pushListeners) {
 				listener.listen(networkTraffic);
 			}
 		}
 	}
 
 	@Override
-	public void addNetworkTrafficListener(Listener<NetworkTraffic> listener) {
-		this.networkTrafficListeners.add(listener);
+	public void addPushListener(Listener<NetworkTraffic> listener) {
+		this.pushListeners.add(listener);
 	}
 
 	@Override

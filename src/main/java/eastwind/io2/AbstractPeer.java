@@ -1,16 +1,11 @@
 package eastwind.io2;
 
-import java.lang.reflect.Method;
-import java.util.Map;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.Maps;
+public abstract class AbstractPeer implements Peer {
 
-public abstract class AbstractEndPoint implements EndPoint {
-
-	protected static Logger logger = LoggerFactory.getLogger(EndPoint.class);
+	protected static Logger logger = LoggerFactory.getLogger(Peer.class);
 	
 	public static final int DEFAULT_WEIGHT = 10;
 	
@@ -19,13 +14,6 @@ public abstract class AbstractEndPoint implements EndPoint {
 	protected String tag;
 	protected String version;
 	protected int weight = DEFAULT_WEIGHT;
-
-	protected AbstractEndPoint(String uuid, String group, String tag, String version) {
-		this.uuid = uuid;
-		this.group = group;
-		this.tag = tag;
-		this.version = version;
-	}
 
 	@Override
 	public String getUuid() {
@@ -50,10 +38,6 @@ public abstract class AbstractEndPoint implements EndPoint {
 	@Override
 	public String getVersion() {
 		return version;
-	}
-
-	protected void setWeight(int weight) {
-		this.weight = weight;
 	}
 
 	protected Shake createShake() {

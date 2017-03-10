@@ -8,9 +8,9 @@ public interface Transport {
 
 	Throwable getTh();
 	
-	void attach(EndPoint endPoint);
+	void attach(Peer endPoint);
 
-	EndPoint endPoint();
+	Peer peer();
 
 	void addActiveListener(Listener<Transport> listener);
 

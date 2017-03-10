@@ -6,12 +6,12 @@ import java.util.concurrent.TimeUnit;
 
 import com.google.common.collect.Maps;
 
-import eastwind.io.Sequence;
+import eastwind.io.Sequencer;
 
 public class DelayedExecutor {
 
 	private Thread t;
-	private Sequence sequence = new MillisX10Sequence();
+	private Sequencer sequence = new MillisX10Sequencer();
 	private volatile DelayQueue<DelayedTask> current;
 	private DelayQueue<DelayedTask>[] queues;
 	private int cardinal;

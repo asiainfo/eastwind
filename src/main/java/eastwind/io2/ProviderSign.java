@@ -4,7 +4,7 @@ import java.lang.reflect.Method;
 
 import com.esotericsoftware.kryo.serializers.FieldSerializer.Optional;
 
-public class ProviderDescriptor extends NetworkTraffic {
+public class ProviderSign extends NetworkTraffic {
 
 	@Optional("method")
 	private Method method;

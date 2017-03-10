@@ -7,7 +7,7 @@ import io.netty.util.concurrent.GenericFutureListener;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 
-import eastwind.io.Sequence;
+import eastwind.io.Sequencer;
 import eastwind.io.TransmitPromise;
 import eastwind.io.TransmitSustainer;
 import eastwind.io.model.HandlerEnquire;
@@ -31,7 +31,7 @@ public class ServerTransport {
 	private WeakReference<Channel> channelRef;
 	private SettableFuture<ServerTransport> shakeFuture;
 	private TransmitSustainer transmitSustainer;
-	private Sequence sequence;
+	private Sequencer sequence;
 	private ProviderMetaDataVisitor providerMetaDataVisitor;
 
 	public ServerTransport(String group, Node node, Channel channel) {
@@ -167,7 +167,7 @@ public class ServerTransport {
 		this.transmitSustainer = transmitSustainer;
 	}
 
-	public void setSequence(Sequence sequence) {
+	public void setSequence(Sequencer sequence) {
 		this.sequence = sequence;
 	}
 

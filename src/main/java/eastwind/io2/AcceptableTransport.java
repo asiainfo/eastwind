@@ -5,18 +5,18 @@ import io.netty.channel.ChannelFuture;
 import io.netty.util.concurrent.GenericFutureListener;
 
 
-public class AcceptorTransport extends AbstractTransport {
+public class AcceptableTransport extends AbstractTransport {
 
 	private ChannelFuture future;
 	
-	public AcceptorTransport(ChannelFuture future) {
+	public AcceptableTransport(ChannelFuture future) {
 		this.future = future;
 		TransportInboundHandler.setTransport(future.channel(), this);
 		future.addListener(new GenericFutureListener<ChannelFuture>() {
 			@Override
 			public void operationComplete(ChannelFuture future) throws Exception {
 				if (future.isSuccess()) {
-					activeFuture.set(AcceptorTransport.this);
+					activeFuture.set(AcceptableTransport.this);
 				} else if (future.isCancelled()) {
 					activeFuture.cancel(true);
 				} else if (future.cause() != null) {

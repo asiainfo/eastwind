@@ -12,11 +12,11 @@ public class ServerContext {
 	protected String uuid;
 	protected String version;
 	protected SocketAddress socketAddress;
-	protected Sequence sequence;
+	protected Sequencer sequence;
 	private ProviderRegistry providerRegistry = new ProviderRegistry();
 	private RouteGroup routeGroup = new RouteGroup();
 	
-	public ServerContext(String group, String uuid, Sequence sequence) {
+	public ServerContext(String group, String uuid, Sequencer sequence) {
 		this.group = group;
 		this.uuid = uuid;
 		this.sequence = sequence;
@@ -58,7 +58,7 @@ public class ServerContext {
 		return time;
 	}
 
-	public Sequence getSequence() {
+	public Sequencer getSequence() {
 		return sequence;
 	}
 	

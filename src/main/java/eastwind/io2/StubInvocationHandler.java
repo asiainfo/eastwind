@@ -27,7 +27,7 @@ public class StubInvocationHandler implements InvocationHandler {
 	public static void main(String[] args) {
 		InternalProvider p = (InternalProvider) Proxy.newProxyInstance(StubInvocationHandler.class.getClassLoader(), new Class<?>[] { InternalProvider.class },
 				new StubInvocationHandler());
-		p.desc(new ProviderDescriptor());
+		p.sign(new ProviderSign());
 		System.out.println(JSON.toJSONString(InnerUtils.getThreadLocal(Constants.REQUEST)));
 	}
 }

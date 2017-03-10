@@ -12,7 +12,7 @@ public class Request extends NetworkTraffic implements Unique, Headed {
 	private String serializer;
 	private int dataLength;
 	
-	@Optional("data")
+	@Optional("X")
 	private Object data;
 
 	@Override

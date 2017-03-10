@@ -8,7 +8,9 @@ public interface NetworkTrafficTransport extends Transport {
 	
 	void push(NetworkTraffic networkTraffic);
 	
-	boolean post(NetworkTraffic networkTraffic);
+	void post(NetworkTraffic networkTraffic);
+	
+	public Exchange exchange(Request request);
 	
 	boolean isShaked();
 	
@@ -16,5 +18,5 @@ public interface NetworkTrafficTransport extends Transport {
 	
 	void addShakeListener(Listener<Shake> listener);
 	
-	void addNetworkTrafficListener(Listener<NetworkTraffic> listener);
+	void addPushListener(Listener<NetworkTraffic> listener);
 }
