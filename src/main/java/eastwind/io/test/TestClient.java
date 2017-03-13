@@ -12,7 +12,6 @@ import eastwind.io.invocation.InvocationListenerAdapter;
 import eastwind.io.invocation.InvocationUtil;
 import eastwind.io.invocation.SmartInvoker;
 import eastwind.io.model.Host;
-import eastwind.io.transport.Node;
 import eastwind.io.transport.SimpleServerLoader;
 
 public class TestClient {
@@ -22,7 +21,7 @@ public class TestClient {
 	public static void main(String[] args) throws Throwable {
 		EastWindClient client = new EastWindClient(TEST_CLIENT);
 		SimpleServerLoader serverLoader = new SimpleServerLoader();
-		serverLoader.setNodes(TestServer.TEST_SERVER, Lists.newArrayList(new Node(new Host("127.0.0.1", 12468))));
+		serverLoader.setHosts(TestServer.TEST_SERVER, Lists.newArrayList(new Host("127.0.0.1", 12468)));
 		client.setServerLoader(serverLoader);
 		client.start();
 

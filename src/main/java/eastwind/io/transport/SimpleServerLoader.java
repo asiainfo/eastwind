@@ -3,7 +3,11 @@ package eastwind.io.transport;
 import java.util.List;
 import java.util.Map;
 
+import com.google.common.base.Function;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+
+import eastwind.io.model.Host;
 
 public class SimpleServerLoader extends ServerLoader {
 
@@ -19,7 +23,13 @@ public class SimpleServerLoader extends ServerLoader {
 		return 0;
 	}
 	
-	public void setNodes(String group, List<Node> nodes) {
+	public void setHosts(String group, List<Host> hosts) {
+		List<Node> nodes = Lists.transform(hosts, new Function<Host, Node>() {
+			@Override
+			public Node apply(Host input) {
+				return new Node(input);
+			}
+		});
 		nodeGroup.put(group, nodes);
 	}
 }
