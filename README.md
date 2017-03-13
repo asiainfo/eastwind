@@ -7,9 +7,9 @@ demo源码见eastwind.io.text。
 
 ### 1.1 server：
 		
-	EastWindServer eastwind = new EastWindServer(TEST_SERVER);
-	eastwind.registerProvider(new FruitProviderImpl());
-	eastwind.start();
+	EastWindServer server = new EastWindServer(TEST_SERVER);
+	server.registerProvider(new FruitProviderImpl());
+	server.start();
 	System.in.read();
 		
 使用默认端口，启动组名为TEST_SERVER的服务端。<br/>
