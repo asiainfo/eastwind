@@ -17,6 +17,13 @@ demo源码见eastwind.io.text。
 服务端只需开放一个端口即可支持多种协议。<br/>
 
 ### 1.2 client：
+
+	EastWindClient client = new EastWindClient(TEST_CLIENT);
+	SimpleServerLoader serverLoader = new SimpleServerLoader();
+	serverLoader.setHosts(TestServer.TEST_SERVER, Lists.newArrayList(new Host("127.0.0.1", 12468)));
+	client.setServerLoader(serverLoader);
+	client.start();
+
 1.2.1 二进制方式<br/>
 二进制方式用Proxy方式创建invoker，效率高，需要提供严格的Interface、Class。<br/>
 若服务端逻辑向后兼容，客户端不必随服务端同时升级。<br/>
