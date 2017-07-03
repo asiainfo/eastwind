@@ -3,7 +3,7 @@ package eastwind.io2;
 import java.net.SocketAddress;
 import java.util.Set;
 
-public abstract class AbstractConfigurablePeer extends AbstractEventPeer implements ConfigurablePeer {
+public abstract class AbstractConfigurablePeer extends AbstractMasterPeer implements ConfigurablePeer {
 	
 	public void refresh(String group, Set<SocketAddress> addresses) {
 		PeerGroup pg = getPeerGroup(group);
