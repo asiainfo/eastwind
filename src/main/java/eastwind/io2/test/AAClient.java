@@ -20,36 +20,36 @@ import eastwind.io2.Transport;
 
 public class AAClient extends AbstractConfigurablePeer {
 
-	protected AAClient(String group) {
-		super.uuid = UUID.randomUUID().toString();
-		super.group = group;
-	}
+    protected AAClient(String group) {
+        super.uuid = UUID.randomUUID().toString();
+        super.group = group;
+    }
 
-	@Override
-	protected NettyConnectorFactory getConnectorFactory() {
-		return NettyConnectorFactorys.clientConnectorFactory();
-	}
+    @Override
+    protected NettyConnectorFactory getConnectorFactory() {
+        return NettyConnectorFactorys.clientConnectorFactory();
+    }
 
-	public void start() {
-		super.start(new InetSocketAddress(12469));
-	}
+    public void start() {
+        super.start(new InetSocketAddress(12469));
+    }
 
-	public static final String TEST_CLIENT = "TEST_CLIENT";
+    public static final String TEST_CLIENT = "TEST_CLIENT";
 
-	public static void main(String[] args) throws IOException, InterruptedException {
-		AAClient client = new AAClient(TEST_CLIENT);
-		client.start();
+    public static void main(String[] args) throws IOException, InterruptedException {
+        AAClient client = new AAClient(TEST_CLIENT);
+        client.start();
 
-		 final Request request = new Request();
-		 request.setDataLength(2);
-		 request.setData(new String[]{"abcaaaaaaaaaaaaaaaaaaaaaafffffffffffffffffffffffffffffffeeeeeeeeeeeeeeeeeeeeeessssssssssssssssssssssssssssssssss", "123aaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbcccccccccccccccccccccccccccccccccccccccccccdddddddddddddddddddddddddddddddddddddddddddeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaafffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffgggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkknnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"});
+        final Request request = new Request();
+        request.setDataLength(2);
+        request.setData(new String[]{"abcaaaaaaaaaaaaaaaaaaaaaafffffffffffffffffffffffffffffffeeeeeeeeeeeeeeeeeeeeeessssssssssssssssssssssssssssssssss", "123aaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbcccccccccccccccccccccccccccccccccccccccccccdddddddddddddddddddddddddddddddddddddddddddeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaafffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffgggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkknnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"});
 
-		 NettyConnectorFactory fac =
-		 NettyConnectorFactorys.clientConnectorFactory();
-		 NettyConnector connector = fac.createConnector(1, 2);
-		 final ConnectedTransport transport =
-		 connector.connect(AAServer.TEST_SERVER, new
-		 InetSocketAddress("127.0.0.1", 12469));
+        NettyConnectorFactory fac =
+                NettyConnectorFactorys.clientConnectorFactory();
+        NettyConnector connector = fac.createConnector(1, 2);
+        final ConnectedTransport transport =
+                connector.connect(AAServer.TEST_SERVER, new
+                        InetSocketAddress("127.0.0.1", 12469));
 //		 transport.addActiveListener(new Listener<Transport>() {
 //		 @Override
 //		 public void listen(Transport t) {
@@ -58,18 +58,18 @@ public class AAClient extends AbstractConfigurablePeer {
 //		 }
 //		 });
 
-		 ChannelFuture cf = transport.getFuture();
-		 cf.await();
-		 System.out.println(cf.isSuccess());
-		 Channel c = cf.channel();
-		 c.writeAndFlush(new Shake());
-		 for (;;) {
-			 c.writeAndFlush(request);
-			 c.writeAndFlush(request);
-			 TimeUnit.SECONDS.sleep(10000000);
-		 }
-		 
+        ChannelFuture cf = transport.getFuture();
+        cf.await();
+        System.out.println(cf.isSuccess());
+        Channel c = cf.channel();
+        c.writeAndFlush(new Shake());
+        for (; ; ) {
+            c.writeAndFlush(request);
+            c.writeAndFlush(request);
+            TimeUnit.SECONDS.sleep(10000000);
+        }
+
 //		client.refresh(AAServer.TEST_SERVER, Sets.newHashSet((SocketAddress) new InetSocketAddress(12469)));
-	}
+    }
 
 }
