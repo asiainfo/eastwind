@@ -7,6 +7,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageCodec;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -82,7 +83,8 @@ public class NetworkTrafficCodec extends ByteToMessageCodec<NetworkTraffic> {
 				headerBuf.writeMedium(i - 4 + out.writerIndex());
 				headerBuf.writerIndex(i);
 
-				ctx.write(headerBuf);
+				ctx.writeAndFlush(headerBuf);
+				TimeUnit.SECONDS.sleep(1);
 			}
 		} else {
 			out.writeByte(SIMPLE);

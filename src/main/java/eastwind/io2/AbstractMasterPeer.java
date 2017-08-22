@@ -12,7 +12,7 @@ import eastwind.io.ProviderRegistry;
 import eastwind.io.Sequencer;
 import eastwind.io.support.MillisX10Sequencer;
 
-public abstract class AbstractEventPeer extends AbstractPeer implements EventPeer {
+public abstract class AbstractMasterPeer extends AbstractPeer implements MasterPeer {
 
 	protected int masterThreads = 1;
 	protected int workerThreads;
@@ -27,18 +27,18 @@ public abstract class AbstractEventPeer extends AbstractPeer implements EventPee
 	protected Sequencer sequencer = new MillisX10Sequencer();
 	protected ConcurrentMap<Long, Exchange> exchanges = new ConcurrentHashMap<Long, Exchange>();
 
-	private AcceptorListenerFactory acceptorListenerFactory = new AcceptorListenerFactory();
-	private ConnectedListenerFactory aonnectedListenerFactory = new ConnectedListenerFactory();
+	private AcceptedListenerFactory acceptedListenerFactory = new AcceptedListenerFactory();
+	private ConnectedListenerFactory connectedListenerFactory = new ConnectedListenerFactory();
 
 	@Override
 	public void start(InetSocketAddress localAddress) {
 		if (localAddress == null) {
-			this.localAddress = localAddress;
-		} else {
 			this.localAddress = new InetSocketAddress(12469);
+		} else {
+			this.localAddress = localAddress;
 		}
 		nettyConnector = getConnectorFactory().createConnector(masterThreads, workerThreads);
-		acceptableTransport = nettyConnector.accept(localAddress);
+		acceptableTransport = nettyConnector.accept(this.localAddress);
 		acceptableTransport.addActiveListener(new AcceptorActiveListener());
 	}
 
@@ -46,8 +46,8 @@ public abstract class AbstractEventPeer extends AbstractPeer implements EventPee
 
 	@Override
 	public void register(NetworkTrafficTransport transport) {
-		ListenerFactory lf = transport instanceof AcceptedTransport ? acceptorListenerFactory
-				: aonnectedListenerFactory;
+		NetworkListenerFactory lf = transport instanceof AcceptedTransport ? acceptedListenerFactory
+				: connectedListenerFactory;
 		transport.addPushListener(lf.getPushListener());
 		transport.addShakeListener(lf.getShakeListener());
 		transport.addActiveListener(lf.getActiveListener());
@@ -80,11 +80,11 @@ public abstract class AbstractEventPeer extends AbstractPeer implements EventPee
 	}
 
 	@Override
-	public RelatedPeer getRelatedPeer(String group, String uuid) {
+	public NetworkPeer getNetworkPeer(String group, String uuid) {
 		PeerGroup pg = getPeerGroup(group);
-		RelatedPeer rp = pg.getRelatedPeer(uuid);
+		NetworkPeer rp = pg.getNetworkPeer(uuid);
 		if (rp == null) {
-			return pg.createRelatedPeer(uuid);
+			return pg.createNetworkPeer(uuid);
 		}
 		return rp;
 	}
@@ -98,7 +98,7 @@ public abstract class AbstractEventPeer extends AbstractPeer implements EventPee
 		}
 	}
 
-	private class ConnectedListenerFactory implements ListenerFactory {
+	private class ConnectedListenerFactory implements NetworkListenerFactory {
 
 		ActiveListener activeListener = new ActiveListener();
 		ShakeListener shakeListener = new ShakeListener();
@@ -134,14 +134,14 @@ public abstract class AbstractEventPeer extends AbstractPeer implements EventPee
 			@Override
 			public void listen(Shake t) {
 				ConnectedTransport transport = (ConnectedTransport) t.getTransport();
-				RelatedPeer rep = getRelatedPeer(t.getMyGroup(), t.getMyUuid());
+				NetworkPeer rep = getNetworkPeer(t.getMyGroup(), t.getMyUuid());
 				rep.attach(transport);
 				transport.push(t);
 			}
 		}
 	}
 
-	private class AcceptorListenerFactory implements ListenerFactory {
+	private class AcceptedListenerFactory implements NetworkListenerFactory {
 
 		Listener<Transport> activeListener = new EmptyListener();
 		ShakeListener shakeListener = new ShakeListener();
@@ -173,9 +173,9 @@ public abstract class AbstractEventPeer extends AbstractPeer implements EventPee
 			@Override
 			public void listen(Shake t) {
 				Shake shake = createShake();
-				RelatedPeer rep = getRelatedPeer(t.getMyGroup(), t.getMyUuid());
+				NetworkPeer np = getNetworkPeer(t.getMyGroup(), t.getMyUuid());
 				AcceptedTransport transport = (AcceptedTransport) t.getTransport();
-				rep.attach(transport);
+				np.attach(transport);
 				transport.post(shake);
 			}
 

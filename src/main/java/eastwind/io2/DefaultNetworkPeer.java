@@ -8,7 +8,7 @@ import java.util.Map;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
-public class DefaultRelatedPeer extends AbstractPeer implements RelatedPeer {
+public class DefaultNetworkPeer extends AbstractPeer implements NetworkPeer {
 
 	protected InetSocketAddress remoteAddress;
 
@@ -18,7 +18,7 @@ public class DefaultRelatedPeer extends AbstractPeer implements RelatedPeer {
 	protected Map<Method, ProviderSign> methodProviderSigns = Maps.newHashMap();
 	protected Map<String, ProviderSign> nameProviderSigns = Maps.newHashMap();
 	
-	protected DefaultRelatedPeer(String uuid, String group, String tag, String version) {
+	protected DefaultNetworkPeer(String uuid, String group, String tag, String version) {
 		super.uuid = uuid;
 		super.group = group;
 		super.tag = tag;

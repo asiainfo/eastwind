@@ -37,4 +37,8 @@ public class ConnectedTransport extends AbstractNetworkTrafficTransport {
 		return group;
 	}
 
+	public ChannelFuture getFuture() {
+		return future;
+	}
+
 }

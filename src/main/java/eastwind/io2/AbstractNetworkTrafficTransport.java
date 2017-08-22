@@ -43,7 +43,7 @@ public abstract class AbstractNetworkTrafficTransport extends AbstractTransport 
 	public Exchange exchange(Request request) {
 		Channel channel = getChannel();
 		if (channel != null && channel.isActive() && channel.isWritable()) {
-			EventPeer peer = (EventPeer) peer();
+			MasterPeer peer = (MasterPeer) peer();
 			Exchange exchange = peer.exchange(request);
 			channel.writeAndFlush(request);
 			return exchange;

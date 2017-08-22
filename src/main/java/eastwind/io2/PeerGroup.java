@@ -11,19 +11,19 @@ public class PeerGroup {
 
 	private String group;
 	private Set<SocketAddress> addresses;
-	private Map<SocketAddress, RelatedPeer> addressRelatedPeers = new HashMap<SocketAddress, RelatedPeer>();
-	private Map<String, RelatedPeer> uuidRelatedPeers = new HashMap<String, RelatedPeer>();
+	private Map<SocketAddress, NetworkPeer> addressNetworkPeers = new HashMap<SocketAddress, NetworkPeer>();
+	private Map<String, NetworkPeer> uuidNetworkPeers = new HashMap<String, NetworkPeer>();
 	
 	public PeerGroup(String group) {
 		this.group = group;
 	}
 	
-	public RelatedPeer getRelatedPeer(String uuid) {
-		return uuidRelatedPeers.get(uuid);
+	public NetworkPeer getNetworkPeer(String uuid) {
+		return uuidNetworkPeers.get(uuid);
 	}
 	
-	public RelatedPeer createRelatedPeer(String uuid) {
-		return new DefaultRelatedPeer(uuid, group, null, null);
+	public NetworkPeer createNetworkPeer(String uuid) {
+		return new DefaultNetworkPeer(uuid, group, null, null);
 	}
 	
 	public Set<SocketAddress> getAddresses() {

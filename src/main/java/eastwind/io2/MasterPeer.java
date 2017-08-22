@@ -3,7 +3,7 @@ package eastwind.io2;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 
-public interface EventPeer extends Peer {
+public interface MasterPeer extends Peer {
 
 	void register(NetworkTrafficTransport transport);
 	
@@ -15,6 +15,6 @@ public interface EventPeer extends Peer {
 
 	PeerGroup getPeerGroup(String group);
 
-	RelatedPeer getRelatedPeer(String group, String uuid);
+	NetworkPeer getNetworkPeer(String group, String uuid);
 	
 }

@@ -2,14 +2,20 @@ package eastwind.io2;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandler;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
+import io.netty.channel.ChannelOutboundHandler;
 import io.netty.channel.ChannelPipeline;
+import io.netty.channel.ChannelPromise;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.logging.LoggingHandler;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -39,6 +45,28 @@ public abstract class NettyConnector extends AbstractConnector {
 		
 		serverBootstrap.channel(NioServerSocketChannel.class).option(ChannelOption.SO_REUSEADDR, true);
 		serverBootstrap.group(masterGroup, workerGroup);
+		serverBootstrap.handler(new ChannelDuplexHandler() {
+			@Override
+			public void bind(ChannelHandlerContext ctx, SocketAddress localAddress, ChannelPromise promise)
+					throws Exception {
+				System.out.println("bind");
+				super.bind(ctx, localAddress, promise);
+			}
+			
+			@Override
+			public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
+				System.out.println("handlerAdded");
+			}
+			@Override
+			public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
+				System.out.println("register");
+			}
+			
+			@Override
+			public void channelActive(ChannelHandlerContext ctx) throws Exception {
+				System.out.println("active");
+			}
+		});
 		serverBootstrap.childHandler(new ChannelInitializeHandler(serializerFactoryHolder));
 	}
 	
